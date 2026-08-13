@@ -32,6 +32,26 @@ around that one source tree; they do not fork the skills.
 
 This is a private repository, so your environment must already have GitHub access.
 
+### Codex — one formula
+
+For example, install Visualize only:
+
+```text
+$skill-installer Install skills/visualize from pkronstrom/formulae-magicae.
+```
+
+The skill appears in Codex in the next turn.
+
+### Codex — all formulae
+
+Ask the built-in skill installer:
+
+```text
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, and skills/visualize.
+```
+
+Installed Codex skills appear in the next turn.
+
 ### Claude Code
 
 Install the complete collection:
@@ -47,26 +67,6 @@ Or install just one formula, such as Visualize:
 /plugin marketplace add pkronstrom/formulae-magicae
 /plugin install visualize@formulae-magicae
 ```
-
-### Codex — all formulae
-
-Ask the built-in skill installer:
-
-```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, and skills/visualize.
-```
-
-Installed Codex skills appear in the next turn.
-
-### Codex — one formula
-
-For example, install Visualize only:
-
-```text
-$skill-installer Install skills/visualize from pkronstrom/formulae-magicae.
-```
-
-The skill appears in Codex in the next turn.
 
 ### OpenSkills (optional)
 
