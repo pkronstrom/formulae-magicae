@@ -181,6 +181,17 @@ def test_readme_quick_install_documents_every_supported_install_path():
     def fenced_commands(section):
         return re.findall(r"```(?:text|sh)\n(.*?)\n```", section, flags=re.DOTALL)
 
+    assert fenced_commands(h3_sections["### Codex — one formula"]) == [
+        "$skill-installer Install skills/visualize from "
+        "pkronstrom/formulae-magicae."
+    ]
+    assert fenced_commands(codex_block) == [
+        "$skill-installer Install all of these skills from "
+        "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
+        "skills/pr-voice-review, skills/pr-voice-review-single-file, "
+        "skills/singlefile, skills/spec-flow, skills/summon, "
+        "skills/transcribe-media, skills/tts, and skills/visualize."
+    ]
     assert fenced_commands(h3_sections["### Claude Code"]) == [
         "/plugin marketplace add pkronstrom/formulae-magicae\n"
         "/plugin install formulae-magicae@formulae-magicae",
