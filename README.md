@@ -1,0 +1,156 @@
+# Formulae Magicae
+
+![Formulae Magicae — Ars Automata](assets/formulae-magicae-cover.png)
+
+> **Ars Automata** — a grimoire of small, practical spells for software agents.
+
+Formulae Magicae is Peter Kronström's portable skill collection for Claude Code,
+Codex, Hawk, and other hosts that understand the open `SKILL.md` convention. The
+repository is private and pre-release while the catalog and distribution story are
+being finished.
+
+Each canonical skill lives in `skills/<name>/` with its scripts, templates,
+references, and other runtime resources beside it. Vendor manifests are wrappers
+around that one source tree; they do not fork the skills.
+
+## The formulae
+
+| Skill | Purpose | Notable dependencies |
+| --- | --- | --- |
+| [`summon`](skills/summon/) | Send files, folders, or text through an encrypted `croc` transfer unlocked by a spoken incantation. | `croc` |
+| [`portal`](skills/portal/) | Open an encrypted agent-to-agent chat over ntfy, or a local same-machine channel. | `curl`, `openssl` |
+| [`bento-slides`](skills/bento-slides/) | Build an editable, playable presentation as one offline `.bento.html` file. | A browser |
+| [`singlefile`](skills/singlefile/) | Build a shareable app or prototype as one self-contained HTML file. | A browser |
+| [`visualize`](skills/visualize/) | Render plans and system models as annotatable, self-contained HTML. | A browser |
+| [`transcribe-media`](skills/transcribe-media/) | Turn video or audio into a timestamped transcript, key frames, and contact sheets. | `yt-dlp`, `ffmpeg`, Python tools described by the skill |
+| [`tts`](skills/tts/) | Speak text locally with Kokoro or a configured system/custom engine. | Python/Kokoro or a supported fallback |
+| [`pr-voice-review`](skills/pr-voice-review/) | Walk through a GitHub pull request aloud while the browser follows the review. | `gh`, browser, optional `tts` |
+| [`pr-voice-review-single-file`](skills/pr-voice-review-single-file/) | Build a narrated, offline PR walkthrough as one HTML file. | `gh`, optional Kokoro |
+| [`spec-flow`](skills/spec-flow/) | Run a discovery-first, spec-driven workflow around OpenSpec changes. | OpenSpec; optional companion workflow skills |
+
+## Install
+
+### Claude Code: complete grimoire
+
+Add this repository as a marketplace, then install the collection:
+
+```text
+/plugin marketplace add pkronstrom/formulae-magicae
+/plugin install formulae-magicae@formulae-magicae
+```
+
+Because the repository is private, GitHub authentication must grant access. Install
+one formula instead by replacing the plugin name, for example:
+
+```text
+/plugin install visualize@formulae-magicae
+```
+
+The available individual plugin names are the directory names in the table above.
+Individual entries use Claude Code's root-`SKILL.md` plugin layout and require
+Claude Code 2.1.142 or newer.
+
+#### Migrating from Spellbook
+
+Install Formulae Magicae first and verify the skills you use. Then remove the old
+plugin and marketplace identity:
+
+```text
+/plugin uninstall spellbook@spellbook
+/plugin marketplace remove spellbook
+```
+
+The migration is a clean import, not a rename of the old repository. Existing
+Spellbook users should switch to `formulae-magicae@formulae-magicae` for updates.
+
+### Codex and other Agent Skills hosts
+
+Install an individual skill from its GitHub subdirectory with the host's skill
+installer, or clone the repository and copy/symlink the desired folders into the
+host's skill directory. Common user-level locations include:
+
+In Codex, ask the built-in installer directly, for example:
+
+```text
+$skill-installer Install skills/visualize from pkronstrom/formulae-magicae.
+```
+
+| Host | Skill directory |
+| --- | --- |
+| Codex | `~/.agents/skills/` |
+| Claude Code | `~/.claude/skills/` |
+| Gemini CLI | `~/.gemini/skills/` |
+| OpenCode | `~/.config/opencode/skills/` |
+
+For an install-all development checkout:
+
+```sh
+git clone git@github.com:pkronstrom/formulae-magicae.git
+mkdir -p ~/.agents/skills
+for skill in formulae-magicae/skills/*; do
+  ln -sfn "$(cd "$skill" && pwd)" "$HOME/.agents/skills/$(basename "$skill")"
+done
+```
+
+The root [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json) describes the
+complete collection for Codex plugin tooling. No personal Codex marketplace entry
+is modified by this repository.
+
+As an optional cross-host installer, OpenSkills can scan the private repository and
+let you select formulae interactively:
+
+```sh
+npx openskills install git@github.com:pkronstrom/formulae-magicae.git
+```
+
+OpenSkills is a convenience layer, not the canonical package format.
+
+### Hawk
+
+The root [`hawk-package.yaml`](hawk-package.yaml) lets Hawk discover the collection
+as one package. The Hawk repository itself remains unchanged during this migration;
+the proposed follow-up is documented in
+[`docs/hawk-hooks-transition.md`](docs/hawk-hooks-transition.md).
+
+## Repository layout
+
+```text
+formulae-magicae/
+├── .claude-plugin/       # Claude marketplace and all-skills plugin metadata
+├── .codex-plugin/        # Codex all-skills plugin metadata
+├── assets/               # Repository artwork
+├── docs/                 # Migration and stewardship notes
+├── skills/               # Canonical, portable skill directories
+├── tests/                # Repository-level regression and validation tests
+├── hawk-package.yaml     # Hawk package metadata
+└── LICENSE
+```
+
+## Development
+
+Run the migrated regression suite from the repository root:
+
+```sh
+python3 -m pytest -q
+bash tests/portal/test.sh
+```
+
+Before publishing, validate both plugin manifests, run every skill validator and
+test, audit licenses and generated files, and scan the full Git history for secrets.
+The repository intentionally starts with a clean migration commit rather than the
+history of either source repository.
+
+## Security and privacy
+
+Some formulae invoke third-party tools or public relays. Read each `SKILL.md` before
+use. In particular, Summon and Portal encrypt payloads but public relays still see
+connection metadata; self-host their relays for sensitive work. Never send secrets
+merely because a transport is encrypted.
+
+## Credits and licenses
+
+The collection is MIT-licensed; see [`LICENSE`](LICENSE). Bundled fonts retain their
+own license files inside the skills that use them. Summon's English wordlist is
+derived from the EFF Short Wordlist under CC BY 3.0 US. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for attribution and bundled-asset
+details.

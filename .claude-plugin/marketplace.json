@@ -1,0 +1,77 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "formulae-magicae",
+  "owner": {
+    "name": "Peter Kronstrom"
+  },
+  "description": "Ars Automata: Peter Kronstrom's portable grimoire of practical agent skills.",
+  "plugins": [
+    {
+      "name": "formulae-magicae",
+      "source": "./",
+      "description": "The complete Formulae Magicae skill collection.",
+      "version": "1.0.0",
+      "category": "development"
+    },
+    {
+      "name": "summon",
+      "source": "./skills/summon",
+      "description": "Send files, folders, or text through an encrypted croc transfer.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "portal",
+      "source": "./skills/portal",
+      "description": "Open an encrypted agent-to-agent chat over ntfy or a local channel.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "bento-slides",
+      "source": "./skills/bento-slides",
+      "description": "Build editable presentations as self-contained Bento HTML files.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "singlefile",
+      "source": "./skills/singlefile",
+      "description": "Build shareable apps and prototypes as one self-contained HTML file.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "visualize",
+      "source": "./skills/visualize",
+      "description": "Render plans and system models as annotatable self-contained HTML.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "transcribe-media",
+      "source": "./skills/transcribe-media",
+      "description": "Turn video or audio into transcripts, key frames, and contact sheets.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "tts",
+      "source": "./skills/tts",
+      "description": "Speak text aloud with a local neural or configured speech engine.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "pr-voice-review",
+      "source": "./skills/pr-voice-review",
+      "description": "Walk through a GitHub pull request aloud while the browser follows.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "pr-voice-review-single-file",
+      "source": "./skills/pr-voice-review-single-file",
+      "description": "Build a narrated offline PR walkthrough as one HTML file.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "spec-flow",
+      "source": "./skills/spec-flow",
+      "description": "Run a discovery-first, spec-driven workflow around OpenSpec changes.",
+      "version": "1.0.0"
+    }
+  ]
+}

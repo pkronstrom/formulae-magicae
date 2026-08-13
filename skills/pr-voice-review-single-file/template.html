@@ -1,0 +1,2186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DATA BLOCKS — two owners, two lifetimes. build.py's block regex anchors on
+     this exact shape (open tag, newline, body, newline, close tag) so keep it.
+     review-content:  the agent's. Replaced wholesale on every rewrite.
+     review-feedback: the reviewer's. Carried across a rewrite untouched.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="review-content" type="application/json">
+{}
+</script>
+<script id="review-feedback" type="application/json">
+{}
+</script>
+<!-- ══ END DATA BLOCKS ══════════════════════════════════════════════════════ -->
+
+<title>PR walkthrough</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg:        light-dark(#fbfbfa, #16161a);
+    --surface:   light-dark(#ffffff, #1f1f24);
+    --fg:        light-dark(#1a1a19, #ececed);
+    --muted:     light-dark(#6b6b68, #9a9aa0);
+    --border:    light-dark(#e2e2df, #32323a);
+    --accent:    light-dark(#3b5bdb, #748ffc);
+    --accent-fg: light-dark(#ffffff, #10101a);
+    --danger:    light-dark(#c92a2a, #ff8787);
+    --add-bg:    light-dark(#e6f4ea, #113322);
+    --del-bg:    light-dark(#fbe9e9, #3a1414);
+    --hunk-bg:   light-dark(#f1f1ef, #232329);
+    --lit-bg:    light-dark(#fff3bf, #4a3c0a);
+    --radius: .5rem; --gap: 1rem;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"]  { color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  html, body { max-width: 100%; overflow-x: hidden; }
+  body {
+    margin: 0; min-height: 100dvh;
+    font: 1rem/1.55 var(--font); color: var(--fg); background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  /* Ghost by default. A border is reserved for controls that need to look
+     pressable in isolation; everything in a group or a card gets weight from
+     hover instead, which keeps the page quiet at rest. */
+  button {
+    padding: .2rem .45rem; border-radius: 6px; cursor: pointer; font-size: .8rem;
+    border: 1px solid transparent; background: none;
+  }
+  button:hover { background: var(--border); }
+  button:disabled { opacity: .45; cursor: default; }
+  button[data-variant="ghost"] { border-color: transparent; background: none; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  a { color: var(--accent); }
+
+    /* --danger is light in dark mode, so white-on-danger failed contrast there.
+     light-dark picks the text colour that actually reads against it. */
+  .banner { padding: .6rem var(--gap); background: var(--danger); color: light-dark(#fff, #1a1a19); }
+  .banner[hidden] { display: none; }
+  #toast {
+    position: fixed; inset-block-end: 1rem; inset-inline: 0; margin-inline: auto; width: fit-content;
+    background: var(--fg); color: var(--bg); padding: .5rem 1rem; border-radius: var(--radius);
+    opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 40; max-width: 90vw;
+  }
+  #toast[data-show] { opacity: 1; }
+
+  /* ── shell: rail + article ─────────────────────────────────────────────────
+     The article scrolls, not the page. Sticky positioning still moved the rail
+     with the document, so on a twenty-file PR the tree scrolled out of reach
+     exactly when it was most useful. Two independent scroll regions instead:
+     the rail holds its own place and the diff scrolls under it. */
+  html, body { height: 100%; overflow: hidden; }
+  .shell {
+    display: grid; grid-template-columns: 15rem 1fr;
+    height: 100dvh; min-height: 0;
+  }
+
+  #rail-toggle { display: none; position: fixed; top: .5rem; left: .5rem; z-index: 30; }
+
+  #rail {
+    height: 100%; min-height: 0; overflow-y: auto;
+    padding-bottom: 3.25rem;              /* clear of the fixed transport */
+    border-right: 1px solid var(--border); padding-inline: var(--gap);
+    padding-top: var(--gap);
+  }
+  #rail-search {
+    width: 100%; padding: .25rem .45rem; border-radius: 6px; font-size: .8rem;
+    border: 1px solid var(--border); background: var(--bg); margin-bottom: .6rem;
+  }
+  .rail-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .2rem; }
+  .rail-item a {
+    display: grid; grid-template-columns: auto 1fr; gap: 0 .4rem; padding: .2rem .35rem;
+    border-radius: 5px; text-decoration: none; color: var(--fg); align-items: baseline;
+  }
+  /* A solid accent fill plus the focus ring read as two competing selections.
+     A tint and a left bar say "you are here" without shouting. */
+  .rail-item.current > a {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .rail-item.current .rail-name { color: var(--accent); font-weight: 600; }
+  /* The filename is the informative end of a path, so it leads and never
+     truncates; the directory is demoted and clipped from the left. */
+  .rail-name { font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rail-dir {
+    grid-column: 2; font-size: .68rem; color: var(--muted); direction: rtl; text-align: left;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rail-dir bdi { direction: ltr; }
+  .rail-map { margin-bottom: .6rem; }
+  /* An authored diagram hardcodes its colours and then disappears in dark
+     mode. Text follows the theme; shapes keep the author's intent. */
+  .prv-svg text { fill: currentColor; }
+  .prv-svg { color: var(--fg); }
+  .prv-svg [stroke]:not([stroke="none"]):not(.keep-stroke) { stroke: currentColor; }
+  .prv-svg .lit, .rail-map .lit { color: var(--accent); }
+  .prv-svg .lit text { fill: var(--accent); }
+  .rail-map .nav { cursor: pointer; }
+  .rail-map .nav:hover { opacity: .75; }
+  .rail-map .nav:focus-visible { outline: 2px solid var(--accent); }
+  .tier-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .tier-dot[data-tier="crucial"] { background: var(--danger); }
+  .ticks { display: flex; flex-wrap: wrap; gap: 2px; padding-left: 1.15rem; margin: .1rem 0 .45rem; }
+  .tick {
+    width: 5px; height: 11px; padding: 0; min-width: 0;
+    background: var(--border); border: 0; border-radius: 2px; cursor: pointer;
+  }
+  .tick:hover { background: var(--muted); }
+  .tick.silent { background: none; box-shadow: inset 0 0 0 1px var(--border); }
+  .tick.done { background: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+  .tick.current { background: var(--accent); height: 13px; margin-top: -1px; }
+  .tick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* The article takes the width it is given — a 56rem cap made the diff scroll
+     sideways on a wide screen while the page had room to spare. Prose is capped
+     separately, since line length is a readability limit and code is not. */
+  #doc {
+    padding: var(--gap); padding-bottom: 3.75rem; min-width: 0; max-width: 120rem;
+    height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  }
+  .obs-text, #pr-head { max-width: 74ch; }
+  #pr-head { margin-bottom: 1rem; }
+  #pr-head h1 { font-size: 1.15rem; margin: 0 0 .25rem; }
+  #pr-meta { color: var(--muted); font-size: .85rem; margin: 0; }
+
+  .seg-head { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; margin: 1.6rem 0 .4rem; }
+  .seg-path { font-size: .9rem; margin: 0; font-family: var(--mono); overflow-wrap: anywhere; }
+  .stat { color: var(--muted); font-size: .8rem; }
+  .tier {
+    font-size: .62rem; text-transform: uppercase; letter-spacing: .05em;
+    padding: .02rem .4rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted);
+  }
+  .tier[data-tier="crucial"] { color: var(--danger); border-color: var(--danger); }
+  .tier[data-tier="notable"], .tier[data-tier="moderate"] { color: var(--accent); border-color: var(--accent); }
+
+  .diff-empty { color: var(--muted); font-style: italic; }
+  .diffwrap {
+    overflow-x: auto; max-width: 100%; border: 1px solid var(--border);
+    border-radius: var(--radius); margin: .5rem 0 1rem;
+  }
+  table.diff { border-collapse: collapse; width: max-content; min-width: 100%; font: .8rem/1.45 var(--mono); }
+  table.diff td { padding: 0 .5rem; vertical-align: top; white-space: pre; }
+  td.ln { text-align: right; color: var(--muted); user-select: none; width: 3rem; }
+  tr.r-hunk td { background: var(--hunk-bg); color: var(--muted); font-style: italic; }
+  tr.r-add td { background: var(--add-bg); }
+  tr.r-del td { background: var(--del-bg); }
+  /* One band across the row. An inset ring on every cell drew a separate box
+     around each gutter and the code, so a lit range looked like a grid. */
+  /* Restrained on purpose: these sit on top of green and red row tints, so
+     saturated colours turn the diff into noise. */
+  .t-com { color: light-dark(#7a7a76, #7f8794); font-style: italic; }
+  .t-str { color: light-dark(#1a7f4b, #7ee2a8); }
+  .t-num { color: light-dark(#b25000, #ffb870); }
+  .t-kw  { color: light-dark(#8b3fc9, #d3a4ff); }
+  .t-typ { color: light-dark(#0b6b8f, #79d1f0); }
+  .t-fn  { color: light-dark(#2f4fd0, #9db4ff); }
+  .t-ann { color: light-dark(#8a6100, #e8c877); }
+
+  tr.lit td { background: var(--lit-bg); }
+  tr.lit td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  table.diff tr.note-row td { padding: .25rem 0; white-space: normal; font: .875rem/1.5 var(--font); background: transparent; }
+  /* --port is the scroll port's width, set by observePort. Without the cap a
+     card is as wide as the widest line in the file and its controls scroll
+     out of reach. */
+  table.diff tr.note-row .obs {
+    position: sticky; left: 0;
+    max-width: var(--port, 100%); box-sizing: border-box;
+  }
+
+  .obs {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: .4rem .55rem; margin: .35rem 0; display: flex; flex-wrap: wrap; gap: .45rem; align-items: center;
+  }
+  .obs-text code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+    background: light-dark(#eceff4, #232733);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  .obs-text { flex: 1; margin: 0; overflow-wrap: anywhere; font-size: .875rem; }
+  .obs[data-key]:not(.silent) { cursor: pointer; }
+  .obs[data-key]:not(.silent):hover { border-color: var(--accent); }
+  /* Where the walk is, on the card itself — the lit diff rows only show it
+     for observations that carry a line range. */
+  /* Where the walk is, unmistakably. The rail says which file; this says which
+     block, and it is the one the narration is about. */
+  .obs.current {
+    border-color: var(--accent);
+    box-shadow: inset 3px 0 0 var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  }
+  .obs.current .obs-text { color: var(--fg); }
+  .obs.silent { opacity: .75; border-style: dashed; cursor: default; }
+  .obs .play { flex-shrink: 0; padding: .15rem .4rem; font-size: .75rem; color: var(--muted); }
+  .obs .play:hover { color: var(--fg); }
+  .obs .play.needs-tap { border-color: var(--danger); animation: pulse 1s ease-in-out infinite; }
+  .play.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+  /* An overview with no display text renders the Start button on its own —
+     an empty bordered box looks unfinished. */
+  /* The bare overview card is just the Start button. It must stay undecorated
+     even when it is the current observation, or the current-card border and
+     inset bar draw an arc around nothing. */
+  .obs.bare, .obs.bare.current {
+    background: none; border: none; padding: 0; box-shadow: none;
+  }
+
+  /* ── reviewer feedback: flag / note / ask, and what they leave behind ──── */
+  .fb-actions { display: flex; align-items: center; gap: .6rem; font-size: .78rem;
+    color: var(--muted); border-top: 1px solid var(--border); margin-top: 1.2rem; padding-top: .7rem; }
+  .fb-actions button { border: 1px solid var(--border); padding: .15rem .5rem; font-size: .78rem; }
+  .fb-controls { display: flex; gap: .15rem; flex-shrink: 0; }
+  .fb-controls button { padding: .15rem .35rem; font-size: .75rem; color: var(--muted); }
+  .fb-controls button:hover { color: var(--fg); }
+  .fb-flag.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .obs.flagged { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+  .fb-items { flex-basis: 100%; display: flex; flex-direction: column; gap: .4rem; margin-top: .3rem; }
+  .fb-item {
+    border-inline-start: 2px solid var(--border); padding-inline-start: .5rem; font-size: .85rem;
+  }
+  .fb-item.fb-question { border-inline-start-color: var(--accent); }
+  .fb-item .fb-kind { color: var(--muted); font-weight: 600; margin-inline-end: .3rem; }
+  .fb-item .fb-text { display: inline; margin: 0; overflow-wrap: anywhere; }
+  .fb-item .fb-answer { margin-top: .3rem; margin-inline-start: .5rem; }
+
+  dialog#fb-dialog {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--fg); padding: 1rem; width: min(28rem, 90vw);
+  }
+  dialog#fb-dialog::backdrop { background: rgba(0, 0, 0, .4); }
+  dialog#fb-dialog p { margin: 0 0 .4rem; font-weight: 600; }
+  #fb-text {
+    width: 100%; min-height: 5rem; margin-bottom: .6rem; padding: .5rem; resize: vertical;
+    border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+  }
+  .fb-dialog-actions { display: flex; justify-content: flex-end; gap: .5rem; }
+
+  #feedback-bar {
+    display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+    margin: 1.5rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--border);
+  }
+  #feedback-status { color: var(--muted); font-size: .8rem; }
+
+  /* ── PR flow map: full width in the overview, miniature in the rail ────── */
+  .overview-map, .rail-map { margin-bottom: 1rem; }
+  .overview-map svg, .rail-map svg { max-width: 100%; height: auto; display: block; }
+  .rail-map .lit, .overview-map .lit {
+    outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 2px;
+  }
+
+  /* ── transport bar ────────────────────────────────────────────────────── */
+  /* Fixed rather than sticky: it is a transport, so it stays put whatever the
+     article does. One row, never wrapping — the height is load-bearing, since
+     #doc reserves exactly this much bottom padding to sit clear of it. */
+  #bar {
+    position: fixed; inset-inline: 0; bottom: 0; min-height: 2.75rem;
+    display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+    padding: 0 var(--gap); font-size: .75rem; z-index: 15;
+    background: light-dark(rgba(251, 251, 250, .93), rgba(22, 22, 26, .93));
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+  }
+
+  /* Transport is one segmented group of equal squares. Uniform padding around
+     glyphs of differing advance width made these 38/35/38px and visibly
+     ragged; a fixed box centred on its icon is what lines them up. */
+  .transport { display: flex; align-items: center; gap: 2px; }
+  .transport button {
+    width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center;
+    border: 0; background: none; border-radius: 6px; color: var(--fg);
+  }
+  /* Prev, play and next are pressed constantly and must stay easy to hit even
+     though the bar is deliberately slim. Skipping a whole file is occasional,
+     so it gets a smaller, quieter button beside them. */
+  .transport button.skip { width: 1.5rem; height: 1.5rem; color: var(--muted); }
+  .transport button.skip svg { width: 11px; height: 11px; }
+  #btn-playpause {
+    width: 2.3rem; height: 2.3rem;
+    background: var(--accent); color: var(--accent-fg);
+  }
+  #btn-playpause:hover:not(:disabled) { background: var(--accent); filter: brightness(1.1); }
+  .transport button:hover:not(:disabled) { background: var(--border); border-color: transparent; }
+  .transport button:disabled { opacity: .3; }
+
+  #bar svg { width: 13px; height: 13px; fill: currentColor; display: block; }
+  #btn-playpause svg { width: 17px; height: 17px; }
+  #btn-playpause[data-playing] .i-play { display: none; }
+  #btn-playpause:not([data-playing]) .i-pause { display: none; }
+  #btn-mute[data-muted] .i-vol { display: none; }
+  #btn-mute:not([data-muted]) .i-mute { display: none; }
+  #btn-mute {
+    width: 1.55rem; height: 1.55rem; padding: 0; display: grid; place-items: center;
+    border: 0; background: none; border-radius: 5px; color: var(--muted);
+  }
+  #btn-mute:hover { background: var(--border); }
+  #btn-mute[data-muted] { color: var(--danger); }
+
+  /* Deliberately not the accent colour: this is a caveat, not a feature, and
+     it has to read as "what you are hearing is not the real narration". */
+  #voice-badge {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
+    padding: .1rem .4rem; border-radius: 999px; white-space: nowrap;
+    color: light-dark(#8a5a00, #ffd08a);
+    background: light-dark(#fff4d6, #3a2c0a);
+    border: 1px solid light-dark(#e8c877, #6b5310);
+  }
+  #voice-badge[hidden] { display: none; }
+  /* Cards inherit the caveat while a stand-in is speaking. */
+  body.preview-voice .obs.current { border-style: dashed; }
+
+  #progress-text { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .progress-track { flex: 1; min-width: 4rem; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar { height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+
+  /* Sits directly on top of the transport, so the words and the controls that
+     drive them are one object. */
+  /* The drawer is the answer to "is this file two-way?" — it is reachable from
+     the transport at any moment, not only from the bottom of a 60-file article. */
+  #fb-drawer {
+    position: fixed; inset-block: 0; inset-inline-end: 0; width: min(26rem, 100vw);
+    z-index: 25; display: flex; flex-direction: column; gap: .5rem;
+    padding: var(--gap); overflow-y: auto;
+    background: var(--surface); border-left: 1px solid var(--border);
+    box-shadow: -8px 0 24px light-dark(rgba(0,0,0,.08), rgba(0,0,0,.4));
+  }
+  #fb-drawer[hidden] { display: none; }
+  /* Jumping to an observation the panel is covering is useless, which is why
+     jump used to close it — and that made triaging a list of flags a cycle of
+     reopening. Above 68rem the drawer gets its own column instead, so the
+     article, the transport and the transcript all stop short of it and jump
+     can leave the panel up. */
+  @media (min-width: 68rem) {
+    body.drawer-open .shell { margin-inline-end: 26rem; }
+    body.drawer-open #doc { max-width: 100%; }
+    body.drawer-open #bar,
+    body.drawer-open #transcript { inset-inline-end: 26rem; }
+    body.drawer-open #fb-drawer { box-shadow: none; }
+  }
+  .fb-drawer-head { display: flex; align-items: center; justify-content: space-between; }
+  .fb-empty { color: var(--muted); font-size: .85rem; margin: .5rem 0; }
+  .fb-hint { color: var(--muted); font-size: .72rem; flex-basis: 100%; }
+  .fb-live { color: var(--accent); font-size: .72rem; flex-basis: 100%; }
+  .fb-live::before { content: "\25cf "; }
+  #fb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+  .fb-row {
+    border: 1px solid var(--border); border-radius: 6px; padding: .45rem .55rem;
+    display: flex; flex-direction: column; gap: .25rem; font-size: .85rem;
+  }
+  .fb-row-active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .fb-row .fb-where { color: var(--muted); font-size: .72rem; font-family: var(--mono); }
+  .fb-row .fb-kind { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+  .fb-row-actions { display: flex; gap: .3rem; }
+  .fb-row-actions button { font-size: .75rem; padding: .1rem .4rem; border: 1px solid var(--border); }
+  .fb-drawer-actions {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    border-top: 1px solid var(--border); padding-top: .6rem; margin-top: auto;
+  }
+  .fb-drawer-actions button { border: 1px solid var(--border); padding: .2rem .55rem; }
+  .bar-send[data-count]:not([data-count="0"])::after {
+    content: " \00b7 " attr(data-count); font-weight: 600;
+  }
+  /* The drawer is closed with Close but re-opened from here, so this has to
+     look like the thing that owns it — otherwise Close reads as one-way. */
+  .bar-send[aria-expanded="true"] {
+    background: var(--accent); color: var(--accent-fg); border-color: var(--accent);
+  }
+  .bar-send[aria-expanded="true"]::after { color: var(--accent-fg); }
+
+  #transcript {
+    position: fixed; inset-inline: 0; bottom: 2.75rem; z-index: 14;
+    max-height: 30dvh; overflow-y: auto;
+    padding: .6rem var(--gap); border-top: 1px solid var(--border);
+    background: light-dark(rgba(251,251,250,.97), rgba(22,22,26,.97));
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  #transcript[hidden] { display: none; }
+  #transcript-text { margin: 0 auto; max-width: 70ch; font-size: 1.05rem; line-height: 1.7; }
+  /* Three states, not two: what has been said recedes, what is being said
+     right now is the loudest thing on screen, and what is coming is faint.
+     Two states made it hard to see where the voice actually was. */
+  .tr-w { color: light-dark(#b6b6b2, #5a5a63); transition: color .1s ease; }
+  .tr-w.lit { color: var(--muted); }
+  .tr-w.now {
+    color: var(--accent-fg); background: var(--accent);
+    border-radius: 4px; padding: .05em .18em; margin: 0 -.02em;
+    font-weight: 600;
+  }
+  .tr-silent { color: var(--muted); font-style: italic; font-size: .9rem; }
+  body.has-transcript #doc { padding-bottom: 34dvh; }
+  #btn-transcript[aria-pressed="true"] {
+    background: var(--accent); color: var(--accent-fg); border-color: var(--accent);
+  }
+
+  .bar-toggle { display: flex; align-items: center; gap: .3rem; color: var(--muted); white-space: nowrap; }
+  .bar-toggle select {
+    padding: .05rem .15rem; font-size: .75rem; border-radius: 4px;
+    border: 1px solid transparent; background: transparent; color: var(--muted);
+  }
+  .bar-action {
+    padding: .12rem .45rem; font-size: .75rem; border-radius: 5px;
+    border: 1px solid var(--border); background: none; color: var(--muted);
+  }
+
+  @media (max-width: 48rem) {
+    .shell { grid-template-columns: 1fr; }
+    #rail { height: 100dvh; }
+    #rail {
+      position: fixed; inset-block: 0; inset-inline-start: 0; width: 17rem; max-width: 85vw;
+      background: var(--bg); transform: translateX(-100%); transition: transform .2s; z-index: 25;
+    }
+    body.rail-open #rail { transform: translateX(0); }
+    #rail-toggle { display: inline-flex; }
+    #doc { padding-top: 3rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<p class="banner" id="banner" role="alert" hidden></p>
+
+<button type="button" id="rail-toggle" aria-label="Toggle file list" aria-controls="rail" aria-expanded="false">☰</button>
+
+<div class="shell">
+  <nav id="rail" aria-label="Files in this PR">
+    <input type="text" id="rail-search" placeholder="Filter files… ( / )" aria-label="Filter files">
+    <!-- renderRail() fills this in: a plain file list, or a miniature of the
+         overview flow diagram with the current file's node lit, when
+         segments[0].svg is present -->
+  </nav>
+
+  <main id="doc">
+    <header id="pr-head">
+      <h1 id="pr-title">PR walkthrough</h1>
+      <p id="pr-meta"></p>
+    </header>
+
+    <section id="overview" class="seg overview">
+      <div id="overview-map" class="overview-map" hidden></div>
+      <div class="obs card-intro" id="overview-card" data-key="0:0">
+        <p class="obs-text" id="overview-text"></p>
+        <button type="button" id="start-walk" class="play primary" data-key="0:0">▶ Start walkthrough</button>
+      </div>
+      <div id="overview-notes"></div>
+    </section>
+
+    <div id="segments"></div>
+
+    <div id="feedback-bar" class="fb-actions">
+      <button type="button" id="open-drawer-end">Review your feedback and send it back</button>
+    </div>
+  </main>
+</div>
+
+<!-- Transport. One icon vocabulary throughout: monochrome inline SVG on
+     currentColor. Emoji were mixed in here at first and read as pasted-in
+     against the text glyphs, because they carry their own colour and metrics.
+     Both states of the toggles live in the markup and CSS picks one, so no
+     script ever builds an icon. -->
+<aside id="fb-drawer" hidden aria-label="Your feedback">
+  <div class="fb-drawer-head">
+    <strong>Your feedback</strong>
+    <button type="button" id="fb-drawer-close" aria-label="Collapse feedback panel">Collapse</button>
+  </div>
+  <p id="fb-drawer-empty" class="fb-empty">
+    Nothing yet. Flag an observation you want dug into, or add a note or question —
+    then send them back to the agent from here.
+  </p>
+  <ul id="fb-list"></ul>
+  <div class="fb-drawer-actions">
+    <span id="fb-live" class="fb-live" hidden></span>
+    <span class="fb-hint">Reopen any time from <strong>Send</strong> in the bar below.</span>
+    <button type="button" id="copy-feedback">Copy for agent</button>
+    <button type="button" id="save-file">Save file</button>
+    <span id="feedback-status" class="stat"></span>
+  </div>
+</aside>
+
+<section id="transcript" hidden aria-live="off" aria-label="Transcript">
+  <p id="transcript-text"></p>
+</section>
+<footer id="bar">
+  <div class="transport">
+    <button type="button" id="btn-rwd" class="skip" aria-label="Previous file (Shift+B)" title="Previous file (Shift+B)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.4 3.5v9L2 8zM14 3.5v9L8.6 8z"/></svg>
+    </button>
+    <button type="button" id="btn-prev" aria-label="Previous observation" disabled title="Previous observation (b)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3.5h1.6v9H4z"/><path d="M12.4 3.5v9L6 8z"/></svg>
+    </button>
+    <button type="button" id="btn-playpause" aria-label="Play" title="Play / pause (space, or p)">
+      <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8.5-5z"/></svg>
+      <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.2h2.2v9.6H4.5zM9.3 3.2h2.2v9.6H9.3z"/></svg>
+    </button>
+    <button type="button" id="btn-next" aria-label="Next observation" disabled title="Next observation (n)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.4 3.5H12v9h-1.6z"/><path d="M3.6 3.5v9L10 8z"/></svg>
+    </button>
+    <button type="button" id="btn-ffwd" class="skip" aria-label="Next file (Shift+N)" title="Next file (Shift+N)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5v9L7.4 8zM8.6 3.5v9L14 8z"/></svg>
+    </button>
+  </div>
+
+  <span id="voice-badge" hidden>preview voice</span>
+  <span id="progress-text" role="status" aria-live="polite" aria-atomic="true">0 / 0</span>
+  <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+
+  <button type="button" id="btn-mute" aria-label="Mute" title="Mute (k)">
+    <svg class="i-vol" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.2L7.8 3.4v9.2L4.7 10H2.5z"/><path d="M9.9 5.8a3 3 0 010 4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11.8 4.1a5.4 5.4 0 010 7.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <svg class="i-mute" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.2L7.8 3.4v9.2L4.7 10H2.5z"/><path d="M10.2 6.2l3.4 3.6M13.6 6.2l-3.4 3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+  </button>
+
+  <button type="button" id="btn-rate" class="bar-action" title="Playback speed (x)">1×</button>
+
+  <label class="bar-toggle">
+    <input type="checkbox" id="play-through">
+    <span class="bar-label">Play through</span>
+  </label>
+
+  <button type="button" id="btn-send" class="bar-action bar-send" aria-expanded="false"
+          aria-controls="fb-drawer" title="Your feedback, and how to send it">Send</button>
+  <button type="button" id="btn-theme" title="Theme: auto / light / dark">Auto</button>
+  <button type="button" id="btn-transcript" class="bar-action" aria-pressed="false" title="Transcript (t)">T</button>
+  <button type="button" id="btn-ask" class="bar-action" title="Ask a question about what you are looking at">Ask</button>
+</footer>
+
+<dialog id="fb-dialog">
+  <form id="fb-form">
+    <p id="fb-dialog-label">Add a note</p>
+    <textarea id="fb-text" rows="4" aria-label="Your text" placeholder="Type here…"></textarea>
+    <div class="fb-dialog-actions">
+      <button type="button" id="fb-cancel">Cancel</button>
+      <button type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Classic script, last element in <body>. Never a module-type script — those
+     are CORS-blocked on file:// in Chrome, which would break double-click-to-open. -->
+<script>
+(function () {
+  'use strict';
+
+  // Snapshot the pristine document BEFORE anything renders — this is what
+  // "Save file" rewrites. review-content is left byte-identical inside it;
+  // only review-feedback gets re-serialized at save time.
+  var TEMPLATE = '<!doctype html>\n' + document.documentElement.outerHTML;
+
+  var $ = function (s) { return document.querySelector(s); };
+  var doc = document.getElementById('doc');
+  var rail = document.getElementById('rail');
+
+  // ── 1. Read the two data blocks. Never trust hand-edited JSON. ────────────
+  function readBlock(id, fallback) {
+    var el = document.getElementById(id);
+    try {
+      var v = JSON.parse(el.textContent);
+      return (v && typeof v === 'object' && !Array.isArray(v)) ? v : fallback;
+    } catch (e) {
+      warn('The ' + id + ' data block is not valid JSON — using defaults.');
+      return fallback;
+    }
+  }
+
+  var CONTENT = readBlock('review-content', {});
+  CONTENT.pr = CONTENT.pr || {};
+  CONTENT.files = Array.isArray(CONTENT.files) ? CONTENT.files : [];
+  CONTENT.segments = Array.isArray(CONTENT.segments) ? CONTENT.segments : [];
+  CONTENT.audio = CONTENT.audio && typeof CONTENT.audio === 'object' ? CONTENT.audio : {};
+
+  var FEEDBACK = readBlock('review-feedback', { v: 1, items: [] });
+
+  // localStorage, namespaced per PR, is what lets the reviewer keep feedback
+  // they typed into the shell across the agent's mid-build rewrite of
+  // review-content. Load precedence: whichever copy has the newer savedAt —
+  // applied to review-feedback ONLY, never to review-content.
+  var pr0 = CONTENT.pr || {};
+  var STORAGE_KEY = 'prvsf:' + (pr0.owner || '') + '/' + (pr0.repo || '') + '#' + (pr0.num || '');
+
+  function readLocalFeedback() {
+    try {
+      var v = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return (v && typeof v === 'object' && Array.isArray(v.items)) ? v : null;
+    } catch (e) { return null; }
+  }
+  var localFeedback = readLocalFeedback();
+  if (localFeedback && (localFeedback.savedAt || 0) > (FEEDBACK.savedAt || 0)) FEEDBACK = localFeedback;
+
+  if (!Array.isArray(FEEDBACK.items)) FEEDBACK.items = [];
+  // Derive the counter from the items rather than trusting it. The agent writes
+  // answers into this block directly and need not maintain nextId, so a stored
+  // (or absent) counter can collide with an id that already exists — which
+  // silently breaks replyTo threading, since an answer then points at two
+  // things. Never hand out an id that is already in use.
+  (function () {
+    var maxSeen = 0;
+    FEEDBACK.items.forEach(function (it) {
+      var m = /^f(\d+)$/.exec(String(it && it.id || ''));
+      if (m) maxSeen = Math.max(maxSeen, parseInt(m[1], 10));
+    });
+    if (typeof FEEDBACK.nextId !== 'number' || FEEDBACK.nextId <= maxSeen) {
+      FEEDBACK.nextId = maxSeen + 1;
+    }
+  })();
+
+  var saveTimer;
+  function saveFeedback() {
+    FEEDBACK.savedAt = Date.now();
+    updateFeedbackStatus();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(FEEDBACK)); }
+      catch (e) { warn('Could not save your feedback to this browser (storage full or blocked) — use Copy for agent to keep it.'); }
+    }, 400);
+  }
+
+  function updateFeedbackStatus() {
+    var el = $('#feedback-status');
+    var n = FEEDBACK.items.filter(function (it) { return it.kind !== 'answer'; }).length;
+    if (el) {
+      el.textContent = n ? (n + ' item' + (n === 1 ? '' : 's') + ' — saved in this browser') : 'No feedback yet';
+    }
+    var send = $('#btn-send');
+    if (send) send.dataset.count = String(n);
+    if (!$('#fb-drawer').hidden) renderDrawer();
+  }
+
+  // ── The drawer: what you have flagged and written, and how it gets back ──
+  // Flags used to be write-only — you could mark an observation but never see
+  // the set — and the exit actions sat below every file in the article, so a
+  // reviewer who never scrolled that far never learned the file was two-way.
+  function whereLabel(it) {
+    if (!it.path) return 'Overview';
+    var name = it.path.slice(it.path.lastIndexOf('/') + 1);
+    if (it.from == null) return name;
+    return name + ':' + it.from + (it.to && it.to !== it.from ? '\u2013' + it.to : '');
+  }
+
+  function renderDrawer() {
+    var list = $('#fb-list');
+    list.textContent = '';
+    var items = FEEDBACK.items.filter(function (it) { return it.kind !== 'answer'; });
+    $('#fb-drawer-empty').hidden = items.length > 0;
+    items.forEach(function (it) {
+      var li = document.createElement('li');
+      li.className = 'fb-row';
+
+      var kind = document.createElement('span');
+      kind.className = 'fb-kind';
+      kind.textContent = it.kind;
+      li.appendChild(kind);
+
+      if (it.text) {
+        var t = document.createElement('div');
+        mdLite(t, it.text);
+        li.appendChild(t);
+      }
+
+      var where = document.createElement('span');
+      where.className = 'fb-where';
+      where.textContent = whereLabel(it);
+      li.appendChild(where);
+
+      var answer = FEEDBACK.items.find(function (a) { return a.kind === 'answer' && a.replyTo === it.id; });
+      if (answer) {
+        var ans = document.createElement('div');
+        ans.className = 'fb-answer';
+        mdLite(ans, 'Answer: ' + answer.text);
+        li.appendChild(ans);
+      }
+
+      var acts = document.createElement('div');
+      acts.className = 'fb-row-actions';
+      var jump = document.createElement('button');
+      jump.type = 'button'; jump.textContent = 'Jump';
+      jump.addEventListener('click', function () {
+        var idx = OBS.findIndex(function (o) { return o.i === it.i && o.c === it.c; });
+        if (idx === -1) return;
+        gotoObs(idx, false);
+        // Only collapse where the panel would be covering what you jumped to.
+        if (!window.matchMedia(WIDE).matches) closeDrawer();
+        li.classList.add('fb-row-active');
+        setTimeout(function () { li.classList.remove('fb-row-active'); }, 1200);
+      });
+      var del = document.createElement('button');
+      del.type = 'button'; del.textContent = 'Remove';
+      del.addEventListener('click', function () {
+        // an answer is meaningless without its question, so it goes too
+        FEEDBACK.items = FEEDBACK.items.filter(function (x) {
+          return x !== it && x.replyTo !== it.id;
+        });
+        saveFeedback();
+        refreshCard(it.i + ':' + it.c);
+        renderDrawer();
+      });
+      acts.appendChild(jump); acts.appendChild(del);
+      li.appendChild(acts);
+      list.appendChild(li);
+    });
+  }
+
+  var WIDE = '(min-width: 68rem)';
+
+  // ── Optional listener ────────────────────────────────────────────────────
+  // Entirely additive. CONTENT.listen is only present when the reviewer opted
+  // in at build time; with no answer the file behaves exactly as it does with
+  // no server at all, and says nothing — a walkthrough that complains about a
+  // missing optional convenience is worse than one that never mentions it.
+  var LIVE = false;
+
+  function probeListener() {
+    var cfg = CONTENT.listen;
+    if (!cfg || !cfg.port || !window.fetch) return;
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    if (ctl) setTimeout(function () { ctl.abort(); }, 1200);
+    fetch('http://127.0.0.1:' + cfg.port + '/ping', ctl ? {signal: ctl.signal} : {})
+      .then(function () { LIVE = true; markLive(); })
+      .catch(function () { /* nothing running: stay standalone, stay quiet */ });
+  }
+
+  function markLive() {
+    var el = $('#fb-live');
+    if (el) { el.hidden = false; el.textContent = 'Agent is listening — Send delivers directly.'; }
+  }
+
+  // Returns a promise so the caller can fall back to the clipboard on failure.
+  function postToListener(payload) {
+    var cfg = CONTENT.listen;
+    if (!LIVE || !cfg) return Promise.reject(new Error('not live'));
+    return fetch('http://127.0.0.1:' + cfg.port + '/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},   // simple request: no preflight
+      body: payload
+    });
+  }
+
+  function openDrawer() {
+    renderDrawer();
+    $('#fb-drawer').hidden = false;
+    document.body.classList.add('drawer-open');
+    $('#btn-send').setAttribute('aria-expanded', 'true');
+    $('#fb-drawer-close').focus();
+  }
+  function closeDrawer() {
+    $('#fb-drawer').hidden = true;
+    document.body.classList.remove('drawer-open');
+    $('#btn-send').setAttribute('aria-expanded', 'false');
+  }
+
+  function nextFeedbackId() {
+    var id = 'f' + FEEDBACK.nextId;
+    FEEDBACK.nextId += 1;
+    return id;
+  }
+
+  // path/from/to anchor a feedback item to a spot in the PR: the file and
+  // line range a comment can become an inline GitHub review comment against.
+  // Both are null on the overview and on a segment-level (non-note) card.
+  function anchorFor(obs) {
+    var seg = CONTENT.segments[obs.i];
+    var path = (obs.i > 0 && seg) ? (seg.path || null) : null;
+    return {
+      path: path,
+      from: obs.note ? (obs.note.from == null ? null : obs.note.from) : null,
+      to: obs.note ? (obs.note.to == null ? null : obs.note.to) : null
+    };
+  }
+
+  function makeFeedbackItem(kind, obs, text, replyTo) {
+    var anchor = anchorFor(obs);
+    return {
+      id: nextFeedbackId(), kind: kind, i: obs.i, c: obs.c,
+      path: anchor.path, from: anchor.from, to: anchor.to,
+      text: text || '', replyTo: replyTo || null, at: Date.now()
+    };
+  }
+
+  function findObsByKey(key) {
+    for (var i = 0; i < OBS.length; i++) { if (OBS[i].key === key) return OBS[i]; }
+    return null;
+  }
+
+  function findFlag(i, c) {
+    for (var k = 0; k < FEEDBACK.items.length; k++) {
+      var it = FEEDBACK.items[k];
+      if (it.kind === 'flag' && it.i === i && it.c === c) return it;
+    }
+    return null;
+  }
+
+  function toggleFlag(obs) {
+    var existing = findFlag(obs.i, obs.c);
+    if (existing) {
+      FEEDBACK.items = FEEDBACK.items.filter(function (it) { return it !== existing; });
+    } else {
+      FEEDBACK.items.push(makeFeedbackItem('flag', obs, ''));
+    }
+    saveFeedback();
+    refreshCard(obs.key);
+  }
+
+  // ── Feedback UI: flag / note buttons on every card, an ask control on the
+  // transport bar, and a <dialog> for the two that need typed text. ────────
+  function feedbackControls(key) {
+    var wrap = document.createElement('div');
+    wrap.className = 'fb-controls';
+    var flagBtn = document.createElement('button');
+    flagBtn.type = 'button'; flagBtn.className = 'fb-flag'; flagBtn.dataset.key = key;
+    flagBtn.textContent = '⚑'; flagBtn.title = 'Flag this for the agent to dig into (f)';
+    flagBtn.setAttribute('aria-label', 'Flag this observation');
+    var noteBtn = document.createElement('button');
+    noteBtn.type = 'button'; noteBtn.className = 'fb-note'; noteBtn.dataset.key = key;
+    noteBtn.textContent = '✎'; noteBtn.title = 'Add a note here (c)';
+    noteBtn.setAttribute('aria-label', 'Add a note to this observation');
+    wrap.appendChild(flagBtn); wrap.appendChild(noteBtn);
+    return wrap;
+  }
+
+  function feedbackItemsFor(i, c) {
+    return FEEDBACK.items.filter(function (it) { return it.i === i && it.c === c && it.kind !== 'answer'; });
+  }
+  function answersFor(questionId) {
+    return FEEDBACK.items.filter(function (it) { return it.kind === 'answer' && it.replyTo === questionId; });
+  }
+
+  function feedbackItemEl(it) {
+    var div = document.createElement('div');
+    div.className = 'fb-item fb-' + it.kind;
+    var label = document.createElement('span');
+    label.className = 'fb-kind';
+    label.textContent = it.kind === 'question' ? 'Q:' : 'Note:';
+    var p = document.createElement('p');
+    p.className = 'fb-text';
+    mdLite(p, it.text);
+    div.appendChild(label); div.appendChild(p);
+    if (it.kind === 'question') {
+      answersFor(it.id).forEach(function (ans) {
+        var a = document.createElement('div');
+        a.className = 'fb-answer';
+        var al = document.createElement('span'); al.className = 'fb-kind'; al.textContent = 'A:';
+        var ap = document.createElement('p'); ap.className = 'fb-text'; mdLite(ap, ans.text);
+        a.appendChild(al); a.appendChild(ap);
+        div.appendChild(a);
+      });
+    }
+    return div;
+  }
+
+  function renderFeedbackList(container, i, c) {
+    container.textContent = '';
+    feedbackItemsFor(i, c).filter(function (it) { return it.kind !== 'flag'; })
+      .forEach(function (it) { container.appendChild(feedbackItemEl(it)); });
+  }
+
+  function updateFlagState(card, i, c) {
+    var flagged = !!findFlag(i, c);
+    card.classList.toggle('flagged', flagged);
+    var btn = card.querySelector('.fb-flag');
+    if (btn) {
+      btn.classList.toggle('active', flagged);
+      btn.setAttribute('aria-pressed', flagged ? 'true' : 'false');
+    }
+  }
+
+  // Refreshes every card rendered against this key — normally just one, but
+  // the query is what keeps this in sync no matter which template built it.
+  function refreshCard(key) {
+    var parts = key.split(':');
+    var i = Number(parts[0]), c = Number(parts[1]);
+    doc.querySelectorAll('.obs[data-key="' + key + '"]').forEach(function (card) {
+      updateFlagState(card, i, c);
+      var list = card.querySelector('.fb-items');
+      if (list) renderFeedbackList(list, i, c);
+    });
+  }
+
+  var fbDialogKind = null;
+  var fbDialogObs = null;
+  function openFeedbackDialog(kind, obs) {
+    fbDialogKind = kind; fbDialogObs = obs;
+    $('#fb-dialog-label').textContent = kind === 'ask' ? 'Ask a question' : 'Add a note';
+    $('#fb-text').value = '';
+    $('#fb-dialog').showModal();
+    $('#fb-text').focus();
+  }
+
+  // ── 2. Decode every base64 chunk to a Blob URL ONCE. Never re-decode a
+  // data URI per play — that is the memory profile a sixty-observation walk
+  // must avoid. ───────────────────────────────────────────────────────────
+  var AUDIO = {};
+  Object.keys(CONTENT.audio).forEach(function (k) {
+    try {
+      var bin = atob(CONTENT.audio[k]);
+      var buf = new Uint8Array(bin.length);
+      for (var j = 0; j < bin.length; j++) buf[j] = bin.charCodeAt(j);
+      AUDIO[k] = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
+    } catch (e) { /* malformed entry — speakFallback covers this key instead */ }
+  });
+
+  // The builder is meant to pass "+12 -3", but GitHub's own file object has
+  // {additions, deletions} and it is an easy thing to hand straight through.
+  // Printing [object Object] at the top of a file is a poor way to find out.
+  function statText(stat) {
+    if (!stat) return '';
+    if (typeof stat === 'string') return stat;
+    if (typeof stat === 'object' && ('additions' in stat || 'deletions' in stat)) {
+      return '+' + (stat.additions || 0) + ' -' + (stat.deletions || 0);
+    }
+    return '';
+  }
+
+  function findFile(path) {
+    if (!path) return null;
+    for (var i = 0; i < CONTENT.files.length; i++) {
+      if (CONTENT.files[i].path === path) return CONTENT.files[i];
+    }
+    return null;
+  }
+
+  // ── 3. Diff rows. This exact shape — PR content is arbitrary text, so
+  // every value lands via textContent and nothing here ever touches
+  // innerHTML. ────────────────────────────────────────────────────────────
+  // ── Syntax highlighting ─────────────────────────────────────────────────
+  // One small tokenizer rather than a vendored highlighter: hljs is 120 KB+
+  // for grammars this never needs, and a diff only shows fragments anyway —
+  // half a statement, an unclosed brace. A lexer that expects whole files does
+  // no better on that than a handful of well-chosen patterns.
+  //
+  // Every token becomes a span carrying textContent, so PR code still has no
+  // path to the DOM as markup.
+  var KW = ('abstract|as|async|await|break|case|catch|class|companion|const|constructor|'
+    + 'continue|data|def|default|del|delete|do|elif|else|enum|except|export|extends|'
+    + 'false|final|finally|fn|for|from|fun|func|function|global|if|impl|implements|import|'
+    + 'in|infix|init|inline|instanceof|interface|internal|is|lambda|lateinit|let|match|mod|'
+    + 'mut|new|nil|none|not|null|object|open|operator|or|override|package|pass|private|'
+    + 'protected|pub|public|raise|record|return|sealed|self|static|struct|super|suspend|'
+    + 'switch|this|throw|throws|trait|true|try|type|typeof|use|val|var|void|when|where|'
+    + 'while|with|yield').split('|');
+  var KW_RE = new RegExp('^(?:' + KW.join('|') + ')$');
+  var HASH_LANGS = /^(py|rb|sh|bash|zsh|yml|yaml|toml|ini|conf|cfg|r|pl|jl|nix|tf|mk|Dockerfile)$/i;
+
+  function langOf(path) {
+    if (!path) return '';
+    var base = String(path).split('/').pop();
+    var dot = base.lastIndexOf('.');
+    return dot === -1 ? base : base.slice(dot + 1);
+  }
+
+  function tokenRe(lang) {
+    var lineComment = HASH_LANGS.test(lang) ? '#[^\\n]*' : '\\/\\/[^\\n]*';
+    return new RegExp(
+      '(' + lineComment + '|\\/\\*[\\s\\S]*?(?:\\*\\/|$))'   // 1 comment
+      + '|("(?:\\\\.|[^"\\\\])*"?|\'(?:\\\\.|[^\'\\\\])*\'?|`(?:\\\\.|[^`\\\\])*`?)' // 2 string
+      + '|(\\b0[xX][0-9a-fA-F]+\\b|\\b\\d[\\d_]*(?:\\.\\d+)?\\b)'          // 3 number
+      + '|(@[A-Za-z_][\\w]*)'                                          // 4 annotation
+      + '|([A-Za-z_$][\\w$]*)',                                        // 5 word
+      'g');
+  }
+
+  function hl(td, text, lang) {
+    if (!text) { td.textContent = text || ''; return; }
+    var re = tokenRe(lang), last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) td.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var cls = null, val = m[0];
+      if (m[1]) cls = 't-com';
+      else if (m[2]) cls = 't-str';
+      else if (m[3]) cls = 't-num';
+      else if (m[4]) cls = 't-ann';
+      else if (m[5]) {
+        if (KW_RE.test(m[5])) cls = 't-kw';
+        else if (/^[A-Z]/.test(m[5])) cls = 't-typ';
+        else if (text.charAt(re.lastIndex) === '(') cls = 't-fn';
+      }
+      if (cls) {
+        var sp = document.createElement('span');
+        sp.className = cls;
+        sp.textContent = val;             // never innerHTML — this is PR code
+        td.appendChild(sp);
+      } else {
+        td.appendChild(document.createTextNode(val));
+      }
+      last = re.lastIndex;
+    }
+    if (last < text.length) td.appendChild(document.createTextNode(text.slice(last)));
+  }
+
+  function rowEl(r, lang) {
+    var tr = document.createElement('tr');
+    tr.className = 'r-' + r.kind;
+    var o = document.createElement('td'); o.className = 'ln'; o.textContent = r.old == null ? '' : r.old;
+    var n = document.createElement('td'); n.className = 'ln'; n.textContent = r.new == null ? '' : r.new;
+    var t = document.createElement('td'); t.className = 'code';
+    if (r.kind === 'hunk') t.textContent = r.text;      // not code; leave it plain
+    else hl(t, r.text, lang);
+    tr.appendChild(o); tr.appendChild(n); tr.appendChild(t);
+    return tr;
+  }
+
+  // rows[idx].new === value wins; falls back to rows[idx].old === value so a
+  // note anchored on a pure deletion still finds a home. Returns which side
+  // matched too, so a highlight range can stay on that same side instead of
+  // bleeding into unrelated rows that coincidentally share a line number on
+  // the other side.
+  function matchSide(rows, value) {
+    if (value == null) return null;
+    for (var i = 0; i < rows.length; i++) { if (rows[i].new === value) return { idx: i, side: 'new' }; }
+    for (var i = 0; i < rows.length; i++) { if (rows[i].old === value) return { idx: i, side: 'old' }; }
+    return null;
+  }
+
+  function findRowIndex(rows, to) {
+    var m = matchSide(rows, to);
+    return m ? m.idx : -1;
+  }
+
+  // Card text is md-lite: `code` and **bold**, and nothing else. Rendered by
+  // splitting on the markers and building real elements, so the text still
+  // reaches the DOM only through textContent — a card can quote a diff, and a
+  // diff can contain anything.
+  var MD_LITE = /(`[^`]+`|\*\*[^*]+\*\*)/;
+
+  function mdLite(el, text) {
+    String(text).split(MD_LITE).forEach(function (part) {
+      if (!part) return;
+      var node;
+      if (part.length > 1 && part[0] === '`' && part[part.length - 1] === '`') {
+        node = document.createElement('code');
+        node.textContent = part.slice(1, -1);
+      } else if (part.length > 4 && part.slice(0, 2) === '**' && part.slice(-2) === '**') {
+        node = document.createElement('strong');
+        node.textContent = part.slice(2, -2);
+      } else {
+        node = document.createTextNode(part);
+      }
+      el.appendChild(node);
+    });
+  }
+
+  // A card with no speech is a deliberately silent observation: it keeps its
+  // index in the audio map but gets no play control at all.
+  function obsCard(label, speech, key) {
+    var card = document.createElement('div');
+    card.className = 'obs';
+    card.dataset.key = key;
+    if (label) {
+      var p = document.createElement('p');
+      p.className = 'obs-text';
+      mdLite(p, label);
+      card.appendChild(p);
+    }
+    if (speech && speech.trim()) {
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'play'; btn.dataset.key = key;
+      btn.textContent = '▶'; btn.setAttribute('aria-label', 'Play this observation');
+      btn.title = 'Play this observation — or click anywhere on the card';
+      card.appendChild(btn);
+    } else {
+      card.classList.add('silent');
+    }
+    card.appendChild(feedbackControls(key));
+    var parts = key.split(':');
+    var i = Number(parts[0]), c = Number(parts[1]);
+    updateFlagState(card, i, c);
+    var fbList = document.createElement('div');
+    fbList.className = 'fb-items';
+    card.appendChild(fbList);
+    renderFeedbackList(fbList, i, c);
+    return card;
+  }
+
+  function noteRow(note, key) {
+    var tr = document.createElement('tr');
+    tr.className = 'note-row';
+    var td = document.createElement('td');
+    td.colSpan = 3;
+    td.appendChild(obsCard(note.text, note.speech, key));
+    tr.appendChild(td);
+    return tr;
+  }
+
+  var SEG_ROWS = {};   // i -> row data, for locating a highlight range
+  var SEG_ROWELS = {}; // i -> row elements, parallel to SEG_ROWS[i]
+
+  function buildDiffTable(seg, rows, i) {
+    if (!rows.length) {
+      var file = findFile(seg.path);
+      var p = document.createElement('p');
+      p.className = 'diff-empty';
+      // "no rows" has several causes and they mean different things to a
+      // reviewer. The builder sets `reason` when it knows; otherwise infer.
+      p.textContent = ({
+        binary: 'Binary file — GitHub provides no diff for it.',
+        toolarge: 'Diff too large to include. Open it on GitHub.',
+        renamed: 'Renamed with no content change.',
+        empty: 'No changes in this file.'
+      })[file && file.reason] || (file && statText(file.stat) === '+0 -0'
+        ? 'No changes in this file.'
+        : 'No diff available — it may be binary or too large. Open it on GitHub.');
+      return p;
+    }
+    var table = document.createElement('table');
+    table.className = 'diff';
+    var tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+
+    var lang = langOf(seg && seg.path);
+    var rowEls = rows.map(function (r) { return rowEl(r, lang); });
+    SEG_ROWS[i] = rows;
+    SEG_ROWELS[i] = rowEls;
+
+    var notes = seg.notes || [];
+    var top = [];    // notes with no from: rendered before the first row
+    var after = {};  // rowIndex -> notes to render right after that row
+    notes.forEach(function (note, idx) {
+      var key = i + ':' + (idx + 1);
+      if (note.from == null) { top.push({ note: note, key: key }); return; }
+      var target = findRowIndex(rows, note.to);
+      if (target === -1) { top.push({ note: note, key: key }); return; }
+      (after[target] = after[target] || []).push({ note: note, key: key });
+    });
+
+    top.forEach(function (n) { tbody.appendChild(noteRow(n.note, n.key)); });
+    rows.forEach(function (r, idx) {
+      tbody.appendChild(rowEls[idx]);
+      (after[idx] || []).forEach(function (n) { tbody.appendChild(noteRow(n.note, n.key)); });
+    });
+    return table;
+  }
+
+  function buildFileSegment(seg, i) {
+    var file = findFile(seg.path);
+    var art = document.createElement('article');
+    art.className = 'seg';
+    art.id = 'seg-' + i;
+    art.dataset.i = i;
+
+    var head = document.createElement('div');
+    head.className = 'seg-head';
+    var h2 = document.createElement('h2');
+    h2.className = 'seg-path';
+    h2.textContent = seg.path || '(unknown file)';
+    head.appendChild(h2);
+    if (seg.tier) {
+      var tier = document.createElement('span');
+      tier.className = 'tier'; tier.dataset.tier = seg.tier; tier.textContent = seg.tier;
+      head.appendChild(tier);
+    }
+    if (file && file.stat) {
+      var stat = document.createElement('span');
+      stat.className = 'stat'; stat.textContent = statText(file.stat);
+      head.appendChild(stat);
+    }
+    art.appendChild(head);
+    art.appendChild(obsCard(seg.role || '', seg.speech, i + ':0'));
+
+    var rows = (file && file.rows) || [];
+    var wrap = document.createElement('div');
+    wrap.className = 'diffwrap';
+    wrap.appendChild(buildDiffTable(seg, rows, i));
+    art.appendChild(wrap);
+    observePort(wrap);
+    return art;
+  }
+
+  // Note cards live inside the diff table, and that table is as wide as its
+  // longest line. Left alone, a card inherits that width and its controls sit
+  // off-screen on any diff wide enough to scroll — measured 937px of card in an
+  // 862px port. The card is pinned to the left of the scroll port instead, and
+  // capped to the port's width, which CSS cannot express on its own.
+  function observePort(wrap) {
+    var apply = function () { wrap.style.setProperty('--port', wrap.clientWidth + 'px'); };
+    apply();
+    if (window.ResizeObserver) new ResizeObserver(apply).observe(wrap);
+    else window.addEventListener('resize', apply);
+  }
+
+  // ── 4. Flatten segments + notes into the walk order. Audio keys, gating,
+  // and j/k navigation all address this same list by index. ────────────────
+  var OBS = [];
+  CONTENT.segments.forEach(function (seg, i) {
+    OBS.push({ i: i, c: 0, key: i + ':0', note: null });
+    (seg.notes || []).forEach(function (note, idx) {
+      OBS.push({ i: i, c: idx + 1, key: i + ':' + (idx + 1), note: note });
+    });
+  });
+
+  function currentSpeech(obs) {
+    var seg = CONTENT.segments[obs.i];
+    if (!seg) return '';
+    return obs.c === 0 ? (seg.speech || '') : ((obs.note && obs.note.speech) || '');
+  }
+
+  // ── 4b. Transcript: the spoken line, lit word by word ────────────────────
+  // There are no word timings in an MP3, so each word is given a share of the
+  // duration proportional to its length — long words take longer to say. It
+  // tracks well enough to follow, and drift resets at every observation
+  // because each one is its own audio file.
+  // Preferences live apart from feedback: they are about how this reviewer
+  // likes to walk, not about the PR, so they are shared across walkthroughs.
+  var PREFS_KEY = 'prvsf:prefs';
+  var PREFS = (function () {
+    try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch (e) { return {}; }
+  })();
+  function savePrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(PREFS)); } catch (e) {}
+  }
+
+  var RATES = [0.75, 1, 1.25, 1.5, 2];
+  var transcriptOn = PREFS.transcript !== false;   // on unless turned off
+  var wordSpans = [];
+  var wordEnds = [];
+
+  function setTranscript(on) {
+    transcriptOn = !!on;
+    PREFS.transcript = transcriptOn; savePrefs();
+    $('#transcript').hidden = !transcriptOn;
+    $('#btn-transcript').setAttribute('aria-pressed', String(transcriptOn));
+    document.body.classList.toggle('has-transcript', transcriptOn);
+    if (transcriptOn) renderTranscript(OBS[currentIdx]);
+  }
+
+  function renderTranscript(obs) {
+    var box = $('#transcript-text');
+    box.textContent = '';
+    wordSpans = []; wordEnds = [];
+    if (!obs) return;
+    var text = currentSpeech(obs);
+    if (!text.trim()) {
+      var em = document.createElement('span');
+      em.className = 'tr-silent';
+      em.textContent = 'This card is silent — nothing is spoken here.';
+      box.appendChild(em);
+      return;
+    }
+    var words = text.split(/\s+/).filter(Boolean);
+    // Length alone drifts: a voice does not read at constant characters per
+    // second, it stops at punctuation. Charging those stops to the word that
+    // carries them keeps the pointer with the voice instead of running ahead.
+    var weights = words.map(function (w) {
+      var n = w.length + 2;
+      if (/[.!?]["')\]]?$/.test(w)) n += 7;
+      else if (/[,;:][")\]]?$/.test(w)) n += 3;
+      else if (/[\u2014\u2013]$|--$/.test(w)) n += 4;
+      return n;
+    });
+    var total = weights.reduce(function (a, b) { return a + b; }, 0);
+    var acc = 0;
+    words.forEach(function (w, n) {
+      var span = document.createElement('span');
+      span.className = 'tr-w';
+      span.textContent = w;
+      box.appendChild(span);
+      box.appendChild(document.createTextNode(' '));
+      wordSpans.push(span);
+      acc += weights[n];
+      wordEnds.push(acc / total);        // fraction of the clip this word ends at
+    });
+  }
+
+  function syncTranscript(fraction) {
+    if (!transcriptOn || !wordSpans.length) return;
+    for (var n = 0; n < wordSpans.length; n++) {
+      wordSpans[n].classList.toggle('lit', fraction >= (n === 0 ? 0 : wordEnds[n - 1]));
+    }
+    // The word being spoken is the last one lit; mark it distinctly and keep
+    // it in view, since the pane scrolls on a long observation.
+    var nowIdx = -1;
+    for (var m = 0; m < wordSpans.length; m++) {
+      if (wordSpans[m].classList.contains('lit')) nowIdx = m;
+      wordSpans[m].classList.remove('now');
+    }
+    if (nowIdx >= 0) {
+      var el = wordSpans[nowIdx];
+      el.classList.add('now');
+      if (el.scrollIntoViewIfNeeded) el.scrollIntoViewIfNeeded();
+      else if (el.scrollIntoView) el.scrollIntoView({block: 'nearest'});
+    }
+  }
+
+  function cycleRate() { setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]); }
+
+  function setRate(r) {
+    rate = r;
+    // defaultPlaybackRate too: assigning src runs the load algorithm, which
+    // resets playbackRate to the default — verified, it happens synchronously.
+    player.defaultPlaybackRate = rate;
+    player.playbackRate = rate;
+    PREFS.rate = rate; savePrefs();
+    $('#btn-rate').textContent = (Number.isInteger(rate) ? rate : rate) + '\u00d7';
+  }
+
+  // ── 5. Render the static shell into the article + rail. ───────────────────
+  function renderHead() {
+    var pr = CONTENT.pr;
+    $('#pr-title').textContent = pr.title || 'PR walkthrough';
+    document.title = pr.title || 'PR walkthrough';
+    var meta = $('#pr-meta');
+    meta.textContent = '';
+    var bits = [];
+    if (pr.owner && pr.repo && pr.num) bits.push(pr.owner + '/' + pr.repo + ' #' + pr.num);
+    if (pr.headSha) bits.push(String(pr.headSha).slice(0, 7));
+    meta.textContent = bits.join(' · ');
+    if (pr.url) {
+      if (bits.length) meta.appendChild(document.createTextNode(' · '));
+      var a = document.createElement('a');
+      a.href = pr.url; a.textContent = 'View on GitHub'; a.rel = 'noopener';
+      meta.appendChild(a);
+    }
+  }
+
+  function renderOverview() {
+    var seg = CONTENT.segments[0];
+    var section = $('#overview');
+    if (!seg) { section.hidden = true; return; }
+    section.hidden = false;
+    renderOverviewMap(seg);
+    var label = (seg.role && seg.role !== 'overview') ? seg.role : '';
+    var card = $('#overview-card');
+    var textEl = $('#overview-text');
+    textEl.textContent = '';
+    if (label) {
+      mdLite(textEl, label);
+      textEl.hidden = false;
+      card.classList.remove('bare');
+    } else {
+      // No display text: an empty bordered box around just the Start button
+      // looks unfinished, so drop the card styling and show the button alone.
+      textEl.hidden = true;
+      card.classList.add('bare');
+    }
+    if (!(seg.speech && seg.speech.trim())) {
+      $('#start-walk').textContent = '▶ Start walkthrough (no audio)';
+    }
+    if (!card.querySelector('.fb-controls')) {
+      card.appendChild(feedbackControls('0:0'));
+      var fbList = document.createElement('div');
+      fbList.className = 'fb-items';
+      card.appendChild(fbList);
+    }
+    updateFlagState(card, 0, 0);
+    renderFeedbackList(card.querySelector('.fb-items'), 0, 0);
+
+    var notesWrap = $('#overview-notes');
+    notesWrap.textContent = '';
+    (seg.notes || []).forEach(function (note, idx) {
+      notesWrap.appendChild(obsCard(note.text, note.speech, '0:' + (idx + 1)));
+    });
+  }
+
+  function renderFileSegments() {
+    var wrap = $('#segments');
+    wrap.textContent = '';
+    for (var i = 1; i < CONTENT.segments.length; i++) {
+      wrap.appendChild(buildFileSegment(CONTENT.segments[i], i));
+    }
+  }
+
+  function tickClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var i = +this.dataset.i, c = +this.dataset.c;
+    var idx = OBS.findIndex(function (o) { return o.i === i && o.c === c; });
+    if (idx !== -1) gotoObs(idx, false);
+    closeRailOnMobile();
+  }
+
+  function railItem(i, label, tier) {
+    var li = document.createElement('li');
+    li.className = 'rail-item';
+    li.dataset.i = i;
+    li.dataset.path = label.toLowerCase();
+
+    var a = document.createElement('a');
+    a.href = '#' + (i === 0 ? 'overview' : 'seg-' + i);
+    var dot = document.createElement('span');
+    dot.className = 'tier-dot';
+    if (tier) dot.dataset.tier = tier;
+    a.appendChild(dot);
+    var cut = label.lastIndexOf('/');
+    var name = document.createElement('span');
+    name.className = 'rail-name';
+    name.textContent = cut === -1 ? label : label.slice(cut + 1);
+    a.appendChild(name);
+    if (cut !== -1) {
+      var dir = document.createElement('span');
+      dir.className = 'rail-dir';
+      var bdi = document.createElement('bdi');
+      bdi.textContent = label.slice(0, cut);
+      dir.appendChild(bdi);
+      dir.title = label;
+      a.appendChild(dir);
+    }
+    li.appendChild(a);
+
+    // Each tick is one observation, and it is a real control: the rail is the
+    // table of contents, so a reviewer can jump straight to the third point in
+    // a file instead of walking there. The label is the observation's own text.
+    var seg = CONTENT.segments[i] || {};
+    var notes = seg.notes || [];
+    var ticks = document.createElement('span');
+    ticks.className = 'ticks';
+    for (var t = 0; t <= notes.length; t++) {
+      var tick = document.createElement('button');
+      tick.type = 'button';
+      tick.className = 'tick';
+      tick.dataset.i = i;
+      tick.dataset.c = t;
+      var src = t === 0 ? (seg.role || seg.speech || 'File introduction')
+                        : (notes[t - 1].text || notes[t - 1].speech || 'Observation');
+      var label = String(src).replace(/[`*]/g, '');
+      if (label.length > 80) label = label.slice(0, 79) + '\u2026';
+      tick.title = label;
+      tick.setAttribute('aria-label', 'Observation ' + (t + 1) + ': ' + label);
+      if (t > 0 && !(notes[t - 1].speech || '').trim()) tick.classList.add('silent');
+      tick.addEventListener('click', tickClick);
+      ticks.appendChild(tick);
+    }
+    li.appendChild(ticks);
+
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var idx = OBS.findIndex(function (o) { return o.i === i && o.c === 0; });
+      if (idx !== -1) gotoObs(idx, false);
+      closeRailOnMobile();
+    });
+    return li;
+  }
+
+  // ── PR flow map. A hand-written SVG on segments[0], rendered full width in
+  // the overview and again in miniature in the rail, with the current file's
+  // node lit. Parsed as a document and never trusted as an HTML string. ─────
+  function slugFor(path) { return 'n-' + String(path).replace(/[^a-z0-9]+/gi, '-'); }
+
+  function sanitizeSvg(svgText) {
+    if (typeof svgText !== 'string' || !svgText.trim()) return null;
+    var doc2;
+    try { doc2 = new DOMParser().parseFromString(svgText, 'image/svg+xml'); }
+    catch (e) { return null; }
+    if (!doc2 || doc2.querySelector('parsererror')) return null;
+    var root = doc2.documentElement;
+    if (!root || root.nodeName.toLowerCase() !== 'svg') return null;
+    var node = document.importNode(root, true);
+    node.classList.add('prv-svg');
+    // Strip anything executable before this goes anywhere near the page.
+    node.querySelectorAll('script, foreignObject').forEach(function (n) { n.remove(); });
+    // Hardcoded label colours are the reason an authored diagram goes
+    // unreadable in the other theme, so drop them and let CSS decide.
+    node.querySelectorAll('text, tspan').forEach(function (t) {
+      t.removeAttribute('fill');
+      if (t.style) t.style.removeProperty('fill');
+    });
+    var all = node.querySelectorAll('*');
+    all.forEach(function (el) {
+      var attrs = el.attributes;
+      for (var j = attrs.length - 1; j >= 0; j--) {
+        var name = attrs[j].name;
+        if (/^on/i.test(name)) el.removeAttribute(name);
+        if (/^(href|xlink:href)$/i.test(name) && /^\s*javascript:/i.test(attrs[j].value)) el.removeAttribute(name);
+      }
+    });
+    for (var k = node.attributes.length - 1; k >= 0; k--) {
+      if (/^on/i.test(node.attributes[k].name)) node.removeAttribute(node.attributes[k].name);
+    }
+    return node;
+  }
+
+  function renderOverviewMap(seg) {
+    var wrap = $('#overview-map');
+    wrap.textContent = '';
+    var node = seg && seg.svg ? sanitizeSvg(seg.svg) : null;
+    if (!node) { wrap.hidden = true; return; }
+    wrap.appendChild(node);
+    wrap.hidden = false;
+  }
+
+  function railItem(i, label, tier) {
+    var li = document.createElement('li');
+    li.className = 'rail-item';
+    li.dataset.i = i;
+    li.dataset.path = label.toLowerCase();
+
+    var a = document.createElement('a');
+    a.href = '#' + (i === 0 ? 'overview' : 'seg-' + i);
+    var dot = document.createElement('span');
+    dot.className = 'tier-dot';
+    if (tier) dot.dataset.tier = tier;
+    a.appendChild(dot);
+    var cut = label.lastIndexOf('/');
+    var name = document.createElement('span');
+    name.className = 'rail-name';
+    name.textContent = cut === -1 ? label : label.slice(cut + 1);
+    a.appendChild(name);
+    if (cut !== -1) {
+      var dir = document.createElement('span');
+      dir.className = 'rail-dir';
+      var bdi = document.createElement('bdi');
+      bdi.textContent = label.slice(0, cut);
+      dir.appendChild(bdi);
+      dir.title = label;
+      a.appendChild(dir);
+    }
+    li.appendChild(a);
+
+    // Each tick is one observation, and it is a real control: the rail is the
+    // table of contents, so a reviewer can jump straight to the third point in
+    // a file instead of walking there. The label is the observation's own text.
+    var seg = CONTENT.segments[i] || {};
+    var notes = seg.notes || [];
+    var ticks = document.createElement('span');
+    ticks.className = 'ticks';
+    for (var t = 0; t <= notes.length; t++) {
+      var tick = document.createElement('button');
+      tick.type = 'button';
+      tick.className = 'tick';
+      tick.dataset.i = i;
+      tick.dataset.c = t;
+      var src = t === 0 ? (seg.role || seg.speech || 'File introduction')
+                        : (notes[t - 1].text || notes[t - 1].speech || 'Observation');
+      var label = String(src).replace(/[`*]/g, '');
+      if (label.length > 80) label = label.slice(0, 79) + '\u2026';
+      tick.title = label;
+      tick.setAttribute('aria-label', 'Observation ' + (t + 1) + ': ' + label);
+      if (t > 0 && !(notes[t - 1].speech || '').trim()) tick.classList.add('silent');
+      tick.addEventListener('click', tickClick);
+      ticks.appendChild(tick);
+    }
+    li.appendChild(ticks);
+
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var idx = OBS.findIndex(function (o) { return o.i === i && o.c === 0; });
+      if (idx !== -1) gotoObs(idx, false);
+      closeRailOnMobile();
+    });
+    return li;
+  }
+
+  // The diagram's nodes carry id="n-<slug>", the same ids updateRailCurrent
+  // lights. If they can be lit they can be clicked.
+  function wireMapNav(svgRoot) {
+    CONTENT.segments.forEach(function (seg, i) {
+      if (!seg.path) return;
+      var node = svgRoot.querySelector('[id="' + slugFor(seg.path) + '"]');
+      if (!node) return;
+      node.classList.add('nav');
+      node.setAttribute('role', 'link');
+      node.setAttribute('tabindex', '0');
+      var go = function (e) {
+        e.preventDefault();
+        var idx = OBS.findIndex(function (o) { return o.i === i && o.c === 0; });
+        if (idx !== -1) gotoObs(idx, false);
+        closeRailOnMobile();
+      };
+      node.addEventListener('click', go);
+      node.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') go(e);
+      });
+    });
+  }
+
+  function renderRail() {
+    var old = rail.querySelector('.rail-list, .rail-map');
+    if (old) old.remove();
+
+    var seg0 = CONTENT.segments[0];
+    var mapNode = seg0 && seg0.svg ? sanitizeSvg(seg0.svg) : null;
+    if (mapNode) {
+      var wrap = document.createElement('div');
+      wrap.className = 'rail-map';
+      wrap.appendChild(mapNode);
+      rail.appendChild(wrap);
+      wireMapNav(mapNode);
+      // Fall through: the map augments navigation, it does not replace it.
+      // Returning here left a diagrammed PR with no file list, no ticks and a
+      // dead search box — the rail's whole orientation job, gone.
+    }
+
+    // The file list, always. On a PR with no coherent flow to draw it is the
+    // only rail content; with a diagram it sits underneath it.
+    var ul = document.createElement('ul');
+    ul.className = 'rail-list';
+    ul.appendChild(railItem(0, 'Overview', null));
+    for (var i = 1; i < CONTENT.segments.length; i++) {
+      var seg = CONTENT.segments[i];
+      ul.appendChild(railItem(i, seg.path || ('file ' + i), seg.tier));
+    }
+    rail.appendChild(ul);
+  }
+
+  function updateRailCurrent(i) {
+    rail.querySelectorAll('.rail-item').forEach(function (el) {
+      el.classList.toggle('current', Number(el.dataset.i) === i);
+    });
+    // Ticks track the walk: everything behind the cursor reads as done, so the
+    // rail answers "how much is left" at a glance as well as "where am I".
+    var here = OBS[currentIdx];
+    rail.querySelectorAll('.tick').forEach(function (t) {
+      var ti = Number(t.dataset.i), tc = Number(t.dataset.c);
+      var pos = OBS.findIndex(function (o) { return o.i === ti && o.c === tc; });
+      t.classList.toggle('current', !!here && ti === here.i && tc === here.c);
+      t.classList.toggle('done', pos !== -1 && currentIdx > -1 && pos < currentIdx);
+    });
+    var railSvg = rail.querySelector('.rail-map svg');
+    if (railSvg) {
+      railSvg.querySelectorAll('.lit').forEach(function (n) { n.classList.remove('lit'); });
+      var seg = CONTENT.segments[i];
+      var path = seg && seg.path;
+      if (path) {
+        var target = railSvg.querySelector('[id="' + slugFor(path) + '"]');
+        if (target) target.classList.add('lit');
+      }
+    }
+  }
+
+  // ── 6. Playback. Gated by default: one chunk plays, its rows light up,
+  // and the walk parks there until the reviewer advances. ───────────────────
+  var player = new Audio();
+  var currentIdx = -1;
+  var isPlaying = false;
+  var playThrough = false;
+  var autoscroll = true;
+  var rate = 1;
+
+  function clearHighlights() {
+    doc.querySelectorAll('tr.lit').forEach(function (tr) { tr.classList.remove('lit'); });
+  }
+
+  function highlightObs(obs) {
+    clearHighlights();
+    if (!obs || !obs.note || obs.note.from == null) return;
+    var rows = SEG_ROWS[obs.i] || [];
+    var els = SEG_ROWELS[obs.i] || [];
+    var from = obs.note.from;
+    var to = obs.note.to == null ? from : obs.note.to;
+    // Stay on whichever side (old/new numbering) the range actually
+    // resolves against — checking both independently would also light up
+    // an unrelated context row whose *other* side happens to share a number.
+    var m = matchSide(rows, to) || matchSide(rows, from);
+    var side = m ? m.side : 'new';
+    rows.forEach(function (r, idx) {
+      var v = r[side];
+      if (v != null && v >= from && v <= to && els[idx]) els[idx].classList.add('lit');
+    });
+  }
+
+  function scrollToObs(obs) {
+    if (!autoscroll) return;
+    var el = doc.querySelector('[data-key="' + obs.key + '"]');
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  function gotoObs(idx, play) {
+    if (!OBS.length) return;
+    idx = Math.max(0, Math.min(OBS.length - 1, idx));
+    currentIdx = idx;
+    autoscroll = true;   // an explicit advance re-arms autoscroll
+    var obs = OBS[idx];
+    highlightObs(obs);
+    updateRailCurrent(obs.i);
+    scrollToObs(obs);
+    updateBar();
+    doc.querySelectorAll('.obs.current').forEach(function (el) { el.classList.remove('current'); });
+    doc.querySelectorAll('.obs[data-key="' + obs.key + '"]').forEach(function (el) {
+      el.classList.add('current');
+    });
+    if (transcriptOn) renderTranscript(obs);
+    if (play) playCurrent();
+  }
+
+  function advance() { gotoObs(currentIdx + 1, true); }
+  function retreat() { gotoObs(currentIdx - 1, true); }
+
+  function playCurrent() {
+    var obs = OBS[currentIdx];
+    if (!obs) return;
+    var text = currentSpeech(obs);
+    if (!text.trim()) {
+      // A silent card is a hard stop for BOTH engines. Without the cancel the
+      // previous card's voice kept talking over a card that reads as silent,
+      // with isPlaying already false while sound was still coming out.
+      stopAllAudio();
+      isPlaying = false; updateBar();
+      if (playThrough && currentIdx < OBS.length - 1) advance();
+      return;
+    }
+    isPlaying = true; updateBar();
+    playChunk(obs.key, text);
+  }
+
+  // Exactly one engine may be producing sound. Each entry point silences the
+  // other first; skipping that in one direction is how two voices ended up
+  // layered when a rendered chunk sat next to an unrendered one.
+  function stopAllAudio() {
+    try { player.pause(); } catch (e) {}
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    speaking = false;
+  }
+
+  function playChunk(key, fallbackText) {
+    if (!AUDIO[key]) {
+      // Narration is still rendering. Standing in with the browser voice is
+      // better than silence — the shell ships early precisely so the walk can
+      // start — but it sounds nothing like what is coming, so it has to be
+      // labelled rather than passed off as the real thing.
+      setPreviewVoice(!!CONTENT.audioPending);
+      try { player.pause(); } catch (e) {}   // a real clip must not play under it
+      speakFallback(fallbackText);
+      return;
+    }
+    setPreviewVoice(false);
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    speaking = false;
+    player.src = AUDIO[key];
+    player.currentTime = 0;
+    player.defaultPlaybackRate = rate;
+    player.playbackRate = rate;
+    var p = player.play();
+    if (p && p.catch) {
+      p.catch(function () { isPlaying = false; updateBar(); showPlayAffordance(key); });
+    }
+  }
+
+  // The silent-build path, and what runs at runtime if Kokoro was
+  // unavailable at build time — never plays for a card with no speech.
+  // getVoices() is populated asynchronously in Chrome, so this is resolved
+  // lazily and re-resolved once the list arrives.
+  var PREVIEW_VOICE = null;
+  function pickVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    var vs = window.speechSynthesis.getVoices() || [];
+    if (!vs.length) return null;
+    // The real narration is a British male, so an en-GB voice is the least
+    // jarring stand-in; premium/enhanced voices are markedly better than the
+    // compact defaults, and a local one does not need the network.
+    function score(v) {
+      var s = 0;
+      var n = v.name || '';
+      if (/en[-_]GB/i.test(v.lang)) s += 4;
+      else if (/^en/i.test(v.lang)) s += 2;
+      if (/premium|enhanced|natural/i.test(n)) s += 3;
+      if (/compact|novelty|eloquence/i.test(n)) s -= 3;
+      if (v.localService) s += 1;
+      return s;
+    }
+    return vs.slice().sort(function (a, b) { return score(b) - score(a); })[0] || null;
+  }
+  if ('speechSynthesis' in window) {
+    PREVIEW_VOICE = pickVoice();
+    window.speechSynthesis.addEventListener('voiceschanged', function () {
+      PREVIEW_VOICE = pickVoice();
+      var b = $('#voice-badge');
+      if (b && !b.hidden && PREVIEW_VOICE) b.title = 'Standing in with ' + PREVIEW_VOICE.name;
+    });
+  }
+
+  function setPreviewVoice(on) {
+    var b = $('#voice-badge');
+    if (!b) return;
+    b.hidden = !on;
+    document.body.classList.toggle('preview-voice', on);
+    if (on) {
+      b.title = PREVIEW_VOICE
+        ? 'Standing in with ' + PREVIEW_VOICE.name + ' while the narration renders'
+        : 'Standing in with the browser voice while the narration renders';
+    }
+  }
+
+  var warnedNoVoice = false;
+  function speakFallback(text) {
+    if (!text) { isPlaying = false; updateBar(); return; }
+    if (!('speechSynthesis' in window)) {
+      // A silent build on a browser with no speech engine has nothing to play.
+      // Say so once, in the open, rather than looking like a dead button.
+      isPlaying = false; updateBar();
+      if (!warnedNoVoice) {
+        warnedNoVoice = true;
+        toast('This walkthrough has no audio and this browser cannot speak — read the cards.');
+      }
+      return;
+    }
+    window.speechSynthesis.cancel();
+    speaking = true;
+    var u = new SpeechSynthesisUtterance(text);
+    if (PREVIEW_VOICE) { u.voice = PREVIEW_VOICE; u.lang = PREVIEW_VOICE.lang; }
+    u.rate = rate;
+    // The browser voice reports real word boundaries, so the silent-build path
+    // gets an exact transcript rather than the length-weighted estimate.
+    u.onboundary = function (ev) {
+      if (transcriptOn && ev.charIndex != null && text.length) {
+        syncTranscript(ev.charIndex / text.length);
+      }
+    };
+    u.onend = function () { speaking = false; isPlaying = false; updateBar(); if (playThrough) advance(); };
+    u.onerror = function () { speaking = false; isPlaying = false; updateBar(); };
+    window.speechSynthesis.speak(u);
+  }
+
+  // Never a console-only failure — a walkthrough that is quietly mute reads
+  // as a broken file, so the card gets a visible affordance instead.
+  function showPlayAffordance(key) {
+    var btn = document.querySelector('.play[data-key="' + key + '"]');
+    if (btn) btn.classList.add('needs-tap');
+    toast('Playback needs a tap — press play on this card');
+  }
+
+  // Which engine is mid-utterance. Pausing one and resuming the other is how
+  // play/pause used to restart the narration from the top.
+  var speaking = false;
+
+  function togglePlay() {
+    if (currentIdx === -1) { gotoObs(0, true); return; }
+
+    if (isPlaying) {
+      if (speaking && 'speechSynthesis' in window) window.speechSynthesis.pause();
+      else player.pause();
+      isPlaying = false; updateBar();
+      return;
+    }
+
+    // Resume the stand-in voice where it stopped. Without this, play fell
+    // through to playCurrent() and spoke the whole observation again.
+    if (speaking && 'speechSynthesis' in window && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      isPlaying = true; updateBar();
+      return;
+    }
+
+    // `currentTime > 0` used to be required here, so pausing in the first
+    // fraction of a second dropped through and reassigned src — which reloads
+    // the clip and restarts it. A loaded, unfinished clip always resumes.
+    if (player.src && !player.ended) {
+      var p = player.play();
+      if (p && p.catch) p.catch(function () { showPlayAffordance(OBS[currentIdx].key); });
+      isPlaying = true; updateBar();
+      return;
+    }
+
+    playCurrent();
+  }
+
+  player.addEventListener('ended', function () {
+    isPlaying = false; updateBar();
+    if (playThrough) advance();   // otherwise the walk parks here
+  });
+  // timeupdate fires about four times a second, so at 1.5x the pointer moved
+  // in half-again bigger jumps and read as lag. currentTime is live, so a frame
+  // loop follows the voice smoothly at any rate.
+  var rafId = null;
+  function followAudio() {
+    if (player.duration && isFinite(player.duration)) {
+      syncTranscript(player.currentTime / player.duration);
+    }
+    rafId = player.paused || player.ended ? null : requestAnimationFrame(followAudio);
+  }
+  function startFollowing() {
+    if (rafId === null) rafId = requestAnimationFrame(followAudio);
+  }
+  function stopFollowing() {
+    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+  player.addEventListener('playing', startFollowing);
+  player.addEventListener('pause', stopFollowing);
+  player.addEventListener('ended', stopFollowing);
+  player.addEventListener('play', function () { isPlaying = true; updateBar(); });
+  player.addEventListener('pause', function () { if (!player.ended) { isPlaying = false; updateBar(); } });
+
+  // Icons live in the markup as two SVGs per toggle; this only flips the
+  // attribute CSS keys off, so no script ever writes a glyph.
+  function updateBar() {
+    var btn = $('#btn-playpause');
+    btn.toggleAttribute('data-playing', isPlaying);
+    btn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+    var total = OBS.length;
+    var pos = currentIdx + 1;
+    $('#progress-text').textContent = total ? (pos + ' / ' + total) : '0 / 0';
+    $('#progress-bar').style.width = total ? ((pos / total) * 100) + '%' : '0%';
+    $('#btn-prev').disabled = currentIdx <= 0;
+    $('#btn-next').disabled = currentIdx === -1 || currentIdx >= total - 1;
+    var mute = $('#btn-mute');
+    mute.toggleAttribute('data-muted', player.muted);
+    mute.setAttribute('aria-label', player.muted ? 'Unmute' : 'Mute');
+  }
+
+  // Any real user scroll cancels autoscroll until the next explicit advance.
+  // wheel/touchmove, never 'scroll' — scrollIntoView above would cancel itself.
+  ['wheel', 'touchmove'].forEach(function (ev) {
+    window.addEventListener(ev, function () { autoscroll = false; }, { passive: true });
+  });
+
+  // ── 7. Events ───────────────────────────────────────────────────────────
+  doc.addEventListener('click', function (e) {
+    var playBtn = e.target.closest && e.target.closest('.play');
+    if (playBtn) {
+      var key = playBtn.dataset.key;
+      var idx = OBS.findIndex(function (o) { return o.key === key; });
+      if (idx === -1) return;
+      playBtn.classList.remove('needs-tap');
+      gotoObs(idx, true);
+      return;
+    }
+    // Anywhere on a card jumps there and plays — a 20px button is a poor
+    // target for the thing you do most. Selecting text must not trigger it,
+    // and a silent card has nothing to play.
+    var card = e.target.closest && e.target.closest('.obs[data-key]');
+    if (card && !e.target.closest('button') && !card.classList.contains('silent')) {
+      var sel = window.getSelection && window.getSelection().toString();
+      if (!sel) {
+        var ci = OBS.findIndex(function (o) { return o.key === card.dataset.key; });
+        if (ci !== -1) { gotoObs(ci, true); return; }
+      }
+    }
+    var flagBtn = e.target.closest && e.target.closest('.fb-flag');
+    if (flagBtn) {
+      var flagObs = findObsByKey(flagBtn.dataset.key);
+      if (flagObs) toggleFlag(flagObs);
+      return;
+    }
+    var noteBtn = e.target.closest && e.target.closest('.fb-note');
+    if (noteBtn) {
+      var noteObs = findObsByKey(noteBtn.dataset.key);
+      if (noteObs) openFeedbackDialog('note', noteObs);
+      return;
+    }
+  });
+
+  function currentOrFirstObs() { return OBS[currentIdx === -1 ? 0 : currentIdx] || null; }
+
+  // What a comment is ABOUT is what the reviewer is looking at, which is not
+  // necessarily where the voice is — they scroll ahead, or back, and then type.
+  // Anchoring to playback position filed comments against the wrong file.
+  // Falls back to the playback position when nothing is on screen.
+  function obsInView() {
+    var mid = window.innerHeight / 2;
+    var best = null, bestDist = Infinity;
+    doc.querySelectorAll('.obs[data-key]').forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var d = Math.abs((r.top + r.bottom) / 2 - mid);
+      if (d < bestDist) { bestDist = d; best = el.dataset.key; }
+    });
+    if (!best) return currentOrFirstObs();
+    var found = OBS.find(function (o) { return o.key === best; });
+    return found || currentOrFirstObs();
+  }
+
+  $('#btn-ask').addEventListener('click', function () {
+    var obs = obsInView();
+    if (obs) openFeedbackDialog('ask', obs);
+  });
+
+  $('#fb-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = $('#fb-text').value.trim();
+    $('#fb-dialog').close();
+    if (!text || !fbDialogObs) return;
+    var kind = fbDialogKind === 'ask' ? 'question' : 'comment';
+    FEEDBACK.items.push(makeFeedbackItem(kind, fbDialogObs, text));
+    saveFeedback();
+    refreshCard(fbDialogObs.key);
+  });
+  $('#fb-cancel').addEventListener('click', function () { $('#fb-dialog').close(); });
+
+  $('#copy-feedback').addEventListener('click', function () {
+    var text = JSON.stringify(FEEDBACK, null, 2);
+    // When a listener is up this is a delivery, not a copy — but it still puts
+    // the payload on the clipboard, so a failed POST costs the reviewer nothing.
+    if (LIVE) {
+      postToListener(text).then(
+        function () { toast('Sent to the agent'); },
+        function () { toast('Listener did not answer — copied to the clipboard instead'); }
+      );
+    }
+    function fallbackCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Copied feedback for the agent'); }
+      catch (e) { toast('Copy blocked — use Save file instead'); }
+      ta.remove();
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast('Copied feedback for the agent'); }, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  });
+
+  function jsonForBlock(obj) {
+    // Same technique as render.json_for_block: escape every '<' to its
+    // unicode escape so nothing in the feedback can terminate the block,
+    // and JSON.parse still decodes it with no unescaping step.
+    return JSON.stringify(obj, null, 2).replace(/</g, '\\u003c');
+  }
+
+  function serializeDocument() {
+    var feedbackJson = jsonForBlock(FEEDBACK);
+    return TEMPLATE.replace(
+      /(<script id="review-feedback"[^>]*>)[\s\S]*?(<\/script>)/i,
+      function (_, open, close) { return open + '\n' + feedbackJson + '\n' + close; }
+    );
+  }
+
+  var saveFileHandle = null;
+  $('#save-file').addEventListener('click', function () {
+    saveFeedback();
+    var html = serializeDocument();
+    var pr = CONTENT.pr || {};
+    var name = (pr.repo || 'pr') + '-' + (pr.num || '0') + '-review.html';
+
+    function download() {
+      var url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      toast('Saved — open the downloaded file anywhere');
+    }
+
+    if (!window.showSaveFilePicker) { download(); return; }
+    (async function () {
+      try {
+        if (!saveFileHandle) {
+          saveFileHandle = await window.showSaveFilePicker({
+            suggestedName: name,
+            types: [{ description: 'Web page', accept: { 'text/html': ['.html'] } }]
+          });
+        }
+        var w = await saveFileHandle.createWritable();
+        await w.write(html);
+        await w.close();
+        toast('Saved to ' + saveFileHandle.name);
+      } catch (e) {
+        if (e && e.name === 'AbortError') { toast('Save cancelled — your work is still in this browser'); return; }
+        saveFileHandle = null;
+        download();
+      }
+    })();
+  });
+
+  $('#btn-prev').addEventListener('click', retreat);
+  $('#btn-next').addEventListener('click', advance);
+  $('#btn-ffwd').addEventListener('click', function () { skipFile(1); });
+  $('#btn-rwd').addEventListener('click', function () { skipFile(-1); });
+  $('#btn-playpause').addEventListener('click', togglePlay);
+  $('#play-through').addEventListener('change', function (e) { playThrough = e.target.checked; });
+  $('#btn-rate').addEventListener('click', cycleRate);
+  $('#btn-send').addEventListener('click', function () {
+    if ($('#fb-drawer').hidden) openDrawer(); else closeDrawer();
+  });
+  $('#fb-drawer-close').addEventListener('click', closeDrawer);
+  $('#open-drawer-end').addEventListener('click', openDrawer);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('#fb-drawer').hidden) closeDrawer();
+  });
+
+  // data-theme was styled but nothing ever set it, so the page could only
+  // follow the OS. Three states, because "auto" is a real preference.
+  var THEMES = ['auto', 'light', 'dark'];
+  function setTheme(t) {
+    PREFS.theme = t; savePrefs();
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    $('#btn-theme').textContent = t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  $('#btn-theme').addEventListener('click', function () {
+    setTheme(THEMES[(THEMES.indexOf(PREFS.theme || 'auto') + 1) % THEMES.length]);
+  });
+  $('#btn-mute').addEventListener('click', function () { player.muted = !player.muted; updateBar(); });
+  $('#btn-transcript').addEventListener('click', function () { setTranscript(!transcriptOn); });
+
+  $('#rail-search').addEventListener('input', function (e) {
+    var q = e.target.value.trim().toLowerCase();
+    rail.querySelectorAll('.rail-item').forEach(function (li) {
+      li.hidden = q.length > 0 && li.dataset.path.indexOf(q) === -1;
+    });
+  });
+
+  function closeRailOnMobile() {
+    if (window.matchMedia('(max-width: 48rem)').matches) document.body.classList.remove('rail-open');
+  }
+  $('#rail-toggle').addEventListener('click', function () {
+    var open = document.body.classList.toggle('rail-open');
+    $('#rail-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  // Keys match the sibling skill's map, so muscle memory carries between the
+  // two. n/b move, not j/k — and n is next, never "note", which is c.
+  //   n next · b back · p/r/s play · c comment · t transcript · x rate
+  //   a auto (play through) · k silent (mute) · f flag · N/B skip a file
+  var KEYS = {
+    n: function () { advance(); },
+    b: function () { retreat(); },
+    p: function () { togglePlay(); },
+    r: function () { togglePlay(); },
+    s: function () { togglePlay(); },
+    c: function () { var o = obsInView(); if (o) openFeedbackDialog('note', o); },
+    f: function () { var o = obsInView(); if (o) toggleFlag(o); },
+    t: function () { setTranscript(!transcriptOn); },
+    x: function () { cycleRate(); },
+    a: function () { var cb = $('#play-through'); cb.checked = !cb.checked; playThrough = cb.checked; },
+    k: function () { $('#btn-mute').click(); }
+  };
+
+  function skipFile(dir) {
+    var here = OBS[currentIdx] || OBS[0];
+    if (!here) return;
+    var target = -1;
+    for (var n = 0; n < OBS.length; n++) {
+      var idx = dir > 0 ? n : OBS.length - 1 - n;
+      if (dir > 0 ? OBS[idx].i > here.i : OBS[idx].i < here.i) {
+        if (OBS[idx].c === 0) { target = idx; break; }
+      }
+    }
+    if (target !== -1) gotoObs(target, true);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (e.key === '/' && !typing) { e.preventDefault(); $('#rail-search').focus(); return; }
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') { e.preventDefault(); togglePlay(); return; }
+    // Shifted N/B skip a whole file rather than one observation.
+    if (e.key === 'N' || e.key === 'B') { e.preventDefault(); skipFile(e.key === 'N' ? 1 : -1); return; }
+    if (KEYS[e.key]) { e.preventDefault(); KEYS[e.key](); }
+  });
+
+  // ── 8. Toast / warn (no alert/confirm/prompt anywhere in this file) ──────
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg; t.setAttribute('data-show', '');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.removeAttribute('data-show'); }, 2200);
+  }
+  function warn(msg) { var b = $('#banner'); b.textContent = msg; b.hidden = false; }
+
+  // ── 9. Go ───────────────────────────────────────────────────────────────
+  setRate(RATES.indexOf(PREFS.rate) !== -1 ? PREFS.rate : 1);
+  setTheme(THEMES.indexOf(PREFS.theme) !== -1 ? PREFS.theme : 'auto');
+  if (CONTENT.audioPending) {
+    warn('Narration is still rendering. Until it lands this walks with a stand-in '
+         + 'browser voice — marked "preview voice" in the bar. Reload when the agent '
+         + 'says it is ready to hear the real one.');
+  }
+  probeListener();
+  renderHead();
+  renderOverview();
+  renderRail();
+  renderFileSegments();
+  updateBar();
+  updateFeedbackStatus();
+  setTranscript(transcriptOn);
+})();
+</script>
+</body>
+</html>

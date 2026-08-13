@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DATA BLOCK — the contract between this page, external tools, and agents.
+     Plain, pretty-printed JSON. Edit it directly and reload; the app reads it.
+     Keep it first in the file so `head -60 app.html` shows the whole document
+     state without touching the code below it.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="app-data" type="application/json">
+{
+  "v": 1,
+  "savedAt": 0,
+  "theme": "auto",
+  "title": "Single-file starter",
+  "items": []
+}
+</script>
+<!-- ══ END DATA BLOCK ═══════════════════════════════════════════════════════ -->
+
+<title>Single-file starter</title>
+<style>
+  /* Design tokens. `color-scheme: light dark` + light-dark() pick per OS preference;
+     [data-theme] on <html> lets the in-app toggle override it. */
+  /* Each colour is declared once, both themes together. Baseline since May 2024;
+     on older engines light-dark() is invalid and you get default black-on-white. */
+  :root {
+    color-scheme: light dark;
+    --bg:        light-dark(#fbfbfa, #16161a);
+    --surface:   light-dark(#ffffff, #1f1f24);
+    --fg:        light-dark(#1a1a19, #ececed);
+    --muted:     light-dark(#6b6b68, #9a9aa0);
+    --border:    light-dark(#e2e2df, #32323a);
+    --accent:    light-dark(#3b5bdb, #748ffc);
+    --accent-fg: light-dark(#ffffff, #10101a);
+    --danger:    light-dark(#c92a2a, #ff8787);
+    --radius: .5rem; --gap: 1rem; --measure: 68rem;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  /* The toggle only flips colour-scheme; every light-dark() above follows it. */
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"]  { color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100dvh; display: flex; flex-direction: column;
+    font: 1rem/1.55 var(--font); color: var(--fg); background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
+  header, main, footer { width: 100%; max-width: var(--measure); margin-inline: auto; padding: var(--gap); }
+  header {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  }
+  h1 { font-size: 1.1rem; margin: 0; margin-inline-end: auto; }
+  main { flex: 1; }
+  footer { color: var(--muted); font-size: .85rem; }
+
+  /* The whole responsive story, no media queries: cards fill the row, then wrap. */
+  .grid { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: var(--gap); display: flex; gap: .5rem; align-items: start;
+  }
+  .card p { margin: 0; flex: 1; overflow-wrap: anywhere; }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button {
+    padding: .4rem .75rem; border-radius: var(--radius); cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  button:hover { border-color: var(--accent); }
+  button[data-variant="primary"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  button[data-variant="ghost"] { border-color: transparent; background: none; color: var(--muted); }
+  button[data-variant="ghost"]:hover { color: var(--danger); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  input[type="text"] {
+    padding: .4rem .6rem; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface); width: 100%;
+  }
+  form { display: flex; gap: .5rem; margin-bottom: var(--gap); }
+
+  .banner { padding: .6rem var(--gap); background: var(--danger); color: #fff; }
+  .banner[hidden] { display: none; }
+  #toast {
+    position: fixed; inset-block-end: 1rem; inset-inline: 0; margin-inline: auto; width: fit-content;
+    background: var(--fg); color: var(--bg); padding: .5rem 1rem; border-radius: var(--radius);
+    opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  #toast[data-show] { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<p class="banner" id="banner" role="alert" hidden></p>
+
+<header>
+  <h1 id="title">Single-file starter</h1>
+  <button id="save" data-variant="primary" title="Write this app back to a file with your data baked in">Save</button>
+  <button id="export">Export JSON</button>
+  <button id="copy">Copy</button>
+  <button id="import">Import</button>
+  <button id="theme" aria-label="Toggle colour theme">◐</button>
+  <input type="file" id="file" accept="application/json,.json" hidden>
+</header>
+
+<main>
+  <form id="add">
+    <input type="text" id="text" aria-label="New item" placeholder="Add an item…" autocomplete="off" required>
+    <button type="submit">Add</button>
+  </form>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <span id="status">Stored in this browser. <strong>Save</strong> writes a copy you can share.</span>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Classic script, last element in <body>. Not type="module" — module scripts
+     are CORS-blocked on file:// in Chrome, which would break double-click-to-open. -->
+<script>
+(function () {
+  'use strict';
+
+  // ── 1. Snapshot the pristine source BEFORE anything renders. ──────────────
+  // This is what "Save" rewrites. It must be the first statement that runs.
+  var TEMPLATE = '<!doctype html>\n' + document.documentElement.outerHTML;
+
+  var APP_ID = 'singlefile-starter';  // localStorage namespace — change per app
+  var SCHEMA = 1;
+  var $ = function (s) { return document.querySelector(s); };
+
+  function defaults() {
+    return { v: SCHEMA, savedAt: 0, theme: 'auto', title: 'Single-file starter', items: [] };
+  }
+
+  // Anything may have edited the data block by hand. Validate, never trust.
+  function migrate(s) {
+    if (s === null || s === undefined) return null;   // nothing stored — not an error
+    // Arrays are objects too — a bare JSON array must not pass as state, or an
+    // import would overwrite and persist over the user's data. Say so: a silent
+    // fallback to defaults would let the next Save clobber a hand-edited block.
+    if (typeof s !== 'object' || Array.isArray(s) || typeof s.v !== 'number') {
+      warn('That data is not in this app\'s format — it was ignored.');
+      return null;
+    }
+    if (s.v > SCHEMA) { warn('This file was saved by a newer version of this app.'); return null; }
+    // if (s.v < 1) { ...upgrade in place...; s.v = 1; } // add migrations here
+    if (typeof s.savedAt !== 'number') s.savedAt = 0;
+    if (typeof s.theme !== 'string') s.theme = 'auto';
+    if (typeof s.title !== 'string') s.title = 'Single-file starter';
+    // Entries are hand-editable, so drop unusable ones here rather than letting
+    // render() throw on them. Say so — silently losing rows is worse than a warning.
+    var raw = Array.isArray(s.items) ? s.items : [];
+    s.items = raw
+      .filter(function (i) { return i && typeof i.text === 'string'; })
+      // ids are stringified: dataset.id is always a string, and 1 !== "1" would
+      // make the delete button silently do nothing on hand-edited numeric ids.
+      .map(function (i) { return { id: String(i.id || crypto.randomUUID()), text: i.text }; });
+    if (s.items.length !== raw.length) warn('Some entries in the data block were malformed and were skipped.');
+    return s;
+  }
+
+  function readBaked() {
+    var el = document.getElementById('app-data');
+    try { return migrate(JSON.parse(el.textContent)); }
+    catch (e) { warn('The data block at the top of this file is not valid JSON — it was ignored.'); return null; }
+  }
+  function readLocal() {
+    try { return migrate(JSON.parse(localStorage.getItem(APP_ID))); } catch (e) { return null; }
+  }
+
+  // Precedence: whichever copy was saved most recently. A file you were just
+  // sent has a fresh savedAt and wins; after you edit it, localStorage wins.
+  var baked = readBaked(), local = readLocal();
+  var state = (baked && local ? (baked.savedAt >= local.savedAt ? baked : local) : (baked || local)) || defaults();
+
+  // ── 2. Persistence ────────────────────────────────────────────────────────
+  var timer;
+  function persist() {
+    state.savedAt = Date.now();
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      try { localStorage.setItem(APP_ID, JSON.stringify(state)); }
+      catch (e) { warn('Could not save to this browser (storage full or blocked). Use Save to keep your work.'); }
+    }, 200);
+  }
+  function update(fn) { fn(state); persist(); render(); }
+
+  function serialize() {
+    // Escape '<' so no user text can terminate the data block's closing tag.
+    var json = JSON.stringify(state, null, 2).replace(/</g, '\\u003c');
+    // Function replacer, not a '$1…' string: user text containing $& would corrupt it.
+    return TEMPLATE.replace(
+      /(<script id="app-data"[^>]*>)[\s\S]*?(<\/script>)/i,
+      function (_, open, close) { return open + '\n' + json + '\n' + close; }
+    );
+  }
+
+  function download(name, mime, text) {
+    var url = URL.createObjectURL(new Blob([text], { type: mime }));
+    var a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function slug() { return APP_ID + '-' + new Date().toISOString().slice(0, 10); }
+
+  // ── 3. UI ─────────────────────────────────────────────────────────────────
+  function render() {
+    document.documentElement.setAttribute('data-theme', state.theme);
+    if (state.theme === 'auto') document.documentElement.removeAttribute('data-theme');
+    $('#title').textContent = state.title;
+    document.title = state.title;
+
+    var grid = $('#grid');
+    grid.textContent = '';
+    state.items.forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      var p = document.createElement('p');
+      p.textContent = item.text;                       // textContent, never innerHTML
+      var del = document.createElement('button');
+      del.type = 'button'; del.dataset.variant = 'ghost'; del.dataset.id = item.id;
+      del.textContent = '×'; del.setAttribute('aria-label', 'Delete ' + item.text);
+      card.append(p, del);
+      grid.append(card);
+    });
+    $('#status').textContent = state.items.length
+      ? state.items.length + ' item(s) — stored in this browser. Save writes a shareable copy with your data inside.'
+      : 'Nothing yet. Add an item, or edit the JSON block at the top of this file.';
+  }
+
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg; t.setAttribute('data-show', '');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.removeAttribute('data-show'); }, 1800);
+  }
+  function warn(msg) { var b = $('#banner'); b.textContent = msg; b.hidden = false; }
+
+  // ── 4. Events (delegated where it saves code) ─────────────────────────────
+  $('#add').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('#text'), text = input.value.trim();
+    if (!text) return;
+    update(function (s) { s.items.push({ id: crypto.randomUUID(), text: text }); });
+    input.value = ''; input.focus();
+  });
+
+  $('#grid').addEventListener('click', function (e) {
+    var id = e.target.dataset && e.target.dataset.id;
+    if (!id) return;
+    update(function (s) { s.items = s.items.filter(function (i) { return i.id !== id; }); });
+  });
+
+  // Chrome/Edge (incl. from file://): pick the destination once, then every later
+  // Save overwrites that file silently. Firefox/Safari: plain download each time.
+  // The handle lives for this page session only; after a reload you pick once more.
+  var fileHandle = null;
+
+  $('#save').addEventListener('click', async function () {
+    persist();
+    var html = serialize();
+    if (window.showSaveFilePicker) {
+      try {
+        if (!fileHandle) {
+          fileHandle = await window.showSaveFilePicker({
+            suggestedName: slug() + '.html',
+            types: [{ description: 'Web page', accept: { 'text/html': ['.html'] } }]
+          });
+        }
+        var w = await fileHandle.createWritable();
+        await w.write(html);
+        await w.close();
+        toast('Saved to ' + fileHandle.name);
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') {         // user cancelled — not a failure
+          toast('Save cancelled — your work is still in this browser');
+          return;
+        }
+        fileHandle = null;                     // permission lost etc. — fall back
+      }
+    }
+    download(slug() + '.html', 'text/html', html);
+    toast('Saved — open the downloaded file anywhere');
+  });
+
+  $('#export').addEventListener('click', function () {
+    download(slug() + '.json', 'application/json', JSON.stringify(state, null, 2));
+  });
+
+  $('#copy').addEventListener('click', function () {
+    var text = JSON.stringify(state, null, 2);
+    // Needs a user gesture and a secure context (https, localhost, or file://).
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast('Copied to clipboard'); }, fallback);
+    } else { fallback(); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.append(ta); ta.select();
+      try { document.execCommand('copy'); toast('Copied to clipboard'); }
+      catch (e) { toast('Copy blocked — use Export JSON'); }
+      ta.remove();
+    }
+  });
+
+  $('#import').addEventListener('click', function () { $('#file').click(); });
+  $('#file').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    file.text().then(function (txt) {
+      var next = migrate(JSON.parse(txt));
+      if (!next) throw new Error('bad shape');
+      state = next; persist(); render(); toast('Imported');
+    }).catch(function () { toast('That file is not valid app data'); });
+    e.target.value = '';
+  });
+
+  $('#theme').addEventListener('click', function () {
+    var order = ['auto', 'light', 'dark'];
+    update(function (s) { s.theme = order[(order.indexOf(s.theme) + 1) % 3]; });
+    toast('Theme: ' + state.theme);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

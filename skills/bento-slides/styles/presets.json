@@ -1,0 +1,88 @@
+{
+  "$comment": "Preset library for bento.sh. Themes for orbital/picnic/signal/terra are lifted verbatim from Bento's own gallery decks (bento.page/gallery/*.bento.html); their subsetted faces are the same bytes those decks ship. Presets are PINNED, not tracked — `bento.sh refresh` deliberately leaves this file alone.",
+  "presets": {
+    "orbital": {
+      "look": "Dark, immersive. Deep space blue with an electric cyan accent.",
+      "theme": {
+        "background": "#05060E",
+        "color": "#EAF4FF",
+        "accent": "#38E1FF",
+        "fontFamily": "'Instrument Sans', 'Helvetica Neue', sans-serif"
+      },
+      "fonts": [
+        { "family": "Instrument Sans", "file": "instrument-sans.b64", "asset": "font-instrument", "weight": "100 900" },
+        { "family": "Space Mono", "file": "space-mono-400.b64", "asset": "font-spacemono", "weight": "400" },
+        { "family": "Space Mono", "file": "space-mono-700.b64", "asset": "font-spacemono-bold", "weight": "700" }
+      ],
+      "houseRules": "Ken-burns on every photo slide — a still image reads as dead against this background. Count-up on headline numbers. Space Mono for anything that is data, a label, a coordinate, or a timestamp; Instrument Sans for prose. Accent cyan is a spotlight, not a fill: hairline strokes, thin rules, one glowing element per slide. Full-bleed photography wants a scrim at rgba(5,6,14,0.55) or the text will not hold."
+    },
+    "picnic": {
+      "look": "Playful, high chroma. Sunflower yellow ground, ink violet type, hot pink accent.",
+      "theme": {
+        "background": "#FFD43A",
+        "color": "#201A31",
+        "accent": "#FF7BAC",
+        "fontFamily": "'Instrument Sans', 'Helvetica Neue', sans-serif"
+      },
+      "fonts": [
+        { "family": "Instrument Sans", "file": "instrument-sans.b64", "asset": "font-instrument", "weight": "100 900" }
+      ],
+      "houseRules": "Lean into motion — this preset is allowed to be loud. Oversized type (headlines 100px+, weight 800-900) and blocks of flat colour rather than photographs. Rounded rects, generous radius. Let elements overlap and sit at slight rotations. Entrances on nearly everything; morph the big shapes between slides so colour blocks slide around. Restraint is the wrong instinct here."
+    },
+    "signal": {
+      "look": "Editorial. Warm paper, near-black type, vermilion accent. Type-led.",
+      "theme": {
+        "background": "#EFEDE4",
+        "color": "#141310",
+        "accent": "#E8442E",
+        "fontFamily": "'Instrument Sans', 'Helvetica Neue', sans-serif"
+      },
+      "fonts": [
+        { "family": "Fraunces", "file": "fraunces-900.b64", "asset": "font-fraunces", "weight": "900" },
+        { "family": "Instrument Sans", "file": "instrument-sans.b64", "asset": "font-instrument", "weight": "100 900" }
+      ],
+      "houseRules": "Fraunces 900 for display, Instrument Sans for body — never the reverse. Type carries the deck; imagery is occasional and always earns its place. Hairline rules (1px, ink at 15%) separate sections. Vermilion is for one word, one underline, or one bar per slide — a slide with two accent moments has none. Big type set tight (lineHeight 0.95-1.05). Think magazine spread, not slide."
+    },
+    "terra": {
+      "look": "Warm premium. Bone paper, soft ink, terracotta accent. Photography-forward.",
+      "theme": {
+        "background": "#F7F5F0",
+        "color": "#2A2724",
+        "accent": "#C96F4A",
+        "fontFamily": "'Instrument Sans', 'Helvetica Neue', sans-serif"
+      },
+      "fonts": [
+        { "family": "Fraunces", "file": "fraunces-900.b64", "asset": "font-fraunces", "weight": "900" },
+        { "family": "Instrument Sans", "file": "instrument-sans.b64", "asset": "font-instrument", "weight": "100 900" }
+      ],
+      "houseRules": "Generous whitespace — fewer elements per slide than feels right, and let them breathe. Restrained motion: fades and slow morphs, no count-up, no dash-march. Photography-forward, with images given real estate (60/40 splits, or full-bleed with a light scrim). Fraunces for headlines at modest sizes (56-72px), Instrument Sans everywhere else. Terracotta appears in small quantities: a rule, a caption, a single filled shape."
+    },
+    "latex": {
+      "look": "Scientific monochrome. Off-white paper, near-black ink, Latin Modern throughout.",
+      "theme": {
+        "background": "#F9FAFB",
+        "color": "#1B1818",
+        "accent": "#1B1818",
+        "fontFamily": "'Latin Modern', Georgia, Cambria, 'Times New Roman', serif"
+      },
+      "fonts": [
+        { "family": "Latin Modern", "file": "lm-regular.b64", "asset": "font-lm", "weight": "400" },
+        { "family": "Latin Modern", "file": "lm-bold.b64", "asset": "font-lm-bold", "weight": "700" },
+        { "family": "Latin Modern", "file": "lm-italic.b64", "asset": "font-lm-italic", "weight": "400", "style": "italic" },
+        { "family": "Latin Modern", "file": "lm-bolditalic.b64", "asset": "font-lm-bolditalic", "weight": "700", "style": "italic" }
+      ],
+      "houseRules": "Monochrome — emphasis comes from greys and weight, never hue. The accent IS the ink. Charts are hairline axes and unfilled marks. Latin Modern everywhere, ranged left, generous leading (1.45 on body). Modest title sizes: a LaTeX heading is bold serif around 48px, not an 88px display slab. Rules, not blocks — hairline horizontal rules separate, and theorem/definition boxes are thin-stroked rects, never filled panels. Academic furniture: numbered sections, 'Figure 1:' captions in smaller italic, a footnote rule, and a title slide driven by {{author}} / {{date}} / {{event}} tokens. Fade only — no ken-burns, no count-up, no dash-march. Not a typesetter: for notation use Unicode (α, ∑, ≤, x²), which renders correctly in Latin Modern."
+    },
+    "plain": {
+      "look": "System stack, zero embedded bytes. For decks that will be restyled anyway.",
+      "theme": {
+        "background": "#FFFFFF",
+        "color": "#111111",
+        "accent": "#2563EB",
+        "fontFamily": "system-ui, -apple-system, 'Segoe UI', sans-serif"
+      },
+      "fonts": [],
+      "houseRules": "No opinions. Every element carries an explicit role (title|subtitle|body|kicker) so a later 'Apply layout' pass can restyle the deck without re-typing it. Keep to the documented column bands and the 96px margins; that is the whole discipline here."
+    }
+  }
+}

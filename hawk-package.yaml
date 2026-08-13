@@ -1,0 +1,31 @@
+name: formulae-magicae
+version: "1.0.0"
+description: "Ars Automata: a portable collection of practical skills for software agents."
+author: pkronstrom
+license: MIT
+repository: https://github.com/pkronstrom/formulae-magicae
+contents:
+  skills:
+    - path: skills/summon/
+      name: summon
+    - path: skills/portal/
+      name: portal
+    - path: skills/bento-slides/
+      name: bento-slides
+    - path: skills/singlefile/
+      name: singlefile
+    - path: skills/visualize/
+      name: visualize
+    - path: skills/transcribe-media/
+      name: transcribe-media
+    - path: skills/tts/
+      name: tts
+    - path: skills/pr-voice-review/
+      name: pr-voice-review
+    - path: skills/pr-voice-review-single-file/
+      name: pr-voice-review-single-file
+    - path: skills/spec-flow/
+      name: spec-flow
+tags: [agent-skills, automation, developer-tools]
+compatibility:
+  tools: [claude, codex, gemini, opencode]

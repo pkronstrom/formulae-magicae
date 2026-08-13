@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "pr-voice-review overlay",
+  "version": "11.0",
+  "description": "Walkthrough control bar + local audio bridge for pr-voice-review. GitHub PR pages only; talks only to 127.0.0.1.",
+  "host_permissions": ["http://127.0.0.1:*/"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    { "matches": ["https://github.com/*/pull/*"], "js": ["content.js"], "run_at": "document_idle", "world": "MAIN" },
+    { "matches": ["https://github.com/*/pull/*"], "js": ["bridge.js"],  "run_at": "document_idle" }
+  ]
+}

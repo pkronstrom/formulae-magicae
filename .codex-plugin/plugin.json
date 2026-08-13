@@ -1,0 +1,24 @@
+{
+  "name": "formulae-magicae",
+  "version": "1.0.0",
+  "description": "Ars Automata: a portable collection of practical skills for software agents.",
+  "author": {
+    "name": "Peter Kronstrom",
+    "url": "https://github.com/pkronstrom"
+  },
+  "homepage": "https://github.com/pkronstrom/formulae-magicae",
+  "repository": "https://github.com/pkronstrom/formulae-magicae",
+  "license": "MIT",
+  "keywords": ["agent-skills", "automation", "developer-tools", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Formulae Magicae",
+    "shortDescription": "Practical agent skills, bound as Ars Automata.",
+    "longDescription": "A portable grimoire of practical skills for creating artifacts, reviewing code, working with media, collaborating between agents, and running spec-driven development.",
+    "developerName": "Peter Kronstrom",
+    "category": "Productivity",
+    "capabilities": ["Create", "Review", "Collaborate"],
+    "websiteURL": "https://github.com/pkronstrom/formulae-magicae",
+    "defaultPrompt": "Show me the formulae available in this grimoire."
+  }
+}

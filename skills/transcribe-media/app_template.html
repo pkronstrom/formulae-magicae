@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+</head>
+<body>
+
+<script id="app-data" type="application/json">
+__DATA__
+</script>
+
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: light-dark(#fbfbfa, #16161a);
+    --fg: light-dark(#1c1c1a, #e8e8e6);
+    --muted: light-dark(#6b6b66, #a0a09a);
+    --card: light-dark(#ffffff, #202024);
+    --line: light-dark(#e4e4e0, #33333a);
+    --accent: light-dark(#b4530a, #f0913c);
+    --mark: light-dark(#fff2a8, #6b5a12);
+    --mark-noted: light-dark(#ffd9a8, #7a4a12);
+  }
+  [data-theme="light"] { color-scheme: light; }
+  [data-theme="dark"] { color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.7 ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 5;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line); padding: .75rem 1rem;
+  }
+  .bar { max-width: 54rem; margin: 0 auto; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+  .bar h1 { font-size: 1rem; margin: 0; flex: 1 1 16rem; line-height: 1.3; }
+  .bar .sub { color: var(--muted); font-size: .8rem; font-weight: 400; display: block; }
+  button {
+    font: inherit; font-size: .85rem; padding: .35rem .7rem; cursor: pointer;
+    background: var(--card); color: var(--fg);
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  button:hover { border-color: var(--accent); }
+  main { max-width: 54rem; margin: 0 auto; padding: 1.5rem 1rem 6rem; }
+  .lede {
+    font-size: 1.1rem; border-left: 3px solid var(--accent);
+    padding-left: 1rem; margin: 0 0 2rem;
+  }
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.1rem; margin-bottom: 1.25rem;
+  }
+  section h2 { font-size: 1.1rem; margin: 0 0 .2rem; }
+  .stamp {
+    display: inline-block; font-variant-numeric: tabular-nums; font-size: .8rem;
+    color: var(--accent); text-decoration: none; margin-bottom: .6rem;
+  }
+  img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); margin: .4rem 0 .9rem; }
+  details {
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: .75rem 1.1rem; margin-bottom: 1.25rem; background: var(--card);
+  }
+  details > summary { cursor: pointer; font-weight: 600; }
+  .cue { display: grid; grid-template-columns: 4.2rem 1fr; gap: .75rem; margin: .9rem 0; }
+  .cue .stamp { margin: 0; }
+  mark {
+    background: var(--mark); color: inherit; border-radius: 2px; cursor: pointer;
+    padding: .05em 0;
+  }
+  mark.noted { background: var(--mark-noted); border-bottom: 2px solid var(--accent); }
+  .note-item { border-left: 3px solid var(--accent); padding-left: .8rem; margin: 1rem 0; }
+  .note-item blockquote { margin: 0 0 .3rem; font-style: italic; color: var(--muted); }
+  .note-item p { margin: 0; }
+  dialog {
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+    color: var(--fg); max-width: 32rem; width: 92%; padding: 1.1rem;
+  }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog blockquote {
+    margin: 0 0 .8rem; padding-left: .8rem; border-left: 3px solid var(--accent);
+    color: var(--muted); font-style: italic; max-height: 8rem; overflow: auto;
+  }
+  textarea {
+    width: 100%; min-height: 6rem; font: inherit; font-size: .9rem; padding: .5rem;
+    background: var(--bg); color: var(--fg);
+    border: 1px solid var(--line); border-radius: 6px; resize: vertical;
+  }
+  .row { display: flex; gap: .5rem; justify-content: flex-end; margin-top: .8rem; }
+  .toast {
+    position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+    background: var(--fg); color: var(--bg); padding: .5rem .9rem; border-radius: 6px;
+    font-size: .85rem; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.on { opacity: 1; }
+  .hint { color: var(--muted); font-size: .8rem; margin: 0 0 1.25rem; }
+  @media print { header, .no-print { display: none; } }
+</style>
+
+<header>
+  <div class="bar">
+    <h1 id="doc-title"></h1>
+    <button id="btn-notes" type="button">Notes</button>
+    <button id="btn-copy" type="button">Copy notes</button>
+    <button id="btn-save" type="button">Save</button>
+    <button id="btn-theme" type="button" title="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main id="root"></main>
+
+<dialog id="note-dialog">
+  <blockquote id="note-quote"></blockquote>
+  <textarea id="note-text" placeholder="Your note on this passage…"></textarea>
+  <div class="row">
+    <button id="note-remove" type="button">Remove highlight</button>
+    <button id="note-cancel" type="button">Cancel</button>
+    <button id="note-save" type="button">Save note</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var FALLBACK = { v: 1, savedAt: 0, meta: {}, blocks: [], annotations: [] };
+  var state = read();
+  var APP_ID = "transcribe-media:" + (state.meta.id || "media");
+  var handle = null;
+  var saveTimer = null;
+  var pending = null;
+
+  function read() {
+    var el = document.getElementById("app-data");
+    var baked;
+    try {
+      baked = JSON.parse(el.textContent);
+    } catch (err) {
+      note("Saved data was unreadable; starting from the file as written.");
+      return FALLBACK;
+    }
+    var local = null;
+    try {
+      var raw = localStorage.getItem("transcribe-media:" + (baked.meta.id || "media"));
+      if (raw) local = JSON.parse(raw);
+    } catch (err) {
+      local = null;
+    }
+    // Whichever copy is newer wins, so a file you were just sent opens with its own
+    // annotations, while your edits survive a reload.
+    if (local && (local.savedAt || 0) > (baked.savedAt || 0)) return local;
+    return baked;
+  }
+
+  function serialize(value) {
+    return JSON.stringify(value, null, 2).replace(/</g, "\\u003c");
+  }
+
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      state.savedAt = Date.now();
+      try {
+        localStorage.setItem(APP_ID, JSON.stringify(state));
+      } catch (err) {
+        note("Could not autosave locally.");
+      }
+    }, 400);
+  }
+
+  function note(message) {
+    var el = document.getElementById("toast");
+    el.textContent = message;
+    el.classList.add("on");
+    setTimeout(function () { el.classList.remove("on"); }, 2200);
+  }
+
+  function stamp(seconds) {
+    var whole = Math.floor(seconds || 0);
+    var h = Math.floor(whole / 3600);
+    var m = Math.floor((whole % 3600) / 60);
+    var s = whole % 60;
+    var mm = h ? (m < 10 ? "0" + m : "" + m) : "" + m;
+    var ss = s < 10 ? "0" + s : "" + s;
+    return h ? h + ":" + mm + ":" + ss : mm + ":" + ss;
+  }
+
+  function link(seconds) {
+    var tpl = state.meta.linkTemplate;
+    if (!tpl) return null;
+    return tpl.replace("{t}", String(Math.floor(seconds)));
+  }
+
+  function stampNode(time) {
+    var url = link(time);
+    var el = document.createElement(url ? "a" : "span");
+    el.className = "stamp";
+    el.textContent = stamp(time);
+    if (url) { el.href = url; el.target = "_blank"; el.rel = "noopener"; }
+    return el;
+  }
+
+  /* ---------------------------------------------------------------- render */
+
+  function paint(target, block) {
+    // Rebuild the text as alternating plain and highlighted runs. Everything goes in
+    // through textContent, so nothing in the transcript can inject markup.
+    target.setAttribute("data-block", block.id);
+    target.textContent = "";
+    var text = block.text || "";
+    var marks = state.annotations
+      .filter(function (a) { return a.blockId === block.id; })
+      .sort(function (a, b) { return a.start - b.start; });
+
+    var at = 0;
+    marks.forEach(function (a) {
+      if (a.start < at || a.end > text.length) return;
+      if (a.start > at) target.appendChild(document.createTextNode(text.slice(at, a.start)));
+      var el = document.createElement("mark");
+      el.textContent = text.slice(a.start, a.end);
+      el.setAttribute("data-id", a.id);
+      if (a.note) el.className = "noted";
+      target.appendChild(el);
+      at = a.end;
+    });
+    if (at < text.length) target.appendChild(document.createTextNode(text.slice(at)));
+  }
+
+  function render() {
+    var root = document.getElementById("root");
+    root.textContent = "";
+
+    var title = document.getElementById("doc-title");
+    title.textContent = state.meta.title || "Untitled";
+    var sub = document.createElement("span");
+    sub.className = "sub";
+    var bits = [];
+    if (state.meta.channel) bits.push(state.meta.channel);
+    if (state.meta.duration) bits.push(state.meta.duration);
+    if (state.meta.source) bits.push("transcript: " + state.meta.source);
+    sub.textContent = bits.join(" · ");
+    title.appendChild(sub);
+
+    var hint = document.createElement("p");
+    hint.className = "hint no-print";
+    hint.textContent =
+      "Select any text to highlight it and attach a note. Click a highlight to edit it. " +
+      "Save writes your notes back into this file.";
+    root.appendChild(hint);
+
+    var lede = state.blocks.filter(function (b) { return b.kind === "lede"; });
+    lede.forEach(function (block) {
+      var p = document.createElement("p");
+      p.className = "lede";
+      paint(p, block);
+      root.appendChild(p);
+    });
+
+    root.appendChild(notesPanel());
+
+    state.blocks.filter(function (b) { return b.kind === "section"; }).forEach(function (block) {
+      var el = document.createElement("section");
+      var h = document.createElement("h2");
+      h.textContent = block.title || "";
+      el.appendChild(h);
+      if (block.time !== null && block.time !== undefined) el.appendChild(stampNode(block.time));
+      if (block.frame) {
+        var img = document.createElement("img");
+        img.src = block.frame;
+        img.alt = block.title || "frame";
+        el.appendChild(img);
+      }
+      var p = document.createElement("p");
+      paint(p, block);
+      el.appendChild(p);
+      root.appendChild(el);
+    });
+
+    var cues = state.blocks.filter(function (b) { return b.kind === "transcript"; });
+    if (cues.length) {
+      var details = document.createElement("details");
+      var summary = document.createElement("summary");
+      summary.textContent = "Full transcript (" + cues.length + " passages)";
+      details.appendChild(summary);
+      cues.forEach(function (block) {
+        var row = document.createElement("div");
+        row.className = "cue";
+        row.appendChild(stampNode(block.time));
+        var p = document.createElement("p");
+        paint(p, block);
+        row.appendChild(p);
+        details.appendChild(row);
+      });
+      root.appendChild(details);
+    }
+  }
+
+  function notesPanel() {
+    var details = document.createElement("details");
+    details.id = "notes-panel";
+    var summary = document.createElement("summary");
+    summary.textContent = "Your notes (" + state.annotations.length + ")";
+    details.appendChild(summary);
+
+    if (!state.annotations.length) {
+      var empty = document.createElement("p");
+      empty.className = "hint";
+      empty.textContent = "Nothing highlighted yet.";
+      details.appendChild(empty);
+      return details;
+    }
+
+    ordered().forEach(function (a) {
+      var item = document.createElement("div");
+      item.className = "note-item";
+      var quote = document.createElement("blockquote");
+      quote.textContent = a.text;
+      item.appendChild(quote);
+      if (a.note) {
+        var p = document.createElement("p");
+        p.textContent = a.note;
+        item.appendChild(p);
+      }
+      details.appendChild(item);
+    });
+    return details;
+  }
+
+  function ordered() {
+    var order = {};
+    state.blocks.forEach(function (b, i) { order[b.id] = i; });
+    return state.annotations.slice().sort(function (a, b) {
+      var d = (order[a.blockId] || 0) - (order[b.blockId] || 0);
+      return d !== 0 ? d : a.start - b.start;
+    });
+  }
+
+  /* ------------------------------------------------------------ highlights */
+
+  function offsetWithin(host, node, offset) {
+    var range = document.createRange();
+    range.selectNodeContents(host);
+    range.setEnd(node, offset);
+    return range.toString().length;
+  }
+
+  document.getElementById("root").addEventListener("mouseup", function () {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return;
+    var text = sel.toString();
+    if (!text.trim()) return;
+
+    var host = sel.anchorNode && sel.anchorNode.parentElement;
+    host = host && host.closest("[data-block]");
+    var tail = sel.focusNode && sel.focusNode.parentElement;
+    tail = tail && tail.closest("[data-block]");
+    if (!host || host !== tail) return;
+
+    var a = offsetWithin(host, sel.anchorNode, sel.anchorOffset);
+    var b = offsetWithin(host, sel.focusNode, sel.focusOffset);
+    var start = Math.min(a, b);
+    var end = Math.max(a, b);
+    var blockId = host.getAttribute("data-block");
+
+    var clash = state.annotations.some(function (x) {
+      return x.blockId === blockId && start < x.end && end > x.start;
+    });
+    if (clash) { note("That overlaps an existing highlight."); return; }
+
+    var entry = {
+      id: "a" + Date.now().toString(36),
+      blockId: blockId,
+      start: start,
+      end: end,
+      text: text,
+      note: ""
+    };
+    state.annotations.push(entry);
+    sel.removeAllRanges();
+    persist();
+    render();
+    open(entry);
+  });
+
+  document.getElementById("root").addEventListener("click", function (event) {
+    var el = event.target.closest("mark");
+    if (!el) return;
+    var id = el.getAttribute("data-id");
+    var entry = state.annotations.filter(function (a) { return a.id === id; })[0];
+    if (entry) open(entry);
+  });
+
+  var dialog = document.getElementById("note-dialog");
+
+  function open(entry) {
+    pending = entry;
+    document.getElementById("note-quote").textContent = entry.text;
+    document.getElementById("note-text").value = entry.note || "";
+    dialog.showModal();
+    document.getElementById("note-text").focus();
+  }
+
+  document.getElementById("note-save").addEventListener("click", function () {
+    if (pending) pending.note = document.getElementById("note-text").value.trim();
+    dialog.close();
+    persist();
+    render();
+  });
+
+  document.getElementById("note-cancel").addEventListener("click", function () {
+    dialog.close();
+  });
+
+  document.getElementById("note-remove").addEventListener("click", function () {
+    if (pending) {
+      state.annotations = state.annotations.filter(function (a) { return a.id !== pending.id; });
+    }
+    dialog.close();
+    persist();
+    render();
+  });
+
+  /* ------------------------------------------------------------- transport */
+
+  function fileText() {
+    var clone = document.documentElement.cloneNode(true);
+    state.savedAt = Date.now();
+    clone.querySelector("#app-data").textContent = "\n" + serialize(state) + "\n";
+    var root = clone.querySelector("#root");
+    if (root) root.textContent = "";
+    var title = clone.querySelector("#doc-title");
+    if (title) title.textContent = "";
+    var dlg = clone.querySelector("#note-dialog");
+    if (dlg) dlg.removeAttribute("open");
+    return "<!doctype html>\n" + clone.outerHTML;
+  }
+
+  function suggestedName() {
+    var base = (state.meta.title || "summary").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    return base.replace(/^-|-$/g, "").slice(0, 60) + ".html";
+  }
+
+  document.getElementById("btn-save").addEventListener("click", async function () {
+    var text = fileText();
+    try {
+      localStorage.setItem(APP_ID, JSON.stringify(state));
+    } catch (err) { /* keep going; the file write is what matters */ }
+
+    if (window.showSaveFilePicker) {
+      try {
+        if (!handle) {
+          handle = await window.showSaveFilePicker({
+            suggestedName: suggestedName(),
+            types: [{ description: "HTML", accept: { "text/html": [".html"] } }]
+          });
+        }
+        var stream = await handle.createWritable();
+        await stream.write(text);
+        await stream.close();
+        note("Saved with " + state.annotations.length + " highlight(s).");
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+      }
+    }
+
+    var url = URL.createObjectURL(new Blob([text], { type: "text/html" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = suggestedName();
+    a.click();
+    URL.revokeObjectURL(url);
+    note("Downloaded a copy with your notes.");
+  });
+
+  document.getElementById("btn-copy").addEventListener("click", async function () {
+    if (!state.annotations.length) { note("No highlights yet."); return; }
+    var lines = ["# Notes on " + (state.meta.title || "") , ""];
+    if (state.meta.url) { lines.push(state.meta.url, ""); }
+    ordered().forEach(function (a) {
+      var block = state.blocks.filter(function (b) { return b.id === a.blockId; })[0];
+      var when = block && block.time !== undefined && block.time !== null
+        ? "[" + stamp(block.time) + "] " : "";
+      lines.push("> " + when + a.text);
+      if (a.note) lines.push("", a.note);
+      lines.push("");
+    });
+    var text = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      note("Notes copied.");
+    } catch (err) {
+      var box = document.createElement("textarea");
+      box.value = text;
+      document.body.appendChild(box);
+      box.select();
+      try { document.execCommand("copy"); note("Notes copied."); }
+      catch (e2) { note("Copy failed."); }
+      document.body.removeChild(box);
+    }
+  });
+
+  document.getElementById("btn-notes").addEventListener("click", function () {
+    var panel = document.getElementById("notes-panel");
+    if (!panel) return;
+    panel.open = !panel.open;
+    if (panel.open) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.getElementById("btn-theme").addEventListener("click", function () {
+    var now = document.documentElement.getAttribute("data-theme");
+    var next = now === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem(APP_ID + ":theme", next); } catch (err) { /* ignore */ }
+  });
+
+  try {
+    var theme = localStorage.getItem(APP_ID + ":theme");
+    if (theme) document.documentElement.setAttribute("data-theme", theme);
+  } catch (err) { /* ignore */ }
+
+  render();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "formulae-magicae",
+  "description": "Ars Automata: a portable collection of practical skills for software agents.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Peter Kronstrom",
+    "url": "https://github.com/pkronstrom"
+  },
+  "homepage": "https://github.com/pkronstrom/formulae-magicae",
+  "repository": "https://github.com/pkronstrom/formulae-magicae",
+  "license": "MIT",
+  "keywords": ["agent-skills", "automation", "developer-tools", "claude-code"]
+}
