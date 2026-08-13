@@ -126,6 +126,45 @@ def test_individual_plugins_do_not_depend_on_sibling_skill_files():
     assert "sibling's §" not in standalone_text
 
 
+def test_readme_quick_install_documents_every_supported_install_path():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    quick_heading = "## Quick install"
+    h2_matches = list(re.finditer(r"(?m)^## [^\n]+$", readme))
+    h2_headings = [match.group() for match in h2_matches]
+    assert quick_heading in h2_headings, "README is missing the Quick install section"
+    quick_index = h2_headings.index(quick_heading)
+    assert quick_index + 1 < len(h2_matches), "Quick install must be followed by Install"
+    next_h2 = h2_matches[quick_index + 1]
+    assert next_h2.group() == "## Install"
+
+    quick_start = h2_matches[quick_index].end()
+    quick_section = readme[quick_start:next_h2.start()]
+    expected_identifiers = {
+        "pkronstrom/formulae-magicae",
+        "formulae-magicae@formulae-magicae",
+        "npx openskills install",
+        "hawk download",
+    }
+    for identifier in expected_identifiers:
+        assert identifier in quick_section
+
+    codex_heading = "### Codex — all formulae"
+    h3_matches = list(re.finditer(r"(?m)^### [^\n]+$", quick_section))
+    h3_headings = [match.group() for match in h3_matches]
+    assert codex_heading in h3_headings
+    codex_index = h3_headings.index(codex_heading)
+    codex_start = h3_matches[codex_index].end()
+    codex_end = (
+        h3_matches[codex_index + 1].start()
+        if codex_index + 1 < len(h3_matches)
+        else len(quick_section)
+    )
+    codex_block = quick_section[codex_start:codex_end]
+    assert "$skill-installer" in codex_block
+    for name in EXPECTED_SKILLS:
+        assert f"skills/{name}" in codex_block
+
+
 
 def test_pr_voice_review_tts_resolution_supports_bundle_and_isolation(tmp_path):
     env = {**os.environ, "PATH": "/usr/bin:/bin", "TTS_PATH": ""}
