@@ -139,6 +139,10 @@ def test_readme_quick_install_documents_every_supported_install_path():
 
     quick_start = h2_matches[quick_index].end()
     quick_section = readme[quick_start:next_h2.start()]
+    assert (
+        "This is a private repository, so your environment must already have "
+        "GitHub access."
+    ) in quick_section
     expected_identifiers = {
         "pkronstrom/formulae-magicae",
         "formulae-magicae@formulae-magicae",
@@ -158,17 +162,37 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "### OpenSkills (optional)",
         "### Hawk",
     ]
-    codex_index = h3_headings.index(codex_heading)
-    codex_start = h3_matches[codex_index].end()
-    codex_end = (
-        h3_matches[codex_index + 1].start()
-        if codex_index + 1 < len(h3_matches)
-        else len(quick_section)
-    )
-    codex_block = quick_section[codex_start:codex_end]
+
+    h3_sections = {}
+    for index, match in enumerate(h3_matches):
+        end = (
+            h3_matches[index + 1].start()
+            if index + 1 < len(h3_matches)
+            else len(quick_section)
+        )
+        h3_sections[match.group()] = quick_section[match.end():end]
+
+    codex_block = h3_sections[codex_heading]
     assert "$skill-installer" in codex_block
-    for name in EXPECTED_SKILLS:
-        assert f"skills/{name}" in codex_block
+    documented_paths = re.findall(r"skills/[a-z0-9-]+", codex_block)
+    assert set(documented_paths) == {f"skills/{name}" for name in EXPECTED_SKILLS}
+    assert len(documented_paths) == len(EXPECTED_SKILLS)
+
+    def fenced_commands(section):
+        return re.findall(r"```(?:text|sh)\n(.*?)\n```", section, flags=re.DOTALL)
+
+    assert fenced_commands(h3_sections["### Claude Code"]) == [
+        "/plugin marketplace add pkronstrom/formulae-magicae\n"
+        "/plugin install formulae-magicae@formulae-magicae",
+        "/plugin marketplace add pkronstrom/formulae-magicae\n"
+        "/plugin install visualize@formulae-magicae",
+    ]
+    assert fenced_commands(h3_sections["### OpenSkills (optional)"]) == [
+        "npx openskills install git@github.com:pkronstrom/formulae-magicae.git"
+    ]
+    assert fenced_commands(h3_sections["### Hawk"]) == [
+        "hawk download git@github.com:pkronstrom/formulae-magicae.git --enable"
+    ]
 
 
 
