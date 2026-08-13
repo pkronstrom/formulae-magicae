@@ -28,23 +28,70 @@ around that one source tree; they do not fork the skills.
 | [`pr-voice-review-single-file`](skills/pr-voice-review-single-file/) | Build a narrated, offline PR walkthrough as one HTML file. | `gh`, optional Kokoro |
 | [`spec-flow`](skills/spec-flow/) | Run a discovery-first, spec-driven workflow around OpenSpec changes. | OpenSpec; optional companion workflow skills |
 
-## Install
+## Quick install
 
-### Claude Code: complete grimoire
+This is a private repository, so your environment must already have GitHub access.
 
-Add this repository as a marketplace, then install the collection:
+### Claude Code
+
+Install the complete collection:
 
 ```text
 /plugin marketplace add pkronstrom/formulae-magicae
 /plugin install formulae-magicae@formulae-magicae
 ```
 
-Because the repository is private, GitHub authentication must grant access. Install
-one formula instead by replacing the plugin name, for example:
+Or install just one formula, such as Visualize:
 
 ```text
+/plugin marketplace add pkronstrom/formulae-magicae
 /plugin install visualize@formulae-magicae
 ```
+
+### Codex — all formulae
+
+Ask the built-in skill installer:
+
+```text
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, and skills/visualize.
+```
+
+Installed Codex skills appear in the next turn.
+
+### Codex — one formula
+
+For example, install Visualize only:
+
+```text
+$skill-installer Install skills/visualize from pkronstrom/formulae-magicae.
+```
+
+The skill appears in Codex in the next turn.
+
+### OpenSkills (optional)
+
+Use the repository's SSH URL and select formulae interactively:
+
+```sh
+npx openskills install git@github.com:pkronstrom/formulae-magicae.git
+```
+
+### Hawk
+
+Download and enable the complete collection:
+
+```sh
+hawk download git@github.com:pkronstrom/formulae-magicae.git --enable
+```
+
+## Install
+
+### Claude Code: complete grimoire
+
+Use the complete-collection commands in [Quick install](#quick-install).
+
+Because the repository is private, GitHub authentication must grant access. Install
+one formula instead by replacing the plugin name in the one-formula example above.
 
 The available individual plugin names are the directory names in the table above.
 Individual entries use Claude Code's root-`SKILL.md` plugin layout and require
@@ -69,11 +116,8 @@ Install an individual skill from its GitHub subdirectory with the host's skill
 installer, or clone the repository and copy/symlink the desired folders into the
 host's skill directory. Common user-level locations include:
 
-In Codex, ask the built-in installer directly, for example:
-
-```text
-$skill-installer Install skills/visualize from pkronstrom/formulae-magicae.
-```
+In Codex, use either built-in installer prompt in
+[Quick install](#quick-install).
 
 | Host | Skill directory |
 | --- | --- |
@@ -97,11 +141,7 @@ complete collection for Codex plugin tooling. No personal Codex marketplace entr
 is modified by this repository.
 
 As an optional cross-host installer, OpenSkills can scan the private repository and
-let you select formulae interactively:
-
-```sh
-npx openskills install git@github.com:pkronstrom/formulae-magicae.git
-```
+let you select formulae interactively; see [Quick install](#quick-install).
 
 OpenSkills is a convenience layer, not the canonical package format.
 
@@ -109,7 +149,8 @@ OpenSkills is a convenience layer, not the canonical package format.
 
 The root [`hawk-package.yaml`](hawk-package.yaml) lets Hawk discover the collection
 as one package. The Hawk repository itself remains unchanged during this migration;
-the proposed follow-up is documented in
+use the verified command in [Quick install](#quick-install). The proposed follow-up
+is documented in
 [`docs/hawk-hooks-transition.md`](docs/hawk-hooks-transition.md).
 
 ## Repository layout
