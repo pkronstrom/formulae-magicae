@@ -72,6 +72,12 @@
       "source": "./skills/spec-flow",
       "description": "Run a discovery-first, spec-driven workflow around OpenSpec changes.",
       "version": "1.0.0"
+    },
+    {
+      "name": "wire-trigger",
+      "source": "./skills/wire-trigger",
+      "description": "Defer one agent action until an opaque external signal arrives.",
+      "version": "1.0.0"
     }
   ]
 }

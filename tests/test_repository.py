@@ -19,6 +19,7 @@ EXPECTED_SKILLS = {
     "transcribe-media",
     "tts",
     "visualize",
+    "wire-trigger",
 }
 VERSION = "1.0.0"
 SKILLS_WITH_BUNDLED_THIRD_PARTY_ASSETS = {
@@ -190,7 +191,8 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
         "skills/pr-voice-review, skills/pr-voice-review-single-file, "
         "skills/singlefile, skills/spec-flow, skills/summon, "
-        "skills/transcribe-media, skills/tts, and skills/visualize."
+        "skills/transcribe-media, skills/tts, skills/visualize, and "
+        "skills/wire-trigger."
     ]
     assert fenced_commands(h3_sections["### Claude Code"]) == [
         "/plugin marketplace add pkronstrom/formulae-magicae\n"

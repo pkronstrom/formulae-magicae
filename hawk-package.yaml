@@ -26,6 +26,8 @@ contents:
       name: pr-voice-review-single-file
     - path: skills/spec-flow/
       name: spec-flow
+    - path: skills/wire-trigger/
+      name: wire-trigger
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

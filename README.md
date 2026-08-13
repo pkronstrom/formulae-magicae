@@ -27,6 +27,7 @@ around that one source tree; they do not fork the skills.
 | [`pr-voice-review`](skills/pr-voice-review/) | Walk through a GitHub pull request aloud while the browser follows the review. | `gh`, browser, optional `tts` |
 | [`pr-voice-review-single-file`](skills/pr-voice-review-single-file/) | Build a narrated, offline PR walkthrough as one HTML file. | `gh`, optional Kokoro |
 | [`spec-flow`](skills/spec-flow/) | Run a discovery-first, spec-driven workflow around OpenSpec changes. | OpenSpec; optional companion workflow skills |
+| [`wire-trigger`](skills/wire-trigger/) | Wait for a one-shot external signal, then continue the current agent turn or an explicit detached target. | Python 3; public or self-hosted ntfy |
 
 ## Quick install
 
@@ -47,7 +48,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, and skills/visualize.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
 ```
 
 Installed Codex skills appear in the next turn.
