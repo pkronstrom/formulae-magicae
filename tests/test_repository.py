@@ -151,7 +151,13 @@ def test_readme_quick_install_documents_every_supported_install_path():
     codex_heading = "### Codex — all formulae"
     h3_matches = list(re.finditer(r"(?m)^### [^\n]+$", quick_section))
     h3_headings = [match.group() for match in h3_matches]
-    assert codex_heading in h3_headings
+    assert h3_headings == [
+        "### Codex — one formula",
+        codex_heading,
+        "### Claude Code",
+        "### OpenSkills (optional)",
+        "### Hawk",
+    ]
     codex_index = h3_headings.index(codex_heading)
     codex_start = h3_matches[codex_index].end()
     codex_end = (
