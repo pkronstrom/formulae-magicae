@@ -38,9 +38,24 @@ cmd_catalog() {
     local raw
     raw=$(
       find "$category" -name SKILL.md 2>/dev/null | while IFS= read -r skill_md; do
-        name=$(sed -n 's/^name: *//p' "$skill_md" | head -1)
+        # Frontmatter description may be a single line ("description: text")
+        # or a YAML block scalar ("description: |"/">" with the text on
+        # indented lines below) — collapse either form to one line.
+        IFS=$'\t' read -r name description <<< "$(awk '
+          BEGIN { name = ""; desc = ""; in_desc = 0; desc_done = 0 }
+          !in_desc && name == "" && /^name: / { n = $0; sub(/^name: */, "", n); name = n; next }
+          !desc_done && !in_desc && /^description: *[|>]/ { in_desc = 1; next }
+          !desc_done && !in_desc && /^description: / { d = $0; sub(/^description: */, "", d); desc = d; desc_done = 1; next }
+          in_desc {
+            if ($0 ~ /^[^ \t]/) { in_desc = 0; desc_done = 1; next }
+            if ($0 == "") { next }
+            line = $0; sub(/^[ \t]+/, "", line)
+            desc = (desc == "") ? line : desc " " line
+            next
+          }
+          END { print name "\t" desc }
+        ' "$skill_md")"
         [[ -z "$name" ]] && continue
-        description=$(sed -n 's/^description: *//p' "$skill_md" | head -1)
         printf '%s\t%s\t%s\n' "$name" "$description" "$skill_md"
       done
     )
