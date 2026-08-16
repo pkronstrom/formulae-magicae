@@ -67,14 +67,17 @@ If nothing in the catalog is relevant, proceed with the task normally.
 ## Adding, updating, or removing a vaulted skill
 
 If asked to vault a skill (e.g. "add this skill to the vault", pasting a
-repo URL), update one, or remove one, use `vault.sh` directly — do not hand-
-edit `.gitmodules` or the category folders.
+repo URL), update one, or remove one, use `vault.sh` directly — do not
+hand-edit the category folders.
 
 ```bash
-$VAULT/vault.sh add <url> <category> [name]   # vault a new skill as a git submodule
+$VAULT/vault.sh add <url> <category> [name]    # clone a new skill into the vault
 $VAULT/vault.sh update [category/name]         # pull one skill, or all, to latest remote
 $VAULT/vault.sh remove <category/name>          # remove a vaulted skill
 ```
+
+Each vaulted skill is its own plain `git clone` — not a submodule, no
+pinned commit tracked by the vault repo itself.
 
 - `<url>` — the skill's git repo URL.
 - `<category>` — which top-level folder it goes in (e.g. `frontend`,
@@ -84,8 +87,8 @@ $VAULT/vault.sh remove <category/name>          # remove a vaulted skill
 - `[name]` — optional; defaults to the repo name from the URL. Only needed
   when a repo name would collide with a skill already in that category or
   isn't descriptive on its own.
-- `category/name` for `update`/`remove` is the submodule's path exactly as
-  it appears in parentheses at the end of each `catalog` entry, e.g.
+- `category/name` for `update`/`remove` is the skill's path exactly as it
+  appears in parentheses at the end of each `catalog` entry, e.g.
   `frontend/taste-skill`.
 
 `.git` is a reserved name and can't be used as a category. After adding,

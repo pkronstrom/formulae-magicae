@@ -11,8 +11,8 @@ Usage: vault.sh <command> [args]
 
 Commands:
   catalog                        List all vaulted skills, grouped by category (default)
-  update [category/name]         Update one or all submodules to latest remote
-  add <url> <category> [name]    Add a new vaulted skill as a git submodule
+  update [category/name]         Pull one or all vaulted skills to latest remote
+  add <url> <category> [name]    Clone a new skill into the vault
   remove <category/name>         Remove a vaulted skill
 EOF
 }
@@ -85,9 +85,18 @@ cmd_catalog() {
 cmd_update() {
   cd "$VAULT_DIR"
   if [[ $# -eq 0 ]]; then
-    git submodule update --init --recursive --remote
+    for category_path in */; do
+      local category="${category_path%/}"
+      is_reserved "$category" && continue
+      for skill_path in "$category"/*/; do
+        [[ -d "${skill_path}.git" ]] || continue
+        echo "== ${skill_path%/} =="
+        git -C "$skill_path" pull
+      done
+    done
   else
-    git submodule update --init --recursive --remote -- "$1"
+    [[ -d "$1/.git" ]] || { echo "error: '$1' is not a vaulted skill" >&2; exit 1; }
+    git -C "$1" pull
   fi
 }
 
@@ -105,7 +114,7 @@ cmd_add() {
   if [[ -z "$name" ]]; then
     name=$(basename "$url" .git)
   fi
-  git submodule add "$url" "$category/$name"
+  git clone "$url" "$category/$name"
 }
 
 cmd_remove() {
@@ -115,9 +124,8 @@ cmd_remove() {
     exit 1
   fi
   cd "$VAULT_DIR"
-  git submodule deinit -f -- "$target"
-  git rm -f -- "$target"
-  rm -rf ".git/modules/$target"
+  [[ -d "$target/.git" ]] || { echo "error: '$target' is not a vaulted skill" >&2; exit 1; }
+  rm -rf "$target"
 }
 
 case "${1:-catalog}" in

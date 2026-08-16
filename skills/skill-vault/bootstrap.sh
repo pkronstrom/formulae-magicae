@@ -47,6 +47,7 @@ cmd_init() {
   [[ -f "$path/vault.sh" ]] || cp "$HERE/vault.sh" "$path/vault.sh"
   chmod +x "$path/vault.sh"
   [[ -f "$path/README.md" ]] || cp "$HERE/vault-README.md" "$path/README.md"
+  [[ -f "$path/.gitignore" ]] || cp "$HERE/vault-gitignore" "$path/.gitignore"
 
   mkdir -p "$CONFIG_DIR"
   printf '%s\n' "$path" > "$CONFIG_FILE"

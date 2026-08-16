@@ -1,0 +1,3 @@
+# Vaulted skills are plain clones, not submodules — this repo tracks
+# vault.sh and its own README, not their contents.
+/*/*/
