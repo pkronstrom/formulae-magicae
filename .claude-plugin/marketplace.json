@@ -78,6 +78,12 @@
       "source": "./skills/wire-trigger",
       "description": "Defer one agent action until an opaque external signal arrives.",
       "version": "1.0.0"
+    },
+    {
+      "name": "skill-vault",
+      "source": "./skills/skill-vault",
+      "description": "Catalog downloaded-but-inactive skills in a personal skill vault, grouped by category.",
+      "version": "1.0.0"
     }
   ]
 }

@@ -14,6 +14,7 @@ EXPECTED_SKILLS = {
     "pr-voice-review",
     "pr-voice-review-single-file",
     "singlefile",
+    "skill-vault",
     "spec-flow",
     "summon",
     "transcribe-media",
@@ -190,9 +191,9 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "$skill-installer Install all of these skills from "
         "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
         "skills/pr-voice-review, skills/pr-voice-review-single-file, "
-        "skills/singlefile, skills/spec-flow, skills/summon, "
-        "skills/transcribe-media, skills/tts, skills/visualize, and "
-        "skills/wire-trigger."
+        "skills/singlefile, skills/skill-vault, skills/spec-flow, "
+        "skills/summon, skills/transcribe-media, skills/tts, "
+        "skills/visualize, and skills/wire-trigger."
     ]
     assert fenced_commands(h3_sections["### Claude Code"]) == [
         "/plugin marketplace add pkronstrom/formulae-magicae\n"

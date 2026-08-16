@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s nullglob
+
+VAULT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RESERVED_DIRS=(".git")
+
+usage() {
+  cat <<EOF
+Usage: vault.sh <command> [args]
+
+Commands:
+  catalog                        List all vaulted skills, grouped by category (default)
+  update [category/name]         Update one or all submodules to latest remote
+  add <url> <category> [name]    Add a new vaulted skill as a git submodule
+  remove <category/name>         Remove a vaulted skill
+EOF
+}
+
+is_reserved() {
+  local d="$1"
+  for r in "${RESERVED_DIRS[@]}"; do
+    [[ "$d" == "$r" ]] && return 0
+  done
+  return 1
+}
+
+cmd_catalog() {
+  cd "$VAULT_DIR"
+  for category_path in */; do
+    local category="${category_path%/}"
+    is_reserved "$category" && continue
+
+    # Some repos mirror the same skill into several per-tool folders
+    # (.cursor/skills/x, .claude/skills/x, plugin/skills/x, ...) with
+    # identical name/description. Dedupe by name, keeping whichever path
+    # is shortest — the least likely to be a nested tool-mirror copy.
+    local raw
+    raw=$(
+      find "$category" -name SKILL.md 2>/dev/null | while IFS= read -r skill_md; do
+        name=$(sed -n 's/^name: *//p' "$skill_md" | head -1)
+        [[ -z "$name" ]] && continue
+        description=$(sed -n 's/^description: *//p' "$skill_md" | head -1)
+        printf '%s\t%s\t%s\n' "$name" "$description" "$skill_md"
+      done
+    )
+
+    [[ -z "$raw" ]] && continue
+
+    printf '## %s\n' "$category"
+    printf '%s\n' "$raw" | awk -F'\t' '
+      {
+        if (!($1 in seen) || length($3) < best_len[$1]) {
+          if (!($1 in seen)) order[++n] = $1
+          seen[$1] = $0
+          best_len[$1] = length($3)
+        }
+      }
+      END {
+        for (i = 1; i <= n; i++) {
+          split(seen[order[i]], f, "\t")
+          printf "- **%s** — %s (%s)\n", f[1], f[2], f[3]
+        }
+      }
+    '
+    printf '\n'
+  done
+}
+
+cmd_update() {
+  cd "$VAULT_DIR"
+  if [[ $# -eq 0 ]]; then
+    git submodule update --init --recursive --remote
+  else
+    git submodule update --init --recursive --remote -- "$1"
+  fi
+}
+
+cmd_add() {
+  local url="${1:-}" category="${2:-}" name="${3:-}"
+  if [[ -z "$url" || -z "$category" ]]; then
+    echo "usage: vault.sh add <url> <category> [name]" >&2
+    exit 1
+  fi
+  if is_reserved "$category"; then
+    echo "error: '$category' is a reserved directory name" >&2
+    exit 1
+  fi
+  cd "$VAULT_DIR"
+  if [[ -z "$name" ]]; then
+    name=$(basename "$url" .git)
+  fi
+  git submodule add "$url" "$category/$name"
+}
+
+cmd_remove() {
+  local target="${1:-}"
+  if [[ -z "$target" ]]; then
+    echo "usage: vault.sh remove <category/name>" >&2
+    exit 1
+  fi
+  cd "$VAULT_DIR"
+  git submodule deinit -f -- "$target"
+  git rm -f -- "$target"
+  rm -rf ".git/modules/$target"
+}
+
+case "${1:-catalog}" in
+  catalog) cmd_catalog ;;
+  update) shift; cmd_update "$@" ;;
+  add) shift; cmd_add "$@" ;;
+  remove) shift; cmd_remove "$@" ;;
+  -h|--help|help) usage ;;
+  *) echo "unknown command: $1" >&2; usage; exit 1 ;;
+esac
