@@ -41,14 +41,23 @@ a starter `README.md`, and records the path in
 
 ## Step 1: List what's available
 
-Run:
+The vault can grow to hundreds of skills — don't dump the whole thing by
+default. Run:
 
 ```bash
-$VAULT/vault.sh catalog
+$VAULT/vault.sh categories
 ```
 
-This prints every vaulted skill, grouped by category, with its name,
-description, and path relative to `$VAULT`.
+This is cheap: every category with every skill name, no descriptions. Pick
+the category (or categories) that plausibly fit the current task, then run:
+
+```bash
+$VAULT/vault.sh catalog <category>
+```
+
+for each one to see full descriptions and paths. Only fall back to
+`vault.sh catalog` with no argument (every category, full detail) if the
+task is genuinely ambiguous about which category applies.
 
 ## Step 2: Use a relevant skill
 

@@ -10,7 +10,9 @@ usage() {
 Usage: vault.sh <command> [args]
 
 Commands:
-  catalog                        List all vaulted skills, grouped by category (default)
+  categories                     List categories with every skill name, no descriptions (cheap)
+  catalog [category]             List vaulted skills, grouped by category; scope
+                                  to one category to avoid dumping the whole vault
   update [category/name]         Pull one or all vaulted skills to latest remote
   add <url> <category> [name]    Clone a new skill into the vault
   remove <category/name>         Remove a vaulted skill
@@ -25,59 +27,88 @@ is_reserved() {
   return 1
 }
 
-cmd_catalog() {
+# Prints deduped "name\tdescription\tpath" lines for one category.
+# Some repos mirror the same skill into several per-tool folders
+# (.cursor/skills/x, .claude/skills/x, plugin/skills/x, ...) with
+# identical name/description. Dedupe by name, keeping whichever path
+# is shortest — the least likely to be a nested tool-mirror copy.
+dedup_skills_in_category() {
+  local category="$1"
+  local raw
+  raw=$(
+    find "$category" -name SKILL.md 2>/dev/null | while IFS= read -r skill_md; do
+      # Frontmatter description may be a single line ("description: text")
+      # or a YAML block scalar ("description: |"/">" with the text on
+      # indented lines below) — collapse either form to one line.
+      IFS=$'\t' read -r name description <<< "$(awk '
+        BEGIN { name = ""; desc = ""; in_desc = 0; desc_done = 0 }
+        !in_desc && name == "" && /^name: / { n = $0; sub(/^name: */, "", n); name = n; next }
+        !desc_done && !in_desc && /^description: *[|>]/ { in_desc = 1; next }
+        !desc_done && !in_desc && /^description: / { d = $0; sub(/^description: */, "", d); desc = d; desc_done = 1; next }
+        in_desc {
+          if ($0 ~ /^[^ \t]/) { in_desc = 0; desc_done = 1; next }
+          if ($0 == "") { next }
+          line = $0; sub(/^[ \t]+/, "", line)
+          desc = (desc == "") ? line : desc " " line
+          next
+        }
+        END { print name "\t" desc }
+      ' "$skill_md")"
+      [[ -z "$name" ]] && continue
+      printf '%s\t%s\t%s\n' "$name" "$description" "$skill_md"
+    done
+  )
+
+  [[ -z "$raw" ]] && return
+
+  printf '%s\n' "$raw" | awk -F'\t' '
+    {
+      if (!($1 in seen) || length($3) < best_len[$1]) {
+        if (!($1 in seen)) order[++n] = $1
+        seen[$1] = $0
+        best_len[$1] = length($3)
+      }
+    }
+    END {
+      for (i = 1; i <= n; i++) print seen[order[i]]
+    }
+  '
+}
+
+cmd_categories() {
   cd "$VAULT_DIR"
   for category_path in */; do
     local category="${category_path%/}"
     is_reserved "$category" && continue
+    local names
+    names=$(dedup_skills_in_category "$category" | awk -F'\t' '{print $1}' | paste -sd, - | sed 's/,/, /g')
+    [[ -z "$names" ]] && continue
+    printf '## %s\n%s\n\n' "$category" "$names"
+  done
+}
 
-    # Some repos mirror the same skill into several per-tool folders
-    # (.cursor/skills/x, .claude/skills/x, plugin/skills/x, ...) with
-    # identical name/description. Dedupe by name, keeping whichever path
-    # is shortest — the least likely to be a nested tool-mirror copy.
-    local raw
-    raw=$(
-      find "$category" -name SKILL.md 2>/dev/null | while IFS= read -r skill_md; do
-        # Frontmatter description may be a single line ("description: text")
-        # or a YAML block scalar ("description: |"/">" with the text on
-        # indented lines below) — collapse either form to one line.
-        IFS=$'\t' read -r name description <<< "$(awk '
-          BEGIN { name = ""; desc = ""; in_desc = 0; desc_done = 0 }
-          !in_desc && name == "" && /^name: / { n = $0; sub(/^name: */, "", n); name = n; next }
-          !desc_done && !in_desc && /^description: *[|>]/ { in_desc = 1; next }
-          !desc_done && !in_desc && /^description: / { d = $0; sub(/^description: */, "", d); desc = d; desc_done = 1; next }
-          in_desc {
-            if ($0 ~ /^[^ \t]/) { in_desc = 0; desc_done = 1; next }
-            if ($0 == "") { next }
-            line = $0; sub(/^[ \t]+/, "", line)
-            desc = (desc == "") ? line : desc " " line
-            next
-          }
-          END { print name "\t" desc }
-        ' "$skill_md")"
-        [[ -z "$name" ]] && continue
-        printf '%s\t%s\t%s\n' "$name" "$description" "$skill_md"
-      done
-    )
+cmd_catalog() {
+  local only_category="${1:-}"
+  cd "$VAULT_DIR"
 
-    [[ -z "$raw" ]] && continue
+  if [[ -n "$only_category" ]]; then
+    [[ -d "$only_category" ]] || { echo "error: no such category '$only_category'" >&2; exit 1; }
+    is_reserved "$only_category" && { echo "error: '$only_category' is a reserved directory name" >&2; exit 1; }
+    set -- "$only_category/"
+  else
+    set -- */
+  fi
+
+  for category_path in "$@"; do
+    local category="${category_path%/}"
+    is_reserved "$category" && continue
+
+    local deduped
+    deduped=$(dedup_skills_in_category "$category")
+    [[ -z "$deduped" ]] && continue
 
     printf '## %s\n' "$category"
-    printf '%s\n' "$raw" | awk -F'\t' '
-      {
-        if (!($1 in seen) || length($3) < best_len[$1]) {
-          if (!($1 in seen)) order[++n] = $1
-          seen[$1] = $0
-          best_len[$1] = length($3)
-        }
-      }
-      END {
-        for (i = 1; i <= n; i++) {
-          split(seen[order[i]], f, "\t")
-          printf "- **%s** — %s (%s)\n", f[1], f[2], f[3]
-        }
-      }
-    '
+    printf '%s\n' "$deduped" | awk -F'\t' '{ printf "- **%s** — %s (%s)\n", $1, $2, $3 }'
     printf '\n'
   done
 }
@@ -129,7 +160,8 @@ cmd_remove() {
 }
 
 case "${1:-catalog}" in
-  catalog) cmd_catalog ;;
+  categories) cmd_categories ;;
+  catalog) shift; cmd_catalog "$@" ;;
   update) shift; cmd_update "$@" ;;
   add) shift; cmd_add "$@" ;;
   remove) shift; cmd_remove "$@" ;;
