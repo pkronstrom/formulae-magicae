@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 EXPECTED_SKILLS = {
     "bento-slides",
+    "mcp-vault",
     "portal",
     "pr-voice-review",
     "pr-voice-review-single-file",
@@ -190,7 +191,7 @@ def test_readme_quick_install_documents_every_supported_install_path():
     assert fenced_commands(codex_block) == [
         "$skill-installer Install all of these skills from "
         "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
-        "skills/pr-voice-review, skills/pr-voice-review-single-file, "
+        "skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, "
         "skills/singlefile, skills/skill-vault, skills/spec-flow, "
         "skills/summon, skills/transcribe-media, skills/tts, "
         "skills/visualize, and skills/wire-trigger."

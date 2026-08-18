@@ -1,6 +1,6 @@
 ---
 name: singlefile
-description: Build an app, tool, or prototype as one self-contained HTML file that runs from a double-click, stores its own data, and can be emailed to a friend or hosted on GitHub Pages. Use when the user wants something small and shareable, says "single file", "one HTML file", "no build step", "just send it to someone", "host it on gh-pages", or is ideating an app with no server and no accounts.
+description: Build an app, tool, or prototype as one self-contained HTML file that runs from a double-click, stores its own data, and can be emailed or hosted on GitHub Pages. Use for "single file", "one HTML file", "no build step", or any small shareable app with no server or accounts.
 ---
 
 # Single-file HTML apps

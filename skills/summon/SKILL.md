@@ -1,11 +1,6 @@
 ---
 name: summon
-description: >-
-  Magically send a file, folder, or any content to a teammate's Claude — a secure,
-  end-to-end encrypted peer-to-peer transfer sealed with a short spoken
-  "incantation." USE WHEN the user wants to send/share/give content to a
-  colleague/teammate/someone ("send this to a teammate", "share this with the team"),
-  OR to receive one ("summon with this incantation", "receive what a teammate sent").
+description: Send a file, folder, or content to a teammate's Claude — end-to-end encrypted peer-to-peer transfer sealed with a spoken incantation. Use to send or share content with a colleague, or to receive one ("summon <incantation>").
 ---
 
 # Summon

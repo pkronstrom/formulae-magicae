@@ -1,6 +1,6 @@
 ---
 name: pr-voice-review
-description: Walk the user through a pull request out loud, file by file, with the browser following along on GitHub's Files changed view. Use when the user wants a PR explained by voice, wants to review or understand a PR together, says "talk me through this PR", "read me this PR", or wants a spoken walkthrough of changes.
+description: Walk the user through a pull request out loud, file by file, with the browser following on GitHub's Files changed view. Use for "talk me through this PR" or a spoken PR walkthrough.
 ---
 
 # pr-voice-review

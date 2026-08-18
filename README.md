@@ -29,6 +29,7 @@ around that one source tree; they do not fork the skills.
 | [`spec-flow`](skills/spec-flow/) | Run a discovery-first, spec-driven workflow around OpenSpec changes. | OpenSpec; optional companion workflow skills |
 | [`wire-trigger`](skills/wire-trigger/) | Wait for a one-shot external signal, then continue the current agent turn or an explicit detached target. | Python 3; public or self-hosted ntfy |
 | [`skill-vault`](skills/skill-vault/) | Catalog downloaded-but-inactive skills in a personal skill vault, grouped by category, so they don't clutter the active skill set. Bootstraps the vault on first use. | `git` |
+| [`mcp-vault`](skills/mcp-vault/) | Stash MCP servers out of the active tool namespace; browse their cached tools, then connect only the one you need. | `mcpc`, `python3` |
 
 ## Quick install
 
@@ -49,7 +50,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
 ```
 
 Installed Codex skills appear in the next turn.

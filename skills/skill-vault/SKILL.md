@@ -1,6 +1,6 @@
 ---
 name: skill-vault
-description: Catalog of downloaded-but-inactive agent skills kept in a personal skill vault, grouped by category. Use when the current task might be better served by a specialized skill that isn't part of the active skill set yet — e.g. frontend/design work — before improvising from scratch. Also use when asked to add, update, or remove a vaulted skill.
+description: Catalog of downloaded-but-inactive skills in a personal vault, grouped by category. Use when a specialized vaulted skill might beat improvising — e.g. frontend/design work — or when asked to add, update, or remove one.
 ---
 
 # Skill Vault

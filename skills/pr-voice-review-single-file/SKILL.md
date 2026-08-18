@@ -1,6 +1,6 @@
 ---
 name: pr-voice-review-single-file
-description: Build a pull request walkthrough as one self-contained HTML file — narrated, navigable, offline, no extension and no server. Use when the user wants a PR walkthrough they can keep, send to a colleague, or read on a plane; says "single file PR review", "build me a PR walkthrough", "PR review I can share"; or wants a voice PR review without installing anything.
+description: Build a PR walkthrough as one self-contained HTML file — narrated, navigable, offline, no extension or server. Use for a PR review the user can keep, share, or read on a plane.
 ---
 
 # pr-voice-review-single-file

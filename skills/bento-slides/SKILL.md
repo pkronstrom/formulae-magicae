@@ -1,6 +1,6 @@
 ---
 name: bento-slides
-description: Build a presentation as a single self-contained .bento.html deck — one file that is the document, the editor and the player at once, opens from a double-click, and can be mailed on. Use when the user wants slides, a deck, a talk, a keynote, a pitch, a readout, or a presentation; says "make me slides", "turn this into a deck", "build a presentation"; wants to edit or restyle an existing .bento.html; or has a document, notes, or a repo they want presented. Also use for a deck that must work offline with no accounts and no build step.
+description: Build a presentation as a single self-contained .bento.html deck — document, editor, and player in one file that opens from a double-click and can be mailed on. Use when the user wants slides, a deck, or a presentation built, edited, or restyled; works offline with no build step.
 ---
 
 # Bento decks

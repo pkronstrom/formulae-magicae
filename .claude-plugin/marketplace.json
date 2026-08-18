@@ -84,6 +84,12 @@
       "source": "./skills/skill-vault",
       "description": "Catalog downloaded-but-inactive skills in a personal skill vault, grouped by category.",
       "version": "1.0.0"
+    },
+    {
+      "name": "mcp-vault",
+      "source": "./skills/mcp-vault",
+      "description": "Vault of MCP servers kept out of the active tool namespace until needed.",
+      "version": "1.0.0"
     }
   ]
 }

@@ -1,16 +1,6 @@
 ---
 name: portal
-description: >-
-  Open a live, end-to-end-encrypted chat channel ("portal") to a teammate's
-  Claude over ntfy, unlocked by a short spoken incantation. USE WHEN the user
-  wants to talk to / collaborate with / coordinate with a colleague's agent in
-  real time, however they phrase it — "open a portal to Esko's agent", "commune
-  with Esko's agent", "whisper to Jesse's Claude", "open a telepathic bond /
-  channel / link", "start a séance with the team", "let's collaborate via our
-  Claudes", "connect to a named channel" — OR to relay something like a
-  summon incantation to another agent. (Portal is the skill; commune / whisper /
-  telepathy / channel / séance are all ways to invoke it.) Companion to the
-  summon skill.
+description: Open a live end-to-end-encrypted chat channel to a teammate's Claude over ntfy, unlocked by a spoken incantation. Use to talk, collaborate, or relay in real time with a colleague's agent — also invoked as commune, whisper, telepathy, or seance. Companion to summon.
 ---
 
 # Portal

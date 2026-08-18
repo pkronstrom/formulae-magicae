@@ -30,6 +30,8 @@ contents:
       name: wire-trigger
     - path: skills/skill-vault/
       name: skill-vault
+    - path: skills/mcp-vault/
+      name: mcp-vault
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

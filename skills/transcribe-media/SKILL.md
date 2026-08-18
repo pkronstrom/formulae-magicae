@@ -1,6 +1,6 @@
 ---
 name: transcribe-media
-description: YouTube and video transcripts plus key frames — pull a video, YouTube link, talk, or podcast into context as a timestamped transcript with screenshots, so you know what it showed and not just what it said. USE WHENEVER THE USER PASTES A YOUTUBE OR VIDEO URL — including a bare link with no instructions at all, which always means "pull this and tell me what is in it". Also use when asked what a video or YouTube video covers, to summarize or transcribe a talk, tutorial, or podcast, or to get the diagrams, UIs, graphs, or on-screen code out of a video. Handles YouTube, TED, Apple Podcasts, conference sites, and any other site yt-dlp supports.
+description: Pull a video, YouTube link, talk, or podcast into context as a timestamped transcript with key frames. USE WHENEVER THE USER PASTES A YOUTUBE OR VIDEO URL, even a bare link with no instructions. Also for summarizing a talk or extracting on-screen diagrams, UIs, or code. Any yt-dlp-supported site.
 ---
 
 # transcribe-media

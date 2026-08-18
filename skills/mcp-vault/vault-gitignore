@@ -1,0 +1,3 @@
+# Secrets. Everything else in this vault — configs, descriptions, cached tool
+# lists — is worth versioning and syncing between machines. This is not.
+.env
