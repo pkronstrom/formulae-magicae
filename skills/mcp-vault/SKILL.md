@@ -66,9 +66,15 @@ it's missing.
 $VAULT/vault.sh list
 ```
 
-Each server shows its description, credential state, and how many tools it had
-when last connected — no connections are made. For one server's full tool list
-with descriptions:
+Servers are grouped by tag, each showing its description, credential state, and
+how many tools it had when last connected — no connections are made. Narrow to
+one tag when the task is clearly in that area:
+
+```bash
+$VAULT/vault.sh list homelab      # only #homelab servers
+```
+
+For one server's full tool list, notes, and description:
 
 ```bash
 $VAULT/vault.sh show <name>
@@ -130,12 +136,47 @@ alias from then on, so the URL is never retyped.
 If the server doesn't answer, it's still vaulted — as cold, with zero tools
 cached — and `add` says so rather than reporting false success.
 
-Always give it a description afterwards, since `list` is only as useful as its
-descriptions:
+If the server needs a bearer token you don't have yet, wire it now and warm it
+later:
+
+```bash
+$VAULT/vault.sh add <url> <name> --token-env HOMELAB_AI_TOKEN
+```
+
+Always give it a description and tags afterwards — `list` is only as useful as
+what's written on the entries:
 
 ```bash
 $VAULT/vault.sh describe <name> "Notion workspace — search pages, append blocks."
+$VAULT/vault.sh tag <name> work docs
 ```
+
+## Tags and notes
+
+Tags group the `list` output. A server can carry several and appears under each;
+untagged ones collect at the end. Type them without `#` — a bare `#tag` at the
+start of a shell word is a comment, so `tag foo #work` silently drops it (a
+leading `#` is stripped if you quote it).
+
+```bash
+$VAULT/vault.sh tag <name> work homelab
+$VAULT/vault.sh untag <name> work
+```
+
+**Notes accumulate, and you are expected to write them as you work.** When you
+learn something about a server that the next session would otherwise have to
+rediscover — which of its lists or resources is for what, a tool's real
+behavior versus its description, a quirk, a broken config, why it won't
+connect — append it:
+
+```bash
+$VAULT/vault.sh note <name> "The #obsidian memo list is the capture inbox; #read is the reading queue."
+$VAULT/vault.sh note <name> --set "…"    # replace everything instead
+$VAULT/vault.sh note <name> --clear
+```
+
+This is the vault's memory. The cached tool list says what a server *has*;
+notes say what it's *for* and what bit you last time.
 
 ## Probing an unknown server
 
@@ -161,4 +202,20 @@ Removes the `servers.json` entry, its metadata, and its `.env` line.
 
 `add` only accepts URLs. Stdio (command-based) entries launch a local process
 on connect, so vaulting one is deliberately a manual edit of `servers.json` —
-add it by hand only after reading what the command actually runs.
+add it by hand only after reading what the command actually runs:
+
+```json
+"dodo": { "command": "dodo", "args": ["mcp"] }
+```
+
+Then `use <name>` as normal. Check the command's own `--help` first: a bare
+binary name often starts an interactive UI rather than an MCP server, and the
+failure looks like a connection error rather than a wrong command.
+
+## Known limitation: SSE-only servers
+
+`mcpc` speaks Streamable HTTP and has no transport flag. A server that only
+serves the older HTTP+SSE transport (a `/sse` endpoint) fails with
+`Method Not Allowed` (405) and cannot be reached through the vault at all.
+Record that in the server's notes rather than leaving it looking merely cold —
+its credentials may be perfectly fine.

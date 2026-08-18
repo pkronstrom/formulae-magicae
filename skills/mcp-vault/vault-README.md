@@ -23,10 +23,12 @@ MCP client, and `mcpc connect ./servers.json:<name>` works directly.
 
 ## Usage
 
-    ./vault.sh list                          # everything: description, cold/warm, tools
-    ./vault.sh show <name>                   # one server's cached tools in full
-    ./vault.sh add <url> [name] [--token T]  # vault a server
-    ./vault.sh describe <name> <text>        # set a description
+    ./vault.sh list [tag]                    # grouped by tag; or just one tag
+    ./vault.sh show <name>                   # cached tools, notes, description
+    ./vault.sh add <url> [name] [--token T]  # vault a server (--token-env VAR to wire cold)
+    ./vault.sh describe <name> <text>        # set the one-line description
+    ./vault.sh note <name> <text>            # append a note (accumulates)
+    ./vault.sh tag <name> <tag>...           # tag / untag
     ./vault.sh inspect <url>                 # probe a server NOT in the vault
     ./vault.sh warm <name> [--token]         # one-time auth
     ./vault.sh use <name>                    # connect + refresh the tool cache

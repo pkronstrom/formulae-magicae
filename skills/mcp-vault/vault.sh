@@ -18,7 +18,7 @@ Commands:
   show <name>                     Full description and cached tool list for one server
   add <url> [name] [--token T]    Vault a server (--token-env VAR to wire it cold)
   describe <name> <text>          Set the one-line description shown by 'list'
-  note <name> <text>              Set a free-text note shown by 'show'
+  note <name> [--set|--clear] <t>  Append a note (accumulates); --set replaces
   tag <name> <tag>...             Add tags (a leading '#' is optional)
   untag <name> <tag>...           Remove tags
   inspect <url>                   Probe a server NOT in the vault; persists nothing
@@ -345,7 +345,10 @@ import json,sys
 d = json.load(open(sys.argv[1]))
 if d.get("tags"): print("tags: " + " ".join("#" + t for t in d["tags"]))
 if d.get("description"): print("\n" + d["description"])
-if d.get("note"): print("\nnote: " + d["note"])
+if d.get("note"):
+    print("\nnotes:")
+    for line in d["note"].splitlines():
+        print("  · " + line)
 if d.get("auth") == "token": print("auth: bearer token via ${%s}" % d.get("token_env",""))
 elif d.get("auth") == "oauth": print("auth: OAuth (mcpc profile)")
 tools = d.get("tools", [])
@@ -366,14 +369,40 @@ cmd_describe() {
   echo "✓ described $name"
 }
 
+# Notes accumulate by default: an agent learns things about a server as it uses
+# it ("the #obsidian memo list is the capture inbox"), and each of those is
+# worth keeping alongside the last, not instead of it.
 cmd_note() {
   local name="${1:-}"; shift || true
+  local mode=append
+  case "${1:-}" in
+    --set) mode=set; shift ;;
+    --clear) mode=clear; shift ;;
+  esac
   local text="${*:-}"
-  [[ -n "$name" && -n "$text" ]] || die "usage: vault.sh note <name> <text>"
+  [[ -n "$name" ]] || die "usage: vault.sh note <name> [--set|--clear] <text>"
+  [[ "$mode" == clear || -n "$text" ]] || die "usage: vault.sh note <name> [--set|--clear] <text>"
   ensure_layout; require_server "$name"
   [[ -f "$META_DIR/$name.json" ]] || write_meta "$name" none "" ""
-  set_field "$name" note "$text"
-  echo "✓ noted on $name"
+  python3 -c '
+import json,sys
+path, mode, text = sys.argv[1:4]
+d = json.load(open(path))
+cur = d.get("note", "")
+if mode == "clear":
+    d["note"] = ""
+elif mode == "set" or not cur:
+    d["note"] = text
+else:
+    d["note"] = cur.rstrip("\n") + "\n" + text
+json.dump(d, open(path, "w"), indent=2)
+open(path, "a").write("\n")
+' "$META_DIR/$name.json" "$mode" "$text"
+  case "$mode" in
+    clear)  echo "✓ cleared notes on $name" ;;
+    set)    echo "✓ replaced note on $name" ;;
+    *)      echo "✓ noted on $name" ;;
+  esac
 }
 
 cmd_tag() {
