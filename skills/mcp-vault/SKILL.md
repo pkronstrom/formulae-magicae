@@ -1,6 +1,6 @@
 ---
 name: mcp-vault
-description: A vault of MCP servers kept out of the active tool namespace until needed — rare, special-case, or one-off servers. Use to see which MCP servers are stashed and what tools they have, to connect ("warm up") one and call its tools, to probe what an unknown MCP URL offers, or to vault a new server from a URL and token.
+description: A vault of MCP servers kept out of the active tool namespace until needed — rare, special-case, or one-off servers. Use to see which MCP servers are stashed and what tools they have, to connect ("warm up") one and call its tools, or to probe what an unknown MCP URL offers. Also use when asked to add an MCP server, to decide whether it belongs in the vault or permanently in the agent's own MCP config — ask the user which unless they said.
 ---
 
 # MCP Vault
@@ -13,6 +13,26 @@ connect only the one you need.
 Built on `mcpc`, a universal MCP CLI client. `bootstrap.sh` and `vault.sh` live
 beside this file. This is a standalone skill; hawk can distribute it but is
 never needed at runtime.
+
+## First: is the vault even the right destination?
+
+"Add an MCP server at `<url>`" is ambiguous — it could mean *load it into the
+agent permanently* or *stash it here*. *Ask which, and do not assume*, unless
+the user already said (e.g. "vault this", "add to the vault", "I'll rarely use
+this", or they name the other destination explicitly).
+
+| | Where it goes | How |
+|---|---|---|
+| Used often; want its tools always available | The agent's own MCP config | However this machine manages MCP servers — the host's own command, or its component manager if one is in use |
+| Rare, one-off, special-case, or just being tried out | This vault | `vault.sh add <url>` |
+
+The trade-off to state plainly if the user is unsure: a permanently-loaded
+server puts **all** of its tool definitions in the agent's context for every
+session, whether used or not. A vaulted one costs nothing until connected, but
+takes an explicit `use` first.
+
+When the user only wants to know what a server offers before deciding, neither
+applies yet — run `vault.sh inspect <url>` (below), which saves nothing.
 
 ## Step 0: Find or create the vault
 
@@ -94,6 +114,9 @@ to `$VAULT/.env`, mode 0600 and gitignored, referenced from `servers.json` as
 This is one-time. Afterwards the server is warm and `use` just works.
 
 ## Adding a server
+
+Confirm the vault is the intended destination first — see the routing table at
+the top of this skill.
 
 ```bash
 $VAULT/vault.sh add <url>                        # public or OAuth server
