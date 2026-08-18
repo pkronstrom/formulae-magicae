@@ -10,6 +10,7 @@ usage() {
 Usage: vault.sh <command> [args]
 
 Commands:
+  find <query>                   Search names, descriptions and notes (start here)
   categories                     List categories with every skill name, no descriptions (cheap)
   catalog [category]             List vaulted skills, grouped by category; scope
                                   to one category to avoid dumping the whole vault
@@ -113,6 +114,58 @@ cmd_catalog() {
   done
 }
 
+# Search names, descriptions and NOTES.md. Filters cmd_catalog output rather
+# than the filesystem, so dedup of tool-mirror copies comes for free and hits
+# print in the same format the catalog uses.
+cmd_find() {
+  local query="${1:-}"
+  [[ -n "$query" ]] || { echo "usage: vault.sh find <query>" >&2; exit 1; }
+  cd "$VAULT_DIR"
+
+  local lq found=0
+  lq=$(printf '%s' "$query" | tr '[:upper:]' '[:lower:]')
+
+  # index() is a fixed-string search: regex metacharacters in the query are
+  # literal, so a malformed query cannot silently match nothing the way a
+  # bare `grep -i -- "$query" || true` does.
+  local hits
+  hits=$(cmd_catalog | awk -v q="$lq" '
+    # Truncate on a word boundary. Split points are ASCII spaces, so a
+    # multibyte character is never cut in half — substr() does exactly that
+    # under LC_ALL=C and emits illegal bytes.
+    function truncate(s,   n, i, out) {
+      if (length(s) <= 150) return s
+      n = split(s, w, " "); out = w[1]
+      for (i = 2; i <= n; i++) {
+        if (length(out) + 1 + length(w[i]) > 150) return out " ..."
+        out = out " " w[i]
+      }
+      return out
+    }
+    /^## / { cat = $0; next }
+    index(tolower($0), q) {
+      if (cat != shown) { if (shown != "") print ""; print cat; shown = cat }
+      print truncate($0)
+    }
+  ')
+  [[ -n "$hits" ]] && { printf '%s\n' "$hits"; found=1; }
+
+  # Whole "## "-bounded sections, so a match on any line of a note still
+  # prints the heading that says which skill the note is about.
+  if [[ -f NOTES.md ]]; then
+    local notes
+    notes=$(awk -v q="$lq" '
+      function flush() { if (hit && buf != "") print buf "\n" }
+      /^## / { flush(); buf = $0; hit = index(tolower($0), q) ? 1 : 0; next }
+      buf != "" { buf = buf "\n" $0; if (index(tolower($0), q)) hit = 1 }
+      END { flush() }
+    ' NOTES.md)
+    [[ -n "$notes" ]] && { printf '\n## notes\n\n%s' "$notes"; found=1; }
+  fi
+
+  [[ $found -eq 1 ]] || echo "no skill matches '$query'"
+}
+
 cmd_update() {
   cd "$VAULT_DIR"
   if [[ $# -eq 0 ]]; then
@@ -160,6 +213,7 @@ cmd_remove() {
 }
 
 case "${1:-catalog}" in
+  find) shift; cmd_find "$@" ;;
   categories) cmd_categories ;;
   catalog) shift; cmd_catalog "$@" ;;
   update) shift; cmd_update "$@" ;;

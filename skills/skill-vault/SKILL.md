@@ -39,7 +39,25 @@ a starter `README.md`, and records the path in
 `~/.config/skill-vault/config` so future invocations skip straight to Step
 1 via `check`. The printed path is `$VAULT` for the rest of this skill.
 
-## Step 1: List what's available
+## Step 1: Search
+
+When you know roughly what you need, search — don't browse. One call:
+
+```bash
+$VAULT/vault.sh find <query>
+```
+
+It matches names, descriptions and notes, printing hits in catalog format
+under their category heading, with long descriptions truncated. Matching is
+case-insensitive and literal, so `find '['` searches for a bracket rather
+than erroring.
+
+A query is a substring, not a concept: `find mcp` finds skills whose name or
+description contains "mcp", and will also return skills that merely mention
+it in passing. Skim the hits and read the promising one. If a search comes
+back empty or too noisy, browse instead.
+
+## Step 2: Browse what's available
 
 The vault can grow to hundreds of skills — don't dump the whole thing by
 default. Run:
@@ -59,7 +77,7 @@ for each one to see full descriptions and paths. Only fall back to
 `vault.sh catalog` with no argument (every category, full detail) if the
 task is genuinely ambiguous about which category applies.
 
-## Step 2: Use a relevant skill
+## Step 3: Use a relevant skill
 
 If an entry looks relevant to the current task, read it directly and follow
 its instructions as if it had been invoked normally:
@@ -72,6 +90,36 @@ references to bundled scripts or reference files still resolve correctly,
 since it's being read from its real location on disk.
 
 If nothing in the catalog is relevant, proceed with the task normally.
+
+## Recording what you learn
+
+A vaulted skill's `SKILL.md` says what its author claims it does. It can't say
+which of its reference files was the useful one, which of two overlapping
+skills won, or why one was rejected. Write that down — `find` searches it, so
+the next session gets it for free.
+
+Notes live in `$VAULT/NOTES.md`, one section per skill, keyed the same way
+`catalog` names things:
+
+```markdown
+## anthropic/mcp-builder
+aka: mcp
+tags: #mcp #api-design
+The eval harness is the good part — 10 questions run against a real agent.
+reference/mcp_best_practices.md is the file you actually want.
+```
+
+Append to it directly; there is no command. Create the file if absent.
+`aka:` and `tags:` are conventions that give `find` something to match — no
+schema, nothing validates them, and anything else you write is fine too.
+
+Worth a note: which reference file mattered, why a skill was rejected, which
+of two similar skills to reach for. Not worth a note: a restatement of the
+skill's own description.
+
+If an upstream `update` renames a skill, its note keeps the old heading and
+nothing repairs it. `find` still surfaces the text; fix the heading by hand
+if it bothers you.
 
 ## Adding, updating, or removing a vaulted skill
 
