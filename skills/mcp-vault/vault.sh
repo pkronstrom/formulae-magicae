@@ -537,7 +537,7 @@ open(path, "a").write("\n")
     write_meta "$name" token "$var" "$(meta_get "$name" description || echo "")"
     echo "✓ $name is warm (token in .env as \$$var)"
   else
-    echo "opening browser for OAuth login to $url…"
+    echo "opening browser for OAuth login to ${url}…"
     mcpc login "$url" || die "login failed"
     write_meta "$name" oauth "" "$(meta_get "$name" description || echo "")"
     echo "✓ $name is warm (OAuth profile saved)"
