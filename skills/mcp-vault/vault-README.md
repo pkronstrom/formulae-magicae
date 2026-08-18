@@ -32,7 +32,8 @@ MCP client, and `mcpc connect ./servers.json:<name>` works directly.
     ./vault.sh inspect <url>                 # probe a server NOT in the vault
     ./vault.sh warm <name> [--token]         # one-time auth
     ./vault.sh use <name>                    # connect + refresh the tool cache
-    ./vault.sh forget <name>                 # remove entry, metadata, and .env line
+    ./vault.sh cool <name>                   # close the session, keep everything
+    ./vault.sh forget <name>                 # remove entry, metadata, AND credentials
 
 After `use`, talk to mcpc directly:
 

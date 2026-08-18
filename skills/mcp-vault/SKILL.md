@@ -190,13 +190,37 @@ Connects to a temporary session, lists the tools, prints them, and tears the
 session down. Nothing is saved. Use this before `add` when the user pastes a
 URL and asks what's in it.
 
-## Removing a server
+## Disconnecting and removing
 
 ```bash
-$VAULT/vault.sh forget <name>
+$VAULT/vault.sh cool <name>      # close the session; keep config, credentials, cache
+$VAULT/vault.sh forget <name>    # remove the entry, its metadata, AND its credentials
 ```
 
-Removes the `servers.json` entry, its metadata, and its `.env` line.
+`cool` is the opposite of `use` — it frees the background bridge process but
+changes nothing else, and `use` brings it straight back.
+
+`forget` also **revokes local credentials**: it deletes the server's OAuth
+profile from the OS keychain and drops its line from `.env`. Without that, a
+working credential would outlive the entry that created it. Pass
+`--keep-credentials` to remove the entry but leave them in place.
+
+Deleting a bearer token locally is **not** revocation — the token stays valid
+wherever it was issued. Say so when it matters, and revoke it at the source
+(for a self-hosted server, that is its own admin tool).
+
+## When a server can't be reached
+
+Not every failure is fixable from here, and the reason belongs in the server's
+notes so nobody re-investigates it next month:
+
+- **SSE-only server** — `mcpc` speaks only Streamable HTTP. If a server offers
+  both, prefer its `/mcp` endpoint; if it offers only `/sse`, the vault cannot
+  reach it at all.
+- **Dynamic Client Registration refused (403)** — some hosted servers accept
+  only an allow-list of approved OAuth clients, so `mcpc` cannot self-register.
+  It needs a pre-registered `--client-id`, or a local alternative if the vendor
+  ships one.
 
 ## Stdio servers
 

@@ -24,7 +24,8 @@ Commands:
   inspect <url>                   Probe a server NOT in the vault; persists nothing
   warm <name> [--token]           One-time auth: OAuth login, or capture a bearer token
   use <name>                      Connect (idempotent) and refresh the cached tool list
-  forget <name>                   Remove the entry, its metadata, and its .env line
+  cool <name>                     Close the session; keep config, credentials, cache
+  forget <name> [--keep-credentials]  Remove the entry, metadata, AND its credentials
 
 After 'use', talk to mcpc directly:  mcpc @<name> tools-call <tool> arg:=value
 EOF
@@ -575,12 +576,41 @@ cmd_use() {
   echo "↳ mcpc @$name tools-call <tool> arg:=value"
 }
 
+# Close the live session but keep the config, credentials, and cached tools.
+# The opposite of `use`; nothing is revoked and `use` brings it straight back.
+cmd_cool() {
+  ensure_layout
+  local name="${1:-}"; [[ -n "$name" ]] || die "usage: vault.sh cool <name>"
+  require_server "$name"
+  if command -v mcpc >/dev/null 2>&1 && mcpc close "@$name" >/dev/null 2>&1; then
+    echo "✓ closed @$name (config and credentials kept — vault.sh use $name to reopen)"
+  else
+    echo "· @$name was not open"
+  fi
+}
+
 cmd_forget() {
   ensure_layout
-  local name="${1:-}"; [[ -n "$name" ]] || die "usage: vault.sh forget <name>"
+  local name="${1:-}"; shift || true
+  [[ -n "$name" ]] || die "usage: vault.sh forget <name> [--keep-credentials]"
+  local keep_creds=0
+  [[ "${1:-}" == "--keep-credentials" ]] && keep_creds=1
   require_server "$name"
-  local var; var="$(meta_get "$name" token_env || echo "")"
+  local var auth url
+  var="$(meta_get "$name" token_env || echo "")"
+  auth="$(meta_get "$name" auth || echo none)"
+  url="$(server_url "$name")"
   command -v mcpc >/dev/null 2>&1 && mcpc close "@$name" >/dev/null 2>&1 || true
+
+  # An OAuth profile lives in the OS keychain, not in this vault — without this
+  # it would outlive the entry that created it, leaving a working credential
+  # behind for a server the user believes they removed.
+  if [[ "$keep_creds" == 0 && "$auth" == oauth && -n "$url" ]] \
+     && command -v mcpc >/dev/null 2>&1; then
+    if mcpc logout "$url" >/dev/null 2>&1; then
+      echo "✓ deleted its OAuth profile from the keychain"
+    fi
+  fi
   python3 -c '
 import json,sys
 path, name = sys.argv[1:3]
@@ -590,12 +620,16 @@ json.dump(d, open(path, "w"), indent=2)
 open(path, "a").write("\n")
 ' "$SERVERS" "$name"
   rm -f "$META_DIR/$name.json"
-  if [[ -n "$var" && -f "$ENV_FILE" ]]; then
+  if [[ "$keep_creds" == 0 && -n "$var" && -f "$ENV_FILE" ]]; then
     local tmpf; tmpf="$(mktemp)"
     grep -vE "^[[:space:]]*(export[[:space:]]+)?${var}=" "$ENV_FILE" > "$tmpf" || true
     mv "$tmpf" "$ENV_FILE"
     echo "✓ removed \$$var from .env"
+    # Deleting the local copy is not revocation: the token stays valid until
+    # whoever issued it revokes it at the source.
+    echo "  note: the token itself is still valid server-side — revoke it there if it should die."
   fi
+  [[ "$keep_creds" == 1 ]] && echo "· credentials kept (--keep-credentials)"
   echo "✓ forgot $name"
 }
 
@@ -610,6 +644,7 @@ case "${1:-list}" in
   inspect)  shift; cmd_inspect "$@" ;;
   warm)     shift; cmd_warm "$@" ;;
   use)      shift; cmd_use "$@" ;;
+  cool)     shift; cmd_cool "$@" ;;
   forget)   shift; cmd_forget "$@" ;;
   -h|--help|help) usage ;;
   *) echo "unknown command: $1" >&2; usage; exit 1 ;;
