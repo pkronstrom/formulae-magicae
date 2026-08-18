@@ -70,47 +70,94 @@ cmd_find() {
   [[ -n "$query" ]] || { echo "usage: vault.sh find <query>" >&2; exit 1; }
   cd "$VAULT_DIR"
 
-  local hits
-  hits=$(cmd_catalog | grep -i -- "$query" || true)
-  if [[ -n "$hits" ]]; then
-    printf '%s\n' "$hits"
-  else
-    echo "no skill matches '$query'"
-  fi
+  local lq found=0
+  lq=$(printf '%s' "$query" | tr '[:upper:]' '[:lower:]')
 
+  # Catalog hits, keeping the "## category" heading above each group.
+  # index() is a fixed-string search: regex metacharacters in the query are
+  # literal, and a malformed query cannot silently match nothing.
+  local hits
+  hits=$(cmd_catalog | awk -v q="$lq" '
+    # Truncate on a word boundary. Split points are ASCII spaces, so a
+    # multibyte character is never cut in half — substr() does exactly that
+    # under LC_ALL=C and emits illegal bytes.
+    function truncate(s,   n, i, out) {
+      if (length(s) <= 150) return s
+      n = split(s, w, " "); out = w[1]
+      for (i = 2; i <= n; i++) {
+        if (length(out) + 1 + length(w[i]) > 150) return out " ..."
+        out = out " " w[i]
+      }
+      return out
+    }
+    /^## / { cat = $0; next }
+    index(tolower($0), q) {
+      if (cat != shown) { if (shown != "") print ""; print cat; shown = cat }
+      print truncate($0)
+    }
+  ')
+  [[ -n "$hits" ]] && { printf '%s\n' "$hits"; found=1; }
+
+  # Note hits, printed as whole "## "-bounded sections so every match is
+  # attributable to a skill regardless of which line inside it matched.
   if [[ -f NOTES.md ]]; then
     local notes
-    notes=$(grep -i -B1 -- "$query" NOTES.md || true)
-    [[ -n "$notes" ]] && printf '\n## notes\n%s\n' "$notes"
+    notes=$(awk -v q="$lq" '
+      function flush() { if (hit && buf != "") print buf "\n" }
+      /^## / { flush(); buf = $0; hit = index(tolower($0), q) ? 1 : 0; next }
+      buf != "" { buf = buf "\n" $0; if (index(tolower($0), q)) hit = 1 }
+      END { flush() }
+    ' NOTES.md)
+    [[ -n "$notes" ]] && { printf '\n## notes\n\n%s' "$notes"; found=1; }
   fi
+
+  [[ $found -eq 1 ]] || echo "no skill matches '$query'"
 }
+```
+
+Wiring, without which the command is unreachable — `vault.sh find` otherwise
+falls through to the `*)` catch-all and exits `unknown command: find`:
+
+```bash
+# in the case block
+  find) shift; cmd_find "$@" ;;
+
+# in usage()
+  find <query>                   Search names, descriptions and notes
 ```
 
 `find` filters `cmd_catalog` output rather than searching the filesystem. This
 reuses the existing `dedup_skills_in_category` logic, so tool-mirror duplicates
-(`.antigravity-plugin/skills/x` alongside `skills/x`) are already collapsed, and
-matches print in the established `- **name** — description (path)` format with the
-category heading above them. Name, description, and path all become searchable
-without new parsing.
+(`.antigravity-plugin/skills/x` alongside `skills/x`) are already collapsed.
+
+Three behaviours are deliberate and each was verified against the real ~450-skill
+vault:
+
+- **Category headings are re-emitted.** A plain `cmd_catalog | grep` drops every
+  `## category` line, because grep prints only matching lines and a heading does
+  not contain the query. Skill names are unique only within a category —
+  `prototype` and `code-review` each exist in two — so a bare list of matches is
+  ambiguous. The awk pass tracks the current heading and prints it once above the
+  first match in each category.
+- **Matching is fixed-string, and errors are not masked.** With `grep` the query
+  is a regex and `|| true` swallows its error, so `vault.sh find '['` prints "no
+  skill matches" and exits 0 — a malformed query is indistinguishable from an
+  empty vault. `index()` has no metacharacters, so `[` matches literally.
+- **Descriptions are truncated to ~150 characters on a word boundary.** Some
+  frontmatter descriptions run to a full screen each; untruncated, a 7-hit search
+  is unreadable. Word-boundary truncation is locale-independent, which
+  `substr($0, 1, 150)` is not: under `LC_ALL=C` it splits multibyte characters
+  and produces illegal byte sequences (verified — `cut` rejects the output).
 
 A full `cmd_catalog` pass over ~450 skills measures 1.6s. No caching.
 
-`grep` is used rather than `ripgrep`, and this is deliberate:
-
-- `ripgrep` honours `.gitignore`. In this vault, `/*/*/` causes a naive `rg` to
-  search **zero files** and exit successfully with a warning. The failure presents
-  as "the vault contains nothing", not "your search was malformed". Avoiding it
-  requires `--no-ignore`.
-- `ripgrep` skips hidden directories. Searching the vault for `mcp` returns 5 files
-  with `rg --no-ignore` and 6 with `grep`; the missing one is under
-  `.antigravity-plugin/`. Avoiding it requires `--hidden`.
-- `grep` implements neither behaviour, so neither flag is needed and neither trap
-  exists.
-- `grep` is present everywhere; `ripgrep` would be this skill's first hard
-  dependency.
-
-Measured cost is 0.116s for `find`+`grep` against 0.031s for `rg`. The difference
-does not matter at this scale.
+`grep` was considered for the filtering step and rejected for the reasons above,
+not on dependency grounds. Note that the earlier `ripgrep` objections — that the
+vault's `/*/*/` gitignore makes `rg` search zero files, and that `rg` skips hidden
+directories — **do not apply to this design**, because `cmd_find` filters a stream
+and reads one file by path rather than traversing the vault. Those traps are real
+and remain relevant to anyone grepping the vault by hand; they are documented in
+SKILL.md for that reason, not as a justification for this implementation.
 
 ## Commands not added
 
@@ -157,14 +204,22 @@ Cases:
 - `find` matches a skill by frontmatter name.
 - `find` matches a skill by a word appearing only in its description.
 - `find` matches text appearing only in `NOTES.md`.
+- `find` prints the `## category` heading above each group of matches.
+- `find` prints the whole `## category/skill` note section when the match is on a
+  later line of that note, not just the matching line.
+- `find` treats regex metacharacters literally: `find '['` returns entries
+  containing a literal `[` rather than erroring and reporting no matches.
+- `find` truncates long descriptions on a word boundary, and its output is
+  byte-identical under `LC_ALL=C` and a UTF-8 locale (no split multibyte
+  characters).
 - `find` collapses tool-mirror duplicates, including the hidden-directory copy that
   `ripgrep` would skip.
-- `find` with no match prints the no-match message and does not exit non-zero.
+- `find` with no match prints the no-match message and exits 0.
 - `find` with no argument prints usage and exits non-zero.
 - `find` succeeds when `NOTES.md` is absent.
+- `vault.sh find` is reachable through the `case` dispatcher and listed in
+  `usage()`.
 - `categories` and `catalog` output is unchanged by the presence of `NOTES.md`.
-- A vault whose `.gitignore` contains `/*/*/` is still fully searched — the
-  regression that `ripgrep` would introduce.
 
 ## Out of scope
 
