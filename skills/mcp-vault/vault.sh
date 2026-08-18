@@ -14,10 +14,13 @@ usage() {
 Usage: vault.sh <command> [args]
 
 Commands:
-  list                            Every server: description, cold/warm, tools (default)
+  list [tag]                      Every server grouped by tag; or just one tag (default)
   show <name>                     Full description and cached tool list for one server
-  add <url> [name] [--token T]    Vault a server; --token sets bearer auth immediately
-  describe <name> <text>          Set a server's description
+  add <url> [name] [--token T]    Vault a server (--token-env VAR to wire it cold)
+  describe <name> <text>          Set the one-line description shown by 'list'
+  note <name> <text>              Set a free-text note shown by 'show'
+  tag <name> <tag>...             Add tags (a leading '#' is optional)
+  untag <name> <tag>...           Remove tags
   inspect <url>                   Probe a server NOT in the vault; persists nothing
   warm <name> [--token]           One-time auth: OAuth login, or capture a bearer token
   use <name>                      Connect (idempotent) and refresh the cached tool list
@@ -113,11 +116,25 @@ print(re.sub(r"[^a-zA-Z0-9_-]", "-", labels[0]) if labels else "server")
 
 # ── credential state ────────────────────────────────────────────────────────
 
+# Cache mcpc's profile list for the life of one invocation — `list` would
+# otherwise shell out to mcpc once per vaulted server.
+MCPC_STATE=""
+mcpc_state() {
+  if [[ -z "$MCPC_STATE" ]]; then
+    if command -v mcpc >/dev/null 2>&1; then
+      MCPC_STATE="$(mcpc --json 2>/dev/null || echo '{}')"
+    else
+      MCPC_STATE='{}'
+    fi
+  fi
+  printf '%s' "$MCPC_STATE"
+}
+
 # Does mcpc hold a saved OAuth profile for this server's URL?
 has_oauth_profile() {
   local url="$1"
   command -v mcpc >/dev/null 2>&1 || return 1
-  mcpc --json 2>/dev/null | python3 -c '
+  mcpc_state | python3 -c '
 import json,sys
 from urllib.parse import urlparse
 want = urlparse(sys.argv[1]).hostname or ""
@@ -179,9 +196,48 @@ if desc:
     d["description"] = desc
 d.setdefault("description", "")
 d.setdefault("tools", [])
+d.setdefault("tags", [])
+d.setdefault("note", "")
 json.dump(d, open(path, "w"), indent=2)
 open(path, "a").write("\n")
 ' "$META_DIR/$name.json" "$name" "$auth" "$token_env" "$desc"
+}
+
+# Set a free-text field (note) on a server without touching anything else.
+set_field() {
+  local name="$1" field="$2" value="$3"
+  python3 -c '
+import json,sys
+path, field, value = sys.argv[1:4]
+d = json.load(open(path))
+d[field] = value
+json.dump(d, open(path, "w"), indent=2)
+open(path, "a").write("\n")
+' "$META_DIR/$name.json" "$field" "$value"
+}
+
+# Add or remove tags. A leading "#" is stripped — bare '#work' at the start of
+# a shell word is a comment, so tags are usually typed without it.
+edit_tags() {
+  local name="$1" mode="$2"; shift 2
+  python3 -c '
+import json,sys
+path, mode = sys.argv[1:3]
+tags = [t.lstrip("#").strip().lower() for t in sys.argv[3:]]
+tags = [t for t in tags if t]
+d = json.load(open(path))
+cur = d.get("tags", [])
+if mode == "add":
+    for t in tags:
+        if t not in cur:
+            cur.append(t)
+else:
+    cur = [t for t in cur if t not in tags]
+d["tags"] = sorted(cur)
+json.dump(d, open(path, "w"), indent=2)
+open(path, "a").write("\n")
+print(", ".join(d["tags"]) or "(none)")
+' "$META_DIR/$name.json" "$mode" "$@"
 }
 
 # Snapshot a live session's tool list into the server's metadata.
@@ -218,10 +274,14 @@ print(len(d["tools"]))
 
 cmd_list() {
   ensure_layout
-  local found=0
+  local filter="${1:-}"; filter="${filter#\#}"; filter="$(printf '%s' "$filter" | tr '[:upper:]' '[:lower:]')"
+  local rows="" found=0
+
+  # One row per (tag, server) pair, so a server with several tags appears under
+  # each. Untagged servers collect under a trailing "untagged" group.
   for name in $(server_names); do
     found=1
-    local desc state count last
+    local desc state count last tags mark
     desc="$(meta_get "$name" description || echo "")"
     state="$(cred_state "$name")"
     count="$(python3 -c '
@@ -232,17 +292,45 @@ except Exception:
     print(0)
 ' "$META_DIR/$name.json" 2>/dev/null || echo 0)"
     last="$(meta_get "$name" last_used || echo "")"
-    local mark="●"; [[ "$state" == cold ]] && mark="○"
-    printf '%s %-16s %s\n' "$mark" "$name" "${desc:-(no description)}"
-    printf '    %s · %s tools%s\n' "$state" "$count" "${last:+ · last used ${last%T*}}"
+    tags="$(python3 -c '
+import json,sys
+try:
+    t = json.load(open(sys.argv[1])).get("tags", [])
+except Exception:
+    t = []
+print(" ".join(t) if t else "~untagged")
+' "$META_DIR/$name.json" 2>/dev/null || printf '~untagged')"
+    mark="●"; [[ "$state" == cold ]] && mark="○"
+    for tag in $tags; do
+      # "~" sorts after letters under LC_ALL=C, which parks "untagged" last.
+      [[ -n "$filter" && "${tag#\~}" != "$filter" ]] && continue
+      rows+="$tag"$'\t'"$mark"$'\t'"$name"$'\t'"${desc:-(no description)}"$'\t'"$state"$'\t'"$count"$'\t'"${last%%T*}"$'\n'
+    done
   done
+
   if [[ "$found" == 0 ]]; then
     echo "No servers vaulted yet."
     echo "↳ vault.sh add https://mcp.example.com/mcp"
-  else
-    echo
-    echo "● warm (credentials ready)   ○ cold (run: vault.sh warm <name>)"
+    return 0
   fi
+  if [[ -z "$rows" ]]; then
+    echo "No servers tagged '#$filter'."
+    echo "↳ vault.sh list        (all servers)"
+    return 0
+  fi
+
+  printf '%s' "$rows" \
+    | LC_ALL=C sort -t$'\t' -k1,1 -k3,3 \
+    | awk -F'\t' '
+      { tag = $1; sub(/^~/, "", tag) }
+      tag != last { if (NR > 1) printf "\n"; printf "#%s\n", tag; last = tag }
+      {
+        printf "  %s %-16s %s\n", $2, $3, $4
+        printf "      %s · %s tools%s\n", $5, $6, ($7 == "" ? "" : " · last used " $7)
+      }
+    '
+  echo
+  echo "● warm (credentials ready)   ○ cold (run: vault.sh warm <name>)"
 }
 
 cmd_show() {
@@ -255,7 +343,9 @@ cmd_show() {
   python3 -c '
 import json,sys
 d = json.load(open(sys.argv[1]))
+if d.get("tags"): print("tags: " + " ".join("#" + t for t in d["tags"]))
 if d.get("description"): print("\n" + d["description"])
+if d.get("note"): print("\nnote: " + d["note"])
 if d.get("auth") == "token": print("auth: bearer token via ${%s}" % d.get("token_env",""))
 elif d.get("auth") == "oauth": print("auth: OAuth (mcpc profile)")
 tools = d.get("tools", [])
@@ -276,12 +366,42 @@ cmd_describe() {
   echo "✓ described $name"
 }
 
+cmd_note() {
+  local name="${1:-}"; shift || true
+  local text="${*:-}"
+  [[ -n "$name" && -n "$text" ]] || die "usage: vault.sh note <name> <text>"
+  ensure_layout; require_server "$name"
+  [[ -f "$META_DIR/$name.json" ]] || write_meta "$name" none "" ""
+  set_field "$name" note "$text"
+  echo "✓ noted on $name"
+}
+
+cmd_tag() {
+  local name="${1:-}"; shift || true
+  [[ -n "$name" && $# -gt 0 ]] || die "usage: vault.sh tag <name> <tag>...
+(a leading '#' is optional — bare #tag is a shell comment)"
+  ensure_layout; require_server "$name"
+  [[ -f "$META_DIR/$name.json" ]] || write_meta "$name" none "" ""
+  echo "✓ $name tags: $(edit_tags "$name" add "$@")"
+}
+
+cmd_untag() {
+  local name="${1:-}"; shift || true
+  [[ -n "$name" && $# -gt 0 ]] || die "usage: vault.sh untag <name> <tag>..."
+  ensure_layout; require_server "$name"
+  [[ -f "$META_DIR/$name.json" ]] || die "$name has no metadata yet"
+  echo "✓ $name tags: $(edit_tags "$name" remove "$@")"
+}
+
 cmd_add() {
   require_mcpc; ensure_layout
-  local url="" name="" token="" desc=""
+  local url="" name="" token="" desc="" token_env_flag=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --token) token="${2:-}"; shift 2 || die "--token needs a value" ;;
+      # Wire a bearer-token server whose token you don't have yet: it is
+      # vaulted cold, and `warm <name> --token` fills in the value later.
+      --token-env) token_env_flag="${2:-}"; shift 2 || die "--token-env needs a value" ;;
       --description) desc="${2:-}"; shift 2 || die "--description needs a value" ;;
       -*) die "unknown flag: $1" ;;
       *) if [[ -z "$url" ]]; then url="$1"; else name="$1"; fi; shift ;;
@@ -293,13 +413,17 @@ cmd_add() {
   server_exists "$name" && die "'$name' is already vaulted (vault.sh show $name)"
 
   local auth=none token_env=""
-  if [[ -n "$token" ]]; then
+  if [[ -n "$token" || -n "$token_env_flag" ]]; then
     auth=token
-    token_env="$(printf '%s' "$name" | tr '[:lower:]-' '[:upper:]_')_MCP_TOKEN"
-    umask 077
-    touch "$ENV_FILE"
-    printf '%s=%s\n' "$token_env" "$token" >> "$ENV_FILE"
-    echo "✓ token stored in .env as \$$token_env"
+    token_env="${token_env_flag:-$(printf '%s' "$name" | tr '[:lower:]-' '[:upper:]_')_MCP_TOKEN}"
+    if [[ -n "$token" ]]; then
+      umask 077
+      touch "$ENV_FILE"
+      printf '%s=%s\n' "$token_env" "$token" >> "$ENV_FILE"
+      echo "✓ token stored in .env as \$$token_env"
+    else
+      echo "· expects \$$token_env — vaulted cold until you run: vault.sh warm $name --token"
+    fi
   fi
 
   python3 -c '
@@ -447,10 +571,13 @@ open(path, "a").write("\n")
 }
 
 case "${1:-list}" in
-  list)     shift || true; cmd_list ;;
+  list)     shift || true; cmd_list "$@" ;;
   show)     shift; cmd_show "$@" ;;
   add)      shift; cmd_add "$@" ;;
   describe) shift; cmd_describe "$@" ;;
+  note)     shift; cmd_note "$@" ;;
+  tag)      shift; cmd_tag "$@" ;;
+  untag)    shift; cmd_untag "$@" ;;
   inspect)  shift; cmd_inspect "$@" ;;
   warm)     shift; cmd_warm "$@" ;;
   use)      shift; cmd_use "$@" ;;
