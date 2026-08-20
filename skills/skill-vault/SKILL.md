@@ -1,6 +1,6 @@
 ---
 name: skill-vault
-description: Catalog of downloaded-but-inactive skills in a personal vault, grouped by category. Use when a specialized vaulted skill might beat improvising — e.g. frontend/design work — or when asked to add, update, or remove one.
+description: Catalog of downloaded-but-inactive skills in a personal vault, grouped by category. Use when a specialized vaulted skill might beat improvising — e.g. frontend/design work — when asked to add, update, or remove one, or to see which vaulted skills get used often enough to promote into the active skill set.
 ---
 
 # Skill Vault
@@ -38,6 +38,14 @@ This creates the directory (as its own git repo), copies in `vault.sh` and
 a starter `README.md`, and records the path in
 `~/.config/skill-vault/config` so future invocations skip straight to Step
 1 via `check`. The printed path is `$VAULT` for the rest of this skill.
+
+`init` writes `vault.sh` only when creating the vault, so an existing vault
+keeps whatever version created it. If `$VAULT/vault.sh` rejects a command
+this skill documents, that's the cause — refresh it:
+
+```bash
+<skill's base directory>/bootstrap.sh sync
+```
 
 ## Step 1: Search
 
@@ -84,10 +92,13 @@ its instructions as if it had been invoked normally:
 
 Read `$VAULT/<path from catalog output>`
 
-Do not copy, symlink, or otherwise install the vaulted skill into the
-active skill set — just read it in place and follow it. Its own relative
-references to bundled scripts or reference files still resolve correctly,
-since it's being read from its real location on disk.
+Read it in place and follow it. Its own relative references to bundled
+scripts or reference files still resolve correctly, since it's being read
+from its real location on disk.
+
+Don't install a skill just because you used it once — that's what the vault
+is avoiding. Installing is a separate, deliberate step, driven by evidence
+of a habit rather than by a single hit: see **Promoting** below.
 
 If nothing in the catalog is relevant, proceed with the task normally.
 
@@ -120,6 +131,88 @@ skill's own description.
 If an upstream `update` renames a skill, its note keeps the old heading and
 nothing repairs it. `find` still surfaces the text; fix the heading by hand
 if it bothers you.
+
+## Promoting what you keep reaching for
+
+A skill you reach for every week shouldn't need a catalog lookup and a file
+read every time. `promote` links it into the active skill set so it's just
+there; the vault keeps holding the ones you don't.
+
+### Seeing what you actually use
+
+```bash
+$VAULT/vault.sh usage            # all time
+$VAULT/vault.sh usage --days 30
+```
+
+This mines the agent's own session logs for references to vaulted
+`SKILL.md` paths — nothing has to be recorded as you go, so it works
+retroactively over history that predates the feature. Skills are ranked by
+**sessions**, not raw reads: one session that re-reads a skill six times is
+one habit, not six. Anything used in 3+ sessions and still vaulted is
+flagged `→ promote?`.
+
+Two things it can't tell you. It counts *references*, so a skill discussed
+but rejected still scores. And it only sees this machine's logs. Treat the
+ranking as a prompt to think, not a verdict.
+
+**Don't run this on every visit to the vault** — it greps every session log
+on the machine. Run it when the user asks about their habits, or when you
+notice you've reached for the same vaulted skill several times.
+
+### Promoting and undoing it
+
+```bash
+$VAULT/vault.sh promote <name>                    # or the full category/path
+$VAULT/vault.sh demote <name> [--to-vault <cat>]
+$VAULT/vault.sh promoted [--repair]
+```
+
+`promote` symlinks the skill's directory into `~/.claude/skills/<name>`
+(override with `SKILL_VAULT_PROMOTE_DIR`). Because it's a link and not a
+copy, `vault.sh update` keeps a promoted skill current — there's no forked
+second copy to drift.
+
+Take the target from the ranking, or accept a name the user gives. If a name
+is ambiguous — several vaulted repos ship a `skill-status` — `promote`
+refuses and prints the candidates rather than guessing; pass the full path.
+It also refuses to overwrite a name already taken by another tool's skill,
+and says who holds it.
+
+**A promotion lands in the next session, not this one.** The active skill
+set is read at session start.
+
+### Demoting depends on who owns the skill
+
+`demote` takes a skill *out* of the active set, and the active skill
+directory holds three different kinds of thing. It works out which it's
+looking at rather than assuming everything there came from here:
+
+| **A link into this vault** | unlinked. The vault copy is the original, so nothing is lost. |
+| **A link into a component manager's registry** (hawk) | the manager owns it. `demote` runs `hawk disable <name>` and re-syncs instead of touching the link — deleting it directly would be undone by that tool's next sync. The package still holds the skill; `hawk enable <name>` puts it back. |
+| **A real directory** | nothing manages it, so it exists only there. `demote` will not delete it. Pass `--to-vault <category>` to move it into the vault instead; without that it refuses and lists the categories. |
+
+A link pointing somewhere else entirely is an error, not a guess — it names
+the target and tells you to use whatever tool owns it.
+
+A skill adopted this way arrives with no git remote, so `update` skips it
+and the vault holds its only copy. `remove` knows that and refuses to delete
+a remote-less skill without `--force`, because a clone can be re-fetched and
+this cannot.
+
+Three things worth saying out loud when you promote something:
+
+- The link points into the vault, so **local edits to a promoted skill are
+  still destroyed by `vault.sh update`.** Promotion is about reach, not
+  ownership. A skill you want to *modify* has to be forked out of the vault
+  into wherever you keep your own.
+- Promotion has a standing cost: an active skill's description sits in
+  context every session, used or not. That's the whole reason the vault
+  exists. Promote what earns it and demote what stops earning it.
+- The links live in a directory other tools may manage. `$VAULT/.promoted`
+  records every promotion so a component manager that prunes what it doesn't
+  recognise can't silently undo them — `promoted --repair` puts them back.
+  The ledger is machine-local and gitignored.
 
 ## Adding, updating, or removing a vaulted skill
 
