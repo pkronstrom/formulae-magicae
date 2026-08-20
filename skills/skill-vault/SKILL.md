@@ -168,10 +168,12 @@ $VAULT/vault.sh demote <name> [--to-vault <cat>]
 $VAULT/vault.sh promoted [--repair]
 ```
 
-`promote` symlinks the skill's directory into `~/.claude/skills/<name>`
-(override with `SKILL_VAULT_PROMOTE_DIR`). Because it's a link and not a
-copy, `vault.sh update` keeps a promoted skill current — there's no forked
-second copy to drift.
+`promote` symlinks the skill's directory into the host agent's active
+skills directory, under the skill's own name. It defaults to the usual
+location for this host; set `SKILL_VAULT_PROMOTE_DIR` when the agent keeps
+its skills somewhere else. Because it's a link and not a copy, `vault.sh
+update` keeps a promoted skill current — there's no forked second copy to
+drift.
 
 Take the target from the ranking, or accept a name the user gives. If a name
 is ambiguous — several vaulted repos ship a `skill-status` — `promote`
@@ -189,11 +191,25 @@ directory holds three different kinds of thing. It works out which it's
 looking at rather than assuming everything there came from here:
 
 | **A link into this vault** | unlinked. The vault copy is the original, so nothing is lost. |
-| **A link into a component manager's registry** (hawk) | the manager owns it. `demote` runs `hawk disable <name>` and re-syncs instead of touching the link — deleting it directly would be undone by that tool's next sync. The package still holds the skill; `hawk enable <name>` puts it back. |
+| **A link into a component manager's registry** | that manager owns it, so `demote` asks *it* to disable the skill instead of touching the link — deleting the link directly would be undone by that tool's next sync, and moving its copy would be undone by the next update. The manager's package still holds the skill; re-enable it there to undo. Needs the config below, or `demote` just reports the link and stops. |
 | **A real directory** | nothing manages it, so it exists only there. `demote` will not delete it. Pass `--to-vault <category>` to move it into the vault instead; without that it refuses and lists the categories. |
 
 A link pointing somewhere else entirely is an error, not a guess — it names
 the target and tells you to use whatever tool owns it.
+
+Which component manager runs a machine is a property of that machine, not of
+this skill, so it's configuration. Two keys in `$VAULT/.manager.conf`, both
+optional, and `SKILL_VAULT_MANAGER_ROOT` / `SKILL_VAULT_MANAGER_DISABLE`
+override them:
+
+```ini
+root=/path/to/that/manager/registry
+disable=<its disable command> {name}
+```
+
+`{name}` is substituted with the skill name. Without this file, a link owned
+by anything but the vault is reported and left alone — which is the safe
+default, not a failure. The file is machine-local and gitignored.
 
 A skill adopted this way arrives with no git remote, so `update` skips it
 and the vault holds its only copy. `remove` knows that and refuses to delete
