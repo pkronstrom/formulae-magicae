@@ -191,25 +191,22 @@ directory holds three different kinds of thing. It works out which it's
 looking at rather than assuming everything there came from here:
 
 | **A link into this vault** | unlinked. The vault copy is the original, so nothing is lost. |
-| **A link into a component manager's registry** | that manager owns it, so `demote` asks *it* to disable the skill instead of touching the link — deleting the link directly would be undone by that tool's next sync, and moving its copy would be undone by the next update. The manager's package still holds the skill; re-enable it there to undo. Needs the config below, or `demote` just reports the link and stops. |
+| **A link into something else** | another tool owns it. `demote` prints the link and its target and exits 2 without touching either — see below. |
 | **A real directory** | nothing manages it, so it exists only there. `demote` will not delete it. Pass `--to-vault <category>` to move it into the vault instead; without that it refuses and lists the categories. |
 
-A link pointing somewhere else entirely is an error, not a guess — it names
-the target and tells you to use whatever tool owns it.
+**When `demote` exits 2, finish the job yourself.** It stops at a link it
+didn't create because *which* tool owns that link, and what that tool's
+disable command is, varies per machine — knowing it is your job, not the
+script's. From the target path it prints, work out which component manager
+owns it and ask that manager to disable the skill by name. Its own registry
+keeps the copy, so the operation is reversible by re-enabling it there.
 
-Which component manager runs a machine is a property of that machine, not of
-this skill, so it's configuration. Two keys in `$VAULT/.manager.conf`, both
-optional, and `SKILL_VAULT_MANAGER_ROOT` / `SKILL_VAULT_MANAGER_DISABLE`
-override them:
-
-```ini
-root=/path/to/that/manager/registry
-disable=<its disable command> {name}
-```
-
-`{name}` is substituted with the skill name. Without this file, a link owned
-by anything but the vault is reported and left alone — which is the safe
-default, not a failure. The file is machine-local and gitignored.
+Two things not to do, whatever the tool turns out to be: don't delete the
+link, and don't move what it points at. Its next sync recreates the link,
+and its next update restores the file — so both look like they worked and
+silently come back. If you can't identify the owner, say so and stop; a
+promoted skill left in place costs a little context, while a half-removed
+one breaks that manager's state.
 
 A skill adopted this way arrives with no git remote, so `update` skips it
 and the vault holds its only copy. `remove` knows that and refuses to delete

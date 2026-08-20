@@ -11,30 +11,11 @@ PROMOTE_DIR="${SKILL_VAULT_PROMOTE_DIR:-$HOME/.claude/skills}"
 LOG_DIR="${SKILL_VAULT_LOG_DIR:-$HOME/.claude/projects}"
 PROMOTED_LEDGER="$VAULT_DIR/.promoted"
 
-# A component manager may own some of the links in PROMOTE_DIR. Which one is
-# a property of the machine, not of this skill, so it is configuration rather
-# than a hard-coded vendor: an optional two-key file in the vault, overridable
-# by environment.
-#
-#   $VAULT/.manager.conf
-#     root=/path/to/that/manager/registry
-#     disable=<its command> {name}          # {name} is substituted
-#
-# With no config, a link owned by anything other than this vault is reported
-# and left alone.
-MANAGER_ROOT="${SKILL_VAULT_MANAGER_ROOT:-}"
-MANAGER_DISABLE="${SKILL_VAULT_MANAGER_DISABLE:-}"
-MANAGER_CONF="$VAULT_DIR/.manager.conf"
-
-if [[ -f "$MANAGER_CONF" ]]; then
-  while IFS='=' read -r key value; do
-    key="${key%"${key##*[![:space:]]}"}"
-    case "$key" in
-      root) [[ -z "$MANAGER_ROOT" ]] && MANAGER_ROOT="${value/#\~/$HOME}" ;;
-      disable) [[ -z "$MANAGER_DISABLE" ]] && MANAGER_DISABLE="$value" ;;
-    esac
-  done < "$MANAGER_CONF"
-fi
+# Links in PROMOTE_DIR that this vault did not create belong to some component
+# manager. Which one, and what its disable command is, is not something this
+# script needs to know: it reports the target and stops, and the agent reading
+# the skill routes to the right tool. Encoding that here would mean either
+# hard-coding a vendor or executing a command string out of a config file.
 
 # Sessions in which a skill was referenced, before it counts as a habit.
 PROMOTE_THRESHOLD="${SKILL_VAULT_PROMOTE_THRESHOLD:-3}"
@@ -420,25 +401,14 @@ cmd_demote() {
 
   # Case 2 — someone else's link.
   if [[ -L "$link" ]]; then
-    local target; target="$(readlink "$link")"
-    if [[ -n "$MANAGER_ROOT" && -n "$MANAGER_DISABLE" && "$target" == "$MANAGER_ROOT"/* ]]; then
-      local cmd="${MANAGER_DISABLE//\{name\}/$name}"
-      echo "$name is owned by the configured component manager — asking it to"
-      echo "disable the skill rather than removing its link:"
-      echo "  $cmd"
-      bash -c "$cmd" || { echo "error: the manager's disable command failed" >&2; exit 1; }
-      drop_from_ledger "$name"
-      echo "demoted: $name (its package still holds it; re-enable it there to undo)"
-      return 0
-    fi
     {
-      echo "error: $link is a link into something this vault does not manage"
-      echo "  it points at: $target"
-      echo "  remove it with whatever manages that directory — deleting the link"
-      echo "  here would be undone by that tool's next sync"
-      [[ -z "$MANAGER_DISABLE" ]] && echo "  (to let this command route through that tool, see $MANAGER_CONF)"
+      echo "not ours: $name is managed by another tool"
+      echo "  link:   $link"
+      echo "  target: $(readlink "$link")"
+      echo "  Ask that tool to disable the skill. Do not delete the link and do"
+      echo "  not move what it points at — its next sync would undo either one."
     } >&2
-    exit 1
+    exit 2
   fi
 
   # Case 3 — a real directory, owned by nobody.

@@ -4,6 +4,3 @@
 
 # Machine-local promotion ledger.
 /.promoted
-
-# Machine-local component-manager routing for demote.
-/.manager.conf
