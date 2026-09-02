@@ -16,7 +16,7 @@ One section per run, newest appended at the bottom.
 
 | id | tier | finding | evidence | verdict |
 |----|------|---------|----------|---------|
-| F1 | red | Step 3 re-reads config every run | 6/9 eps | applied — commit a91f2c3 |
+| F1 | red | Step 3 re-reads config every run | 6/9 eps | applied — commit a91f2c3 — expect: no config re-read after Step 3 |
 | F2 | red | "ALWAYS snapshot first" ignored | 5/9 eps | applied — moved into scripts/apply.sh |
 | F3 | orange | ffmpeg probe rewritten each time | 4/9 eps | declined — "I want to see the command each time" |
 | F4 | yellow | §"Legacy formats" never loaded | 0/9 eps | deferred — check again after 5 more runs |
@@ -29,7 +29,10 @@ only fired when named explicitly. Not working; the description is not the cause.
 ## Verdicts
 
 - `applied` — landed. Record the commit hash, or the snapshot path when the home
-  isn't a git repo. The hash is what makes a revert cheap later.
+  isn't a git repo, **and the observable it was meant to produce** — one clause
+  naming what a later run should be able to see ("no episode re-reads config
+  after Step 3"). The hash makes a revert cheap; the observable makes the
+  follow-up a check instead of a re-interpretation.
 - `declined` — the user said no. **Record their reason verbatim.** The reason is
   the reusable part: it tells the next run what the skill is actually for, and
   three declines with related reasons usually mean the whole line of analysis has

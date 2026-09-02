@@ -69,15 +69,15 @@ The user names a skill (`/skill-improver bento-slides`) or gestures at one
 ("the transcribe thing keeps failing"). Resolve it to a directory:
 
 ```bash
-ls -d ~/.claude/skills/<name> ~/.claude/plugins/*/skills/<name> \
-      .claude/skills/<name> ~/.skill-vault/*/<name> 2>/dev/null
+ls -d "$HOME"/.*/skills/<name> "$HOME"/.*/plugins/*/skills/<name> \
+      .*/skills/<name> ~/.skill-vault/*/<name> 2>/dev/null
 ```
 
 Read the whole target — `SKILL.md` plus every bundled reference and script. You
 cannot judge whether a section is dead weight without knowing it exists.
 
 Note the **home directory**: the directory the skill lives in (or its skills
-root, e.g. `~/.claude/skills`). Step 7 puts that under version control.
+root — whatever this host calls it). Step 7 puts that under version control.
 
 Targets other than skills work the same way: a slash command is its markdown
 file, an MCP server is its tool surface plus config entry, a `CLAUDE.md` is
@@ -139,7 +139,8 @@ lost signal. The value is in the small surprises, and summarisation is precisely
 the operation that deletes small surprises.
 
 For long or numerous episodes, delegate the reading to parallel subagents — one
-per episode, each returning findings in the Step 5 shape with quotes. Give each
+per episode, each returning findings in the Step 5 shape with quotes. Below
+about three episodes the coordination costs more than it saves; just read them. Give each
 subagent the target's `SKILL.md` too, so it can tell "the model improvised" from
 "the model followed the skill and the skill was wrong".
 
@@ -161,6 +162,11 @@ read it before your first analysis pass. The short version, by family:
   always adds that the skill never mentions.
 - **Dead weight** — a section no episode ever needed. Skills pay their token
   cost on every single invocation, so an unused section is a permanent tax.
+- **Under-service** — the run was quick and clean and the result was wrong,
+  unverified, or quietly narrower than what was asked. Look for it deliberately:
+  every other family here is a way of noticing that the skill made the model do
+  too much, and a review that only ever finds too-much will, over enough
+  rounds, tune a skill into one that finishes fast and checks nothing.
 
 Two disciplines that decide whether this is worth running twice:
 
@@ -172,6 +178,28 @@ about a vivid one-off.
 content fix, not a workflow redesign. Reach for restructuring only when a cluster
 of failures survives the cheaper fix.
 
+**Ask whether the skill could have prevented it at all.** Some failures in the
+episodes are the task being hard, the model having a bad day, or a tool being
+broken — they would have happened against any version of this skill. Those are
+not findings, and mining them produces edits that add weight and change nothing.
+The test is concrete: name the sentence that would have prevented it. If you
+cannot, drop it.
+
+### The counterfactual pass
+
+Signals catch what went wrong line by line. Once per run, do one pass that
+catches what no line-by-line reading can: take two or three of the mined
+episodes and sketch **the shortest run that would have reached the same result**
+— the four or five steps a model holding a perfect version of this skill would
+have taken. Diff that against what the episodes actually did.
+
+The gap is where the structural findings live, and they are the ones worth the
+run: a step order that makes the model read the file twice, three steps that
+should be one script, a decision the skill asks the model to make that it could
+have made for it, a middle section that turned out to be reference material the
+model consulted once. None of these show up as friction in any single episode,
+because nothing went wrong — it just cost more than it had to.
+
 ## Step 6 — Triage
 
 | Tier | Meaning |
@@ -181,6 +209,13 @@ of failures survives the cheaper fix.
 | 🟡 Yellow | Polish and single-episode observations. Dead sections, wording, description tuning, plausible-but-unconfirmed hypotheses. |
 
 Rank within tier by evidence strength, then by how much the fix costs.
+
+Keep red and orange to about five between them. A table of a dozen weighty
+findings gets none of them applied — the user skims, feels the cost, and defers
+the lot. Push the rest down to yellow or into the ledger as deferred; they will
+still be there next run, with more evidence behind them. Yellows can run longer,
+since they are cheap to batch-approve, but the moment a yellow needs a paragraph
+of justification it was never yellow.
 
 ## Step 7 — Present
 
@@ -265,7 +300,7 @@ already drifted will otherwise lose that drift silently.
 
 If it is not a repo, offer to initialise one:
 
-> "`~/.claude/skills` isn't a git repo. Want me to `git init` it so every
+> "`<skills root>` isn't a git repo. Want me to `git init` it so every
 > skill edit from here on is tracked and revertable? I'll commit the current
 > state first, then the changes."
 
@@ -290,14 +325,21 @@ When you bundle a repeated helper into `scripts/`, run it once to confirm it
 works before pointing the skill at it. A broken bundled script is worse than the
 improvisation it replaced.
 
+**Write down what should change.** You cannot measure an edit from inside the
+run that proposed it; the evidence lands in the episodes that come after. So for
+each applied finding, record in one clause what a later run should be able to
+see — "no episode should re-read the config after Step 3", "the snapshot should
+appear in every episode, not two thirds". That clause is what makes Step 9 a
+check rather than a fresh act of interpretation.
+
 ## Step 9 — Record, and check the last round
 
 Append every finding to the ledger with its verdict — applied, declined (with
 the user's reason), or deferred. Declined findings stay declined.
 
-Then close the previous loop: for each finding applied in an earlier run, look at
-the episodes that happened *after* it landed and say plainly whether the problem
-stopped. A self-improvement loop with no feedback on its own edits is just a
+Then close the previous loop: for each finding applied in an earlier run, read
+the observable it was recorded with, look only at the episodes that happened
+*after* it landed, and say plainly whether the problem stopped. A self-improvement loop with no feedback on its own edits is just a
 change generator. Report the honest answer, including "no episodes since — can't
 tell yet".
 

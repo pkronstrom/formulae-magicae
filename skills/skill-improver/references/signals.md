@@ -66,6 +66,24 @@ NEVER, that is evidence of previous rounds of this failure, not a solution.
 - Something in the environment changed and the skill hasn't noticed: a renamed
   flag, a replaced tool, a moved path.
 
+## Under-service — the skill let the model do too little
+
+The hardest family to see, because nothing in the trace looks wrong. Every other
+family is a way of noticing that the skill made the run heavier than it needed
+to be; this one asks whether it made it lighter than it should have been.
+
+- An episode that finished fast and clean, and produced a result the user then
+  had to correct, redo, or argue with.
+- A verification step the skill mentions softly enough that most episodes skip
+  it — and the episodes that skipped it are the ones that went wrong.
+- The model narrowing the task to the part the skill describes well, leaving the
+  rest of what the user asked unaddressed.
+- A skill that was made faster by a previous round of this loop, followed by
+  episodes that are quicker and worse.
+
+Findings here usually argue for adding weight, which will feel wrong after a
+morning of deleting dead sections. Add it anyway when the evidence is there.
+
 ## Context-engineering findings
 
 These are about how the skill spends the context window, and they only become
@@ -91,6 +109,10 @@ Leave these out — including them costs the user's trust in the table:
 - One-off corrections specific to a single task's peculiarities.
 - Tool or harness bugs unrelated to the skill's instructions. Worth mentioning to
   the user in a line, not worth a table row or an edit.
+- Failures no version of the skill could have prevented — the task was hard, the
+  API was down, the model misread something no sentence would have clarified.
+  The test: name the sentence that would have prevented it. If you cannot, it is
+  not a finding about the skill.
 - Style preferences with no trace evidence behind them.
 - Anything already declined in the ledger, unless new episodes genuinely change
   the picture — and if they do, say explicitly that this was declined before and
