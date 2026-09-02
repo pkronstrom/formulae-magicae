@@ -22,7 +22,8 @@ finding is a hypothesis — say so, and tier it accordingly.
 
 ## The loop
 
-Resolve target → load ledger → find sessions → extract raw episodes → analyse →
+Resolve target → load ledger → find sessions → extract raw episodes → check the
+perishable claims → analyse →
 triage → present → approve → apply under git → record.
 
 Work through it in order. Steps 1–4 are cheap and can run without interrupting
@@ -144,6 +145,41 @@ about three episodes the coordination costs more than it saves; just read them. 
 subagent the target's `SKILL.md` too, so it can tell "the model improvised" from
 "the model followed the skill and the skill was wrong".
 
+## Step 4.5 — Check the perishable claims
+
+Before you read a single transcript, take the skill's factual assertions and run
+them against the thing they describe.
+
+This is the one class of defect the transcripts cannot show you. A skill that
+says a flag exists, a service is not running, a binary is missing, a directory
+has one name — states it once, and from then on every session reads it and
+believes it. Nothing retries, nothing errors, nobody corrects course. The
+episodes are silent because the model did what it was told and the instruction
+was wrong. Mining friction will never surface it; only asking the world will.
+
+It has been the single highest-value step on every target where it was run.
+`/codex` documented `--full-auto` through nine invocations after the flag was
+removed — `codex exec --help` said `error: unexpected argument`. The `aarni`
+skill said in bold that backups were installed but unscheduled and to report
+them as broken; both systemd timers were active and had run ten hours earlier.
+
+So: list every claim in the file that can rot, then check it.
+
+- versions, flags, model names, CLI surfaces → run `--help`, run `--version`
+- "X is not installed", "Y is not scheduled", "Z is stopped" → look on the box
+- counts, inventories, tables of what exists → enumerate the real thing
+- paths and directory names → `ls` them
+- "the config lives at …", "there is no …" → resolve it
+
+Two rules keep this honest. **A claim you cannot check is not a finding** — say
+it is unverified and move on. And **check the negative assertions hardest**:
+"there is no CLAUDE.md", "no timer is active", "it needs gum" — a sentence
+telling the model something is absent is the one nobody ever tests, and the one
+that ages worst.
+
+Findings from this step are usually red and usually one-line content fixes. They
+carry no `k/n`; cite the command you ran and what it returned.
+
 ## Step 5 — Analyse
 
 You are looking for the gap between what the skill says and what actually
@@ -162,6 +198,8 @@ read it before your first analysis pass. The short version, by family:
   always adds that the skill never mentions.
 - **Dead weight** — a section no episode ever needed. Skills pay their token
   cost on every single invocation, so an unused section is a permanent tax.
+- **Staleness** — a claim that was true when written and is not now. Step 4.5
+  finds these; carry its results into the triage table alongside the rest.
 - **Under-service** — the run was quick and clean and the result was wrong,
   unverified, or quietly narrower than what was asked. Look for it deliberately:
   every other family here is a way of noticing that the skill made the model do
