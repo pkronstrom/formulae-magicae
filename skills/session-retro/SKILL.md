@@ -208,12 +208,7 @@ document, not a write-up.
 - <the 4-5 steps that would have reached the same result, and where we diverged>
 
 ## Proposed changes
-### Remove
-- `<file>:<line>` — "<current text>" → delete. <why, citing the moment>
-### Change
-- `<file>:<line>` — "<current>" → "<proposed>". <why>
-### Add
-- `<file>` — add "<proposed line>". <what it would have saved this session>
+<the table from Step 5 — this is the part the user acts on>
 
 ## Repo, tooling and ways of working
 - <change to what exists or how the work is done, not to what is written down>
@@ -300,9 +295,73 @@ that would have caught the bug you found late, a check that is slow because it
 does too much, work that should have been done in parallel or handed to a
 subagent, a question that should have been asked before an hour of building.
 
-## Step 5 — Approve, then apply
+## Step 5 — Present the changes as a decision table
 
-Show the report and ask which proposals to apply. Then:
+Everything above this point is analysis. This is the only part the user has to
+read, so it has to be scannable in one pass and approvable in a few keystrokes —
+that is what makes a retro a fast route to an improvement rather than another
+document to get through.
+
+Print it in the terminal. Three weights carry three kinds of information: a boxed
+title says what is wrong, plain text says what it cost, an italic line says what
+to do about it. Rank by cost, worst first. No prose paragraphs above the list.
+
+| Tier | Meaning |
+|------|---------|
+| 🔴 Red | Cost real time or correctness this session, and will again next session. A rule that misfires, a wrong instruction, a check that was skipped and shouldn't have been. |
+| 🟠 Orange | Recurring friction or waste. Survivable, repeatedly annoying, cheap to fix. |
+| 🟡 Yellow | Polish, a single occurrence, or a hypothesis you could not fully evidence. Say which. |
+
+The evidence column carries the measurement from Step 1 — runs, retries, minutes,
+tool calls. In group mode it carries `k/n` sessions instead.
+
+Emit exactly this shape (the four-backtick fence is only so you can see the
+source — your real output is not fenced, or none of it renders):
+
+````markdown
+🔴 cost time this session and will again · 🟠 recurring friction · 🟡 polish or hypothesis
+
+🔴 R1 │ `full suite runs on docs-only changes`                4 runs · 24 min
+      │ *AGENTS.md:14 — scope it to source changes, exclude*
+      │ *docs/ and *.md.*
+
+🟠 R2 │ `test command re-derived from scratch`               3 lookups
+      │ *CLAUDE.md — state it once: pytest tests/ -q.*
+
+🟡 R3 │ `permission prompt on every gh call`                 7 interruptions
+      │ *settings.json allowlist entry — guessing this is why*
+      │ *the PR steps kept stalling; unconfirmed.*
+````
+
+Four mechanics keep it from collapsing in the renderer:
+
+- Markdown collapses runs of spaces, so pad the evidence column and indent the
+  continuation gutter with non-breaking spaces (U+00A0), never ordinary ones.
+- End every line with two trailing spaces, or the renderer joins the lines into
+  one paragraph and the shape is lost.
+- Don't nest inline code inside an italic span — it is the one combination that
+  renders inconsistently. Rephrase so a command sits in a plain-italic line.
+- Keep each fix to one or two lines. A fix needing more is two findings.
+
+Below the blocks, show the before/after for anything red, and quote the moment it
+came from. Red earns the diff; orange and yellow can wait until they are picked.
+
+**Then ask which to act on, and invite counter-proposals.** Approval by id or
+tier is the fast path — "R1 and R3", "all red, skip the rest" — but say plainly
+that changing a proposal is just as welcome as accepting or rejecting it. The
+user knows things the transcript does not: that a rule was deliberate, that the
+wording should be narrower, that the fix belongs in a different file, or that
+they would rather have a script than a rule. When they reshape one, re-draft that
+block and show it again before applying — a proposal rewritten in the user's own
+terms is the best outcome the table has.
+
+A "no, because…" is worth more than a yes. It says what the instructions are
+actually for, and it is what should stop the next retro from proposing the same
+thing again — so put it in the rejection note verbatim.
+
+## Step 6 — Approve, then apply
+
+Once the table has verdicts:
 
 - Apply only what was approved, and only the approved wording.
 - Edit surgically — change the lines named in the report, and leave the rest of
