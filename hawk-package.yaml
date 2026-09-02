@@ -34,6 +34,8 @@ contents:
       name: mcp-vault
     - path: skills/skill-improver/
       name: skill-improver
+    - path: skills/session-retro/
+      name: session-retro
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

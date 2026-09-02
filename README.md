@@ -31,6 +31,7 @@ around that one source tree; they do not fork the skills.
 | [`skill-vault`](skills/skill-vault/) | Catalog downloaded-but-inactive skills in a personal skill vault, grouped by category, so they don't clutter the active skill set. Bootstraps the vault on first use. | `git` |
 | [`mcp-vault`](skills/mcp-vault/) | Stash MCP servers out of the active tool namespace; browse their cached tools, then connect only the one you need. | `mcpc`, `python3` |
 | [`skill-improver`](skills/skill-improver/) | Mine the sessions where a skill was actually used, triage what went wrong into red/orange/yellow findings, and apply the approved fixes under version control. | `python3`, `git` |
+| [`session-retro`](skills/session-retro/) | Retro the session that just finished — or any Claude, Codex or OpenCode session by id — and fix the instructions that cost time. | `python3` |
 
 ## Quick install
 
@@ -51,7 +52,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
 ```
 
 Installed Codex skills appear in the next turn.

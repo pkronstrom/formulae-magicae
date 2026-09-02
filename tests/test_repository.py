@@ -14,7 +14,9 @@ EXPECTED_SKILLS = {
     "portal",
     "pr-voice-review",
     "pr-voice-review-single-file",
+    "session-retro",
     "singlefile",
+    "skill-improver",
     "skill-vault",
     "spec-flow",
     "summon",
@@ -192,7 +194,7 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "$skill-installer Install all of these skills from "
         "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
         "skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, "
-        "skills/singlefile, skills/skill-vault, skills/spec-flow, "
+        "skills/singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, "
         "skills/summon, skills/transcribe-media, skills/tts, "
         "skills/visualize, and skills/wire-trigger."
     ]

@@ -90,6 +90,18 @@
       "source": "./skills/mcp-vault",
       "description": "Vault of MCP servers kept out of the active tool namespace until needed.",
       "version": "1.0.0"
+    },
+    {
+      "name": "skill-improver",
+      "source": "./skills/skill-improver",
+      "description": "Mine the sessions where a skill was used and apply approved fixes.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "session-retro",
+      "source": "./skills/session-retro",
+      "description": "Retro the session that just finished and fix the instructions that cost time.",
+      "version": "1.0.0"
     }
   ]
 }
