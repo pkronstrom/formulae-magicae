@@ -1,6 +1,6 @@
 ---
 name: skill-improver
-description: Improve an existing skill, slash command, subagent, MCP server, CLAUDE.md, or artifact by mining the real sessions where it was actually used — finding the quirks, wrong turns, ignored rules, wasted tokens and misunderstandings it produced in practice — then proposing a red/orange/yellow triage table of fixes for approval and applying the approved ones under version control. Use this whenever the user runs /skill-improver, says a skill feels sluggish, bloated, unreliable, or "never triggers", asks why an agent keeps making the same mistake with a skill, asks to review, tune, audit, optimize or clean up a skill, or wants to know which of their skills are worth keeping. Prefer this over editing a skill from memory or intuition: the whole point is that the evidence comes from transcripts, not from guessing.
+description: Improve an existing skill, slash command, subagent, MCP server, CLAUDE.md, or artifact by mining the real sessions where it was actually used — finding the quirks, wrong turns, ignored rules, wasted tokens and misunderstandings it produced in practice — then proposing a red/orange/yellow triage table of fixes for approval and applying the approved ones under version control. Use this whenever the user runs /skill-improver, says a skill feels sluggish, bloated, unreliable, or "never triggers", asks why an agent keeps making the same mistake with a skill, asks to review, tune, audit, optimize or clean up a skill, or wants to know which of their skills are worth keeping. Prefer this over editing a skill from memory or intuition: the whole point is that the evidence comes from transcripts, not from guessing. Run with no target, or with --survey, when the user asks which skills are worth improving, what they use most, what has never been reviewed, or where to start — it ranks their real usage against review history and recommends a target.
 ---
 
 # Skill Improver
@@ -29,6 +29,39 @@ Work through it in order. Steps 1–4 are cheap and can run without interrupting
 the user; the user's attention is only needed at the triage table.
 
 ---
+
+## Step 0 — Survey (no target named, or `--survey`)
+
+When the user asks what is worth improving rather than naming a skill, start
+here. Two facts already on disk answer it: how often each target actually ran,
+and when it was last reviewed.
+
+```bash
+python3 <skill>/scripts/survey.py --days 60
+```
+
+It counts distinct sessions per skill, command and MCP server, reads the last
+run date from each ledger, and ranks by priority: **never reviewed** first, then
+**stale** (reviewed over 90 days ago), then **thin** (fewer than 4 sessions of
+new evidence), then **recent**.
+
+Two columns carry the decision. `sess` is total distinct sessions — how much the
+target matters. `new` is sessions recorded *since* its last review — how much
+fresh evidence a run would actually have to work with. A heavily used skill with
+`new` in single digits will mostly re-derive its own last report; say so instead
+of running it.
+
+The script counts only unambiguous invocations: the Skill tool's `skill` field,
+`<command-name>`, and `mcp__server__` appearing as a tool_use `name`. The loose
+form of that last pattern matches the deferred-tool listing in every session's
+system prompt, which reports availability rather than use — it buried the real
+signal under thousands of phantom hits before the pattern was tightened. Harness
+built-ins (`/clear`, `/model`) and names that resolve to no editable file are
+dropped, because there is nothing to improve.
+
+Present the top rows and recommend one target, with the reason in a clause:
+heavy use and never reviewed, or a big backlog since a stale review. Then ask
+which to run, and continue from Step 1 with their answer.
 
 ## Step 1 — Resolve the target and its home
 
