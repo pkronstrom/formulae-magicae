@@ -32,6 +32,8 @@ contents:
       name: skill-vault
     - path: skills/mcp-vault/
       name: mcp-vault
+    - path: skills/skill-improver/
+      name: skill-improver
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]
