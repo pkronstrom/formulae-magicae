@@ -22,11 +22,11 @@ finding is a hypothesis — say so, and tier it accordingly.
 
 ## The loop
 
-Resolve target → load ledger → find sessions → extract raw episodes → check the
-perishable claims → analyse →
-triage → present → approve → apply under git → record.
+Resolve target → load ledger → find sessions → extract raw episodes →
+check the perishable claims → analyse → triage → present → approve →
+apply under git → record.
 
-Work through it in order. Steps 1–4 are cheap and can run without interrupting
+Work through it in order. Steps 1–4.5 are cheap and can run without interrupting
 the user; the user's attention is only needed at the triage table.
 
 ---
