@@ -21,6 +21,7 @@ around that one source tree; they do not fork the skills.
 | [`portal`](skills/portal/) | Open an encrypted agent-to-agent chat over ntfy, or a local same-machine channel. | `curl`, `openssl` |
 | [`bento-slides`](skills/bento-slides/) | Build an editable, playable presentation as one offline `.bento.html` file. | A browser |
 | [`singlefile`](skills/singlefile/) | Build a shareable app or prototype as one self-contained HTML file. | A browser |
+| [`prototype-singlefile`](skills/prototype-singlefile/) | Explore UI screens on a pan-and-zoom canvas with draggable frames, comments, drawing, and portable HTML saves. | Python 3 to build; a browser to use |
 | [`visualize`](skills/visualize/) | Render plans and system models as annotatable, self-contained HTML. | A browser |
 | [`transcribe-media`](skills/transcribe-media/) | Turn video or audio into a timestamped transcript, key frames, and contact sheets. | `yt-dlp`, `ffmpeg`, Python tools described by the skill |
 | [`tts`](skills/tts/) | Speak text locally with Kokoro or a configured system/custom engine. | Python/Kokoro or a supported fallback |
@@ -52,7 +53,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, and skills/wire-trigger.
 ```
 
 Installed Codex skills appear in the next turn.

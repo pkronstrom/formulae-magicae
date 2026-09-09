@@ -38,6 +38,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "prototype-singlefile",
+      "source": "./skills/prototype-singlefile",
+      "description": "Explore UI screens on a portable pan-and-zoom canvas with draggable frames, comments, and drawing.",
+      "version": "1.0.0"
+    },
+    {
       "name": "visualize",
       "source": "./skills/visualize",
       "description": "Render plans and system models as annotatable self-contained HTML.",

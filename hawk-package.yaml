@@ -14,6 +14,8 @@ contents:
       name: bento-slides
     - path: skills/singlefile/
       name: singlefile
+    - path: skills/prototype-singlefile/
+      name: prototype-singlefile
     - path: skills/visualize/
       name: visualize
     - path: skills/transcribe-media/

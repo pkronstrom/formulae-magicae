@@ -1,0 +1,26 @@
+{
+  "title": "Fieldwork / Design playground",
+  "frames": [
+    {
+      "id": "overview",
+      "title": "A \u00b7 Overview",
+      "file": "overview.html",
+      "w": 390,
+      "h": 780
+    },
+    {
+      "id": "focus",
+      "title": "B \u00b7 Focus",
+      "file": "focus.html",
+      "w": 390,
+      "h": 780
+    },
+    {
+      "id": "capture",
+      "title": "C \u00b7 Capture",
+      "file": "capture.html",
+      "w": 390,
+      "h": 780
+    }
+  ]
+}
