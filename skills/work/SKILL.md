@@ -124,9 +124,16 @@ one batch, before anything is built — a wrong guess there is the expensive
 kind. Bring it with 1–3 options and a recommendation,
 write the answer into the design, continue.
 
-**Progress signal.** At every `state.yaml` write print one line — phase,
-chunk N/M, commit, verified-finding count. Nothing from handoffs or findings
-files reaches the user unless they ask.
+**What the user sees.** A live checklist in the harness's plan tool
+(adapter names it): one item per phase of this run, the current phase's
+chunks nested under it, exactly one in progress; `MASTERPLAN.md` phases
+beyond this run appear as one trailing item each. Update it at every
+`state.yaml` write — the checklist does the restating. Every message to the
+user is shaped as the `adhd` skill prescribes, whether or not it is
+installed: next action or question first, state restated ("chunk 2/4 done:
+pricing resolution; reviewing"), completed work shown concretely, errors as
+cause + fix, no preamble, no recap, no closer. Nothing from handoffs or
+findings files reaches the user unless they ask.
 
 Load each reference only when entering its phase.
 

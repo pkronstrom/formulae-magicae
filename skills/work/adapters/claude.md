@@ -12,7 +12,7 @@ model_map:
 phase_map: {}               # e.g. chunk_review: codex:gpt-5.6-terra, final_review: codex:gpt-5.6-sol
 ```
 
-Frontier session: `/model opus`.
+Frontier session: `/model opus`. Checklist: `TodoWrite`.
 
 **Fresh-context agent:** the `Agent` tool, `subagent_type: general-purpose`,
 `model:` from the map, prompt per the spawn protocol in SKILL.md. Give the

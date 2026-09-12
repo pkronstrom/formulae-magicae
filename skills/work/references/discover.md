@@ -25,8 +25,10 @@ in four ways:
    `# Decisions`, `# Invariants`, `# Non-goals` and `# Relevant existing
    architecture` sections below — append them if it did not; every later
    pack cites them by name.
-3. **Skip its TodoWrite step tracking; keep `MASTERPLAN.md`.** When it
-   decomposes the work into phases, write them there (shape in SKILL.md),
+3. **Its step tracking becomes `/work`'s checklist; keep `MASTERPLAN.md`.**
+   Its seven steps nest under the *Design* item of the run's checklist
+   (SKILL.md) instead of a list of their own. When it decomposes the work
+   into phases, write them there (shape in SKILL.md),
    mark the first `← current`, and design *that phase* to convergence —
    later phases get a line each, not a spec.
 4. **Its cross-vendor spec review counts.** It is the design's adversarial

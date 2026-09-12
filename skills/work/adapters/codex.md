@@ -13,7 +13,7 @@ effort: {frontier: high, strong: medium, worker: medium}
 phase_map: {}               # e.g. chunk_review: claude:opus
 ```
 
-Frontier session: `codex -m gpt-5.6-sol`.
+Frontier session: `codex -m gpt-5.6-sol`. Checklist: `update_plan`.
 
 **Fresh-context agent**, two options:
 
