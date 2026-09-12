@@ -22,8 +22,20 @@ the chunk does not spell out. Stop that part, finish
 what is independent of it, and report it under *Remaining* with evidence —
 do not decide it yourself. Everything else is yours.
 
-Before reporting done, run the deterministic checks from a clean state and
-paste their real output line. Commit the chunk on the current branch with a
+Before committing, two cheap passes in the context you already hold:
+
+1. **Acceptance tick.** Walk the chunk section's acceptance items and edge
+   cases; for each, name the test that covers it in the handoff — or write
+   "not done" and why. A skipped plan item found by the reviewer costs a fix
+   pass; found by you it costs a line.
+2. **Deletion pass.** Re-read your own diff once as the design reviewer
+   would: an init or hook that only tests use, a value rebuilt on every
+   access, two entry points for one thing, anything the chunk did not ask
+   for. Delete it now; every such item that reaches review comes back as a
+   finding.
+
+Then run the deterministic checks from a clean state and paste their real
+output line. Commit the chunk on the current branch with a
 message naming it (`chunk 02: quote pricing resolution`).
 
 ## Report
