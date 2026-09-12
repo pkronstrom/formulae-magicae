@@ -1,6 +1,8 @@
 # Execute a chunk
 
-Worker model, fresh context per chunk. Pack in `context.md`.
+Worker model; one worker per phase, continued chunk to chunk (SKILL.md).
+Pack in `context.md` — on continuation only the new chunk section and the
+files it names.
 
 You are building the agreed thing. Follow the architecture in the chunk and the
 pattern it names; honour the previous chunk's Decisions and Deviations.

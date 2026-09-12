@@ -101,7 +101,7 @@ twenty-chunk plan.
 |---|---|---|
 | TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes `.work/chunk.md` (Goal, Files, Follow this pattern, Do not) → worker → tests → done → one dated line in `MASTERPLAN.md` if it matters to the whole picture |
 | STANDARD | one contained subsystem, minor decisions, little architectural impact | short design in-session (1–2 questions, no brainstromming) → coordinator writes plan + 1–2 chunks in-session → worker → one final review, both lenses → fix → verify |
-| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → one adversarial plan reviewer, both lenses → chunks (reviewed only where the next chunk builds on them) → final two-lens review |
+| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → one plan reviewer, both lenses → one worker and one reviewer for the phase, continued across chunks → final two-lens review by that reviewer |
 | CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at plan review and after every chunk, and one specialist reviewer where the task creates a real extra failure domain |
 
 `quick` biases to TINY; it does not forbid escalation.
@@ -114,10 +114,10 @@ INTERACTIVE   user ↔ frontier   discover / inspect / challenge / design   → 
               plan; grill the plan-level tail once, batched             → references/writing-plans.md
 AUTONOMOUS    attack the plan, amend                                     → references/review-plan.md
               for each chunk:
-                set chunk_base, launch worker: implement + tests + commit → references/execute.md
-                reviewers (per level) → verifier → fix pass → commit     → references/review-*.md, verify-findings.md
+                set chunk_base, worker: implement + tests + commit        → references/execute.md
+                review where the next chunk builds on it → fix pass       → references/review-*.md
                 propagate Deviations into later chunk sections
-              final whole-change review → fix pass → deterministic checks
+              final whole-change review, both lenses → fix pass → checks
               done → offer feedback capture                              → references/feedback.md
 ```
 
@@ -267,9 +267,15 @@ comes to frontier reasoning (this session, with the design and the worker's
 handoff — not its transcript); the design and later chunks are amended; the
 worker continues. Ordinary coding trouble is the worker's to solve.
 
-Every chunk is a fresh worker. Mid-chunk, a worker that contradicts a recorded
-decision or has gone noisy is restarted with the same pack — not escalated to
-a stronger model.
+**Separate roles, continue within a role.** Every cold context re-reads the
+code; a continued one pays cached input. So a phase has one worker and one
+reviewer, each spawned once and continued: the worker through every chunk
+and fix pass, the reviewer through every checkpoint and the final review,
+with only the new diff sent each time. Independence lives between roles —
+reviewer is never author, planner never implementer — not between turns of
+the same role. Restart a worker or reviewer with a fresh context only on
+symptom: it contradicts a recorded decision, restates old findings, or has
+gone noisy. Never escalate a noisy context to a stronger model.
 
 ## Review, not review loops
 
@@ -286,13 +292,15 @@ review after every fix.
 "Both lenses in one pass" = one reviewer given both `review-correctness.md`
 and `review-design.md`, writing one file, `<phase>-review.md`, in the
 correctness format with each finding tagged by lens.
-| major | one reviewer, both lenses — only after a chunk that defines something the next chunk builds on (a schema, a contract, a seam); a chunk that only consumes waits for final | two independent reviewers + verifier |
-| critical | two independent reviewers + verifier after each chunk | as major + one specialist |
+| major | the phase's reviewer, both lenses, only after a chunk that defines something the next chunk builds on (a schema, a contract, a seam); a chunk that only consumes waits for final | the same reviewer: whole diff, both lenses, self-verified |
+| critical | two fresh independent reviewers + verifier after each chunk | two fresh reviewers + verifier + one specialist |
 
-Reviewers write `.work/handoffs/<phase>-<lens>.md`. When two or more ran, the
-verifier gets those paths and writes `<phase>-findings.md`; skip the verifier
-when both files are empty. A single reviewer's file goes to the fix pass
-directly. Reviewers never talk to each other. The CRITICAL specialist has no
+Reviewers write `.work/handoffs/<phase>-review.md` (`-<lens>.md` when two
+ran). A single reviewer self-verifies — re-opens every cited location before
+writing — and its file goes to the fix pass directly, where a finding shown
+false with evidence is rejected, not implemented. Only when two reviewers ran
+(CRITICAL) does the verifier read both files and write `<phase>-findings.md`;
+skip it when both are empty. Reviewers never talk to each other. The CRITICAL specialist has no
 reference file: write its lens ad hoc in five lines naming the extra failure
 domain (migration, security, concurrency, contract, UI state), give it the
 chunk-review pack, and feed it to the verifier like the others.

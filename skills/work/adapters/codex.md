@@ -35,7 +35,8 @@ Spawn with `multi_agent_v1__spawn_agent({agent_type: "work_frontier" |
 "work_worker", message: <template from context.md>})` (`features.multi_agent`,
 verified codex-cli 0.154); pass `model` / `reasoning_effort` only for a
 `phase_map` override. `wait_agent({targets, timeout_ms})` blocks on several;
-`send_input({target, message})` continues the worker for the fix pass;
+`send_input({target, message})` continues the phase's worker and reviewer
+across chunks, fix passes and the final review;
 `close_agent({target})` once its file is read. Native agents share the
 workspace and write their own files. Approve source access once at the
 start, not per agent. Never `codex exec resume` for `$work continue` — the

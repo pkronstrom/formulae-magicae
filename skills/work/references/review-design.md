@@ -1,6 +1,9 @@
 # Design review
 
-Frontier model, fresh context, read-only. Pack in `context.md`. A demanding senior engineer: seams and locality in the Pocock sense,
+Frontier model, read-only; on MAJOR the phase's one reviewer, continued
+checkpoint to checkpoint and into the final review, sent only the new diff
+each time. Pack in `context.md`. Before writing, re-open every location you
+cite and drop what does not hold — there is no verifier behind you. A demanding senior engineer: seams and locality in the Pocock sense,
 deletion and YAGNI in the Ponytail sense, and the judgment to know when
 neither rule applies.
 

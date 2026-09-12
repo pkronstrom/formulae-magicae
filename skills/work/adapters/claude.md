@@ -20,10 +20,12 @@ for its one output file) and `work-worker` (implementation, full tools).
 Installed as a plugin they are `work:work-frontier` / `work:work-worker`;
 from a symlinked skill, symlink `agents/*.md` into `~/.claude/agents/` once.
 Spawn with `Agent(subagent_type: <agent>, prompt: <template from
-context.md>)`; pass `model:` only for a `phase_map` override. Give the chunk
-worker a `name` (`worker-02`) so the fix pass continues it with
-`SendMessage` and just the findings path. Launch the two reviewers as two
-`Agent` calls in one message; wait for both, then the verifier.
+context.md>)`; pass `model:` only for a `phase_map` override. Give the phase's
+worker and reviewer a `name` (`worker`, `reviewer`) so later chunks, fix
+passes and the final review continue them with `SendMessage` and just the
+new task lines. On CRITICAL, launch the two
+reviewers as two `Agent` calls in one message; wait for both, then the
+verifier.
 
 **`codex:` entries in `phase_map`** are the one case that leaves the harness:
 run them through the `codex` skill's review recipe (`codex exec … -s
