@@ -111,7 +111,8 @@ twenty-chunk plan.
 ```text
 INTERACTIVE   user ↔ frontier   discover / inspect / challenge / design   → references/discover.md
               ↓ converged: no open question is likely to reshape the implementation
-              planner drafts with a ## Grill → one batch to the user     → references/writing-plans.md
+              grill at plan altitude, one question at a time, live      → references/writing-plans.md
+              planner
 AUTONOMOUS    attack the plan, amend                                     → references/review-plan.md
               for each chunk:
                 set chunk_base, worker: implement + tests + commit        → references/execute.md
@@ -134,9 +135,9 @@ implementation exposed, or a chunk still red after one fresh-worker retry
 commit: the coordinator keeps `chunk_base`, writes the failing output to the
 chunk handoff, launches one fresh worker with the fix-pass pack plus that
 output, and if still red, stops and asks. The one scheduled exception is the plan grill:
-plan-level questions the planner cannot settle from the code, asked once, in
-one batch, before anything is built — a wrong guess there is the expensive
-kind. Bring it with 1–3 options and a recommendation,
+plan-level questions this session cannot settle from the code, asked live,
+one at a time, before anything is built — a wrong guess there is the
+expensive kind. Bring it with 1–3 options and a recommendation,
 write the answer into the design, continue.
 
 An approval the user gave once in this run — source access, an external

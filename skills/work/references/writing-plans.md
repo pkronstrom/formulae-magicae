@@ -24,86 +24,26 @@ will write it once, against real code, with the tests running.
 ## Resolve, don't guess — the plan grill
 
 The plan is where a wrong call is cheapest to fix and, once built on, most
-expensive. Before chunking, list every plan-level decision the design leaves
-open: the details brainstromming parked as "plan-time", interface shapes,
-data formats, error and retry policy, names of new public things, what is
-tested and how. Settle each from the code where the code decides it. The
-rest — the ones where a wrong guess costs a rewrite — go into a `## Grill`
-section of the draft plan, each with a recommendation, and the draft is
-returned with the plan otherwise complete.
+expensive. So before the planner is spawned, **this session grills the user
+at plan altitude, brainstromming-style**: the conversation simply continues
+past design convergence into the plan-level decisions the design leaves open
+— the details brainstromming parked as "plan-time", interface shapes, data
+formats, error and retry policy, names of new public things, what is tested
+and how. Settle from the code whatever the code decides; ask the rest
+**one question per message**, live, with 2–4 options and the recommendation
+marked (`AskUserQuestion` where the harness has it, prose otherwise). Stop
+when you could predict the answer to the next one — usually two to five
+questions, sometimes none. Write each answer into the design as a decision
+as you go.
 
-**The coordinator owns the one batch.** It folds its own open items into
-the planner's `## Grill` and asks the user once: up to five inline with the
-recommendation marked; more than that, `grill-singlefile` if installed
-(they answer async), else a numbered list. The user sees every item, even
-those with an obvious answer — a decision made for them is what feels like
-being bypassed. Then the planner is *continued* with the answers and
-returns the final plan, `## Grill` removed. Never a second round; anything
-that surfaces later is the planner's call, written down as a decision. A
-plan with a "TBD" in it is not finished.
+The planner receives a design with those decisions made and does not grill.
+If it still meets a decision it cannot settle from the code and the design,
+it returns that question instead of guessing; this session asks it the same
+way, then continues the planner with the answer. A plan with a "TBD" in it
+is not finished.
 
 STANDARD gets the same discipline in-session, usually as zero or one
 question.
-
-## Chunks
-
-Split into architecturally meaningful chunks a single worker can own from
-implementation through local verification: *persistence path complete*,
-*domain vertical slice complete*, *API contract complete*, *migration
-complete*. Two to four chunks for a MAJOR phase; one or two for STANDARD.
-More than four is a second phase, not a longer plan.
-Never chunk at TDD granularity — "write test / make it pass / refactor" is one
-worker's inner loop, not three review checkpoints.
-
-Order chunks so each leaves the tree building and tests green. If a chunk
-cannot, say what is temporarily allowed to be red and why.
-
-## The plan document
-
-`docs/plans/<date>-<topic>-implementation.md`, next to the design it
-implements. Header: `Status: in progress` (→ `done <date>` at the end), the
-goal, the design link (or the Design section itself for STANDARD), the chunk
-list with one-line goals, the acceptance for the whole feature, non-goals,
-and *things not to redesign*. Then one `## Chunk N` section per chunk,
-self-contained — the worker is pointed at its section and reads only that:
-
-```markdown
-## Chunk 2 — Quote pricing resolution
-
-## Goal
-Resolve quote-line prices by the existing price-source priority.
-
-## Architecture
-Resolution stays in PricingService. The router validates and delegates.
-
-## Files
-- src/services/pricing.ts
-- src/server/routers/quotes.ts
-- tests/pricing.test.ts
-
-## Invariants
-- manual override always wins
-- a missing price never silently becomes zero
-- no pricing rules in the router
-
-## Follow this existing pattern
-src/services/supplier-pricing.ts — the established service boundary for this
-subsystem. Match its shape; do not introduce a second style.
-
-## Implementation notes
-- reuse resolveSupplierPrice(); the transaction boundary stays in QuoteService
-- no generic pricing-strategy framework
-
-## Edge cases
-- ...
-
-## Acceptance
-- tests listed above pass; typecheck and lint clean
-- ...
-
-## Do not
-- redesign the pricing model; touch unrelated serialization
-```
 
 ## Thorough means
 
