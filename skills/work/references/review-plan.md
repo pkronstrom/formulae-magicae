@@ -1,9 +1,9 @@
 # Adversarial plan review
 
-MAJOR and CRITICAL only. Two fresh-context frontier reviewers, read-only, one
-lens each, in parallel, never conversing; then the verifier. Once per
-feature, and a wrong plan costs a rewrite — this is the review not to trim.
-Pack in `context.md`. The design was already attacked at discovery; attack
+MAJOR and CRITICAL only. MAJOR: one fresh-context frontier reviewer,
+read-only, both lenses in one pass. CRITICAL: two reviewers, one lens each,
+in parallel, never conversing, then the verifier. Once per phase, before any
+code — a wrong plan costs a rewrite. Pack in `context.md`. The design was already attacked at discovery; attack
 the *plan*.
 
 Your job is to prove the plan will cause trouble before implementation begins.
@@ -34,11 +34,14 @@ should be verified before building on them.
 Findings only, ranked, each with: severity (`BLOCKER` / `DESIGN` /
 `SUSPICION`), the claim, the evidence (`file:line` or plan section), and the
 smallest plan change that resolves it. Zero findings is a valid answer.
-Write `.work/handoffs/plan-review-<lens>.md`; reply with the path and count.
+Write `.work/handoffs/plan-review-<lens>.md` (`plan-review.md` when one
+reviewer ran both lenses); reply with the path and count.
 
 ## Afterwards (coordinator)
 
-Run the verifier (`verify-findings.md`) on both files unless both are empty.
-Amend the design and
-the chunk sections for verified findings — amend, don't rewrite.
+One reviewer: judge its findings yourself — you hold the plan and the
+design; open the cited code for anything you cannot confirm from them, and
+no verifier. Two reviewers (CRITICAL): run the verifier on both files unless
+both are empty. Amend the design and the chunk sections for the findings
+that hold — amend, don't rewrite.
 Record what changed in `.work/handoffs/plan-review.md`, set `phase: execute`.

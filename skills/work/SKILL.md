@@ -101,8 +101,8 @@ twenty-chunk plan.
 |---|---|---|
 | TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes `.work/chunk.md` (Goal, Files, Follow this pattern, Do not) → worker → tests → done → one dated line in `MASTERPLAN.md` if it matters to the whole picture |
 | STANDARD | one contained subsystem, minor decisions, little architectural impact | short design in-session (1–2 questions, no brainstromming) → coordinator writes plan + 1–2 chunks in-session → worker → one final review, both lenses → fix → verify |
-| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → two adversarial plan reviewers + verifier → chunks, one reviewer each → final two-lens review |
-| CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at chunk checkpoints too, and one specialist reviewer where the task creates a real extra failure domain |
+| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → one adversarial plan reviewer, both lenses → chunks (reviewed only where the next chunk builds on them) → final two-lens review |
+| CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at plan review and after every chunk, and one specialist reviewer where the task creates a real extra failure domain |
 
 `quick` biases to TINY; it does not forbid escalation.
 
@@ -286,7 +286,7 @@ review after every fix.
 "Both lenses in one pass" = one reviewer given both `review-correctness.md`
 and `review-design.md`, writing one file, `<phase>-review.md`, in the
 correctness format with each finding tagged by lens.
-| major | one reviewer, both lenses, after each chunk | two independent reviewers + verifier |
+| major | one reviewer, both lenses — only after a chunk that defines something the next chunk builds on (a schema, a contract, a seam); a chunk that only consumes waits for final | two independent reviewers + verifier |
 | critical | two independent reviewers + verifier after each chunk | as major + one specialist |
 
 Reviewers write `.work/handoffs/<phase>-<lens>.md`. When two or more ran, the
