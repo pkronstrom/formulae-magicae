@@ -17,10 +17,18 @@ Frontier session: `codex -m gpt-5.6-sol`. Checklist: the plan tool if this
 Codex build exposes one (`update_plan`); otherwise a markdown checklist
 restated at the top of each message.
 
-**Fresh-context agent:** `codex exec` from the shell — isolated, runs in the
-background so two reviewers can overlap (verified on codex-cli 0.154). Native
-subagents (`features.multi_agent`) are not used: no verified spawn syntax
-selects a model or enforces read-only.
+**Fresh-context agent — native first.** When this runtime exposes a spawn
+tool that accepts a model (`features.multi_agent`), use it: model from the
+map, prompt per the spawn protocol in SKILL.md, reviewers and the verifier
+told in their first line to change nothing under the repo except their
+findings file. Native agents share the workspace, so they write their
+handoff or findings file themselves and the fix pass continues the same
+worker agent. Reading the project's source, tests and plans is what these
+agents are for — approve that once at the start, not per agent.
+
+**Fallback — `codex exec` from the shell**, when no spawn tool is available:
+isolated, runs in the background so two reviewers can overlap (verified on
+codex-cli 0.154).
 
 ```bash
 # worker: writes, sees AGENTS.md; keep the log — it holds the session id
