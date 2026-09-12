@@ -31,7 +31,7 @@ Frontier session: `codex -m gpt-5.6-sol`. Checklist: `update_plan`.
      -s workspace-write -C "$PWD" - < .work/prompts/chunk-02.md
    # reviewer / verifier: read-only, ephemeral
    codex exec -m gpt-5.6-sol -c model_reasoning_effort="high" \
-     -s read-only --ephemeral -C "$PWD" - < .work/prompts/review-correctness-02.md &
+     -s read-only --ephemeral --ignore-user-config -C "$PWD" - < .work/prompts/review-correctness-02.md &
    ```
 
    Build each prompt file per the spawn protocol in SKILL.md. Reasoning depth

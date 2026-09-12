@@ -23,7 +23,7 @@ launch the verifier.
 
 **`codex:` entries** run from Bash with `run_in_background: true`, prompt on
 stdin, using the `codex exec` lines in `adapters/codex.md` — reviewers and the
-verifier `-s read-only --ephemeral`, workers `-s workspace-write`. Launch the
+verifier `-s read-only --ephemeral --ignore-user-config` (no MCP servers, no stray context), workers `-s workspace-write`. Launch the
 two reviewers in one message and wait for the notifications; do not poll. A
 Codex worker's fix pass continues via `codex exec resume --last`.
 
