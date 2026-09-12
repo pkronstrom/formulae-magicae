@@ -147,14 +147,32 @@ docs/plans/archive/                             both files move here when the wo
 ```
 
 ```markdown
-# Master plan
+# Gateway — master plan
+
+Two or three paragraphs: what this is, where it is going, the architecture
+in one breath. The whole picture, not the steps.
+
+## Phases
 - [x] Phase 1 — Persistence (done 2026-09-10) → docs/plans/archive/2026-09-08-persistence-implementation.md
 - [ ] Phase 2 — Sync (depends on 1) ← current → docs/plans/2026-09-12-sync-implementation.md
+  - settles the event schema Phase 3 renders; at-least-once delivery, dedupe server-side
 - [ ] Phase 3 — UI
+- [x] 2026-09-11 — retry backoff made jittered (tiny; no plan)
+
+## For the next planner
+- Seam: all persistence goes through src/store/*; legacy/ has a second style — do not follow it.
+- Blocker: Phase 3 needs the event schema Phase 2 settles (its plan, Chunk 3).
+- Debt: retry logic lives in both net/ and sync/ — collapse when Phase 3 touches it.
 ```
 
-One line per phase or feature: status, dependencies, links to its design and
-plan once they exist. Steps are never duplicated here; the plan holds them.
+Keep it un-polluted. One line per phase or feature — status, dependencies,
+links — and a few bullets only for a genuinely big phase. Steps are never
+duplicated here; the plan holds them. *For the next planner* is what a
+fresh planner must read or know to make a cohesive decision for the next
+phase: seams to respect, blockers, debt worth collapsing, files to read
+first. Pointers, not essays; ten lines is plenty; remove an entry the run
+that resolves it. It is written at *done* from the run's Deviations and
+Risks, and read at the start of the next discovery and plan.
 
 Local, per-run state:
 
@@ -244,7 +262,9 @@ A feature is done when every chunk is committed, the final review's verified
 findings are fixed, and the deterministic checks in `verified:` all pass in a
 fresh run — not from memory of them passing. Then close the documents:
 set `Status: done <date>` in the plan, tick and date the `MASTERPLAN.md`
-line, move the design and plan to `docs/plans/archive/` and fix the link,
-commit as `<topic>: done`. Report plainly — and if `MASTERPLAN.md` has an
+line, update *For the next planner* from the handoffs' Deviations and Risks
+(add what the next phase must know, remove what this run resolved), move the
+design and plan to `docs/plans/archive/` and fix the link, commit as
+`<topic>: done`. Report plainly — and if `MASTERPLAN.md` has an
 unchecked phase, name it as the next `/work`. Then ask once: *"Feature complete. Capture this run as feedback for improving /work?"*
 (`references/feedback.md`). Never mutate this skill after a single run.

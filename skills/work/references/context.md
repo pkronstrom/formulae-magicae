@@ -8,8 +8,8 @@ source; the references do not restate it.
 
 | phase | pack |
 |---|---|
-| discover | repo rules · relevant architecture · code as discovered · working design · the live conversation |
-| plan | repo rules · working design · relevant architecture and source — **not** the discovery transcript |
+| discover | repo rules · `MASTERPLAN.md` · relevant architecture · code as discovered · working design · the live conversation |
+| plan | repo rules · `MASTERPLAN.md` (the picture and *For the next planner*) · working design · relevant architecture and source — **not** the discovery transcript |
 | plan review | goal · working design · the plan with its chunk sections · relevant contracts — **not** planner reasoning |
 | execute chunk | repo rules · design Decisions + Invariants · this chunk section of the plan (TINY: `.work/chunk.md`) · files it names · relevant tests · the one pattern file · previous chunk's handoff (Decisions, Deviations, Relevant files) |
 | chunk review | goal (one paragraph) · design Invariants · **the chunk section** · `git diff <chunk_base>` · neighbouring code — **not** worker reasoning or handoff prose |

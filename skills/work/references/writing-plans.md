@@ -4,6 +4,10 @@ Frontier model, fresh context for MAJOR/CRITICAL; the coordinator writes it
 in-session for STANDARD and TINY, straight from the working design. Pack in
 `context.md`.
 
+Read `MASTERPLAN.md` first — its *For the next planner* section is what the
+previous runs learned: the seams to respect, the blockers, the files to
+open. Plan against that picture, not just this phase.
+
 The plan resolves architecture; it does not type the implementation twice.
 Be exact about decisions, responsibilities, interfaces, data flow, invariants,
 files, the existing pattern to reuse, edge cases, tests, acceptance and what is
