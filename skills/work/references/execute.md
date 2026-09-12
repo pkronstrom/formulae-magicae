@@ -32,9 +32,12 @@ silence is not.
 
 ## Fix pass
 
-Worker model, fresh context. Pack: the verified findings file (or the single
-reviewer's file), the chunk file, the design's Invariants, and only the files
-the findings cite. Fix the listed findings and nothing else; the chunk's *Do
+**The same worker, continued** — its context already holds the chunk, the
+files and the pattern; send it only the findings file (adapter says how).
+Spawn a fresh worker instead only if the chunk worker was noisy or
+contradicted a decision; its pack is then the findings file, the chunk file,
+the design's Invariants, and only the files the findings cite. Fix the listed
+findings and nothing else; the chunk's *Do
 not* still applies. A finding you can show is false — `file:line` and the
 reason — goes under *Deviations* in the handoff, not into the code. Rerun the
 checks, commit as a follow-up (`chunk 02: review fixes`), append a *Fix pass*

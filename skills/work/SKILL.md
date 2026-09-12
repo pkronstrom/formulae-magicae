@@ -11,7 +11,8 @@ boundary by writing state, not by carrying context. Protect the architecture
 while the codebase grows.
 
 Not a swarm: one planner, one worker at a time, two reviewers only where two
-lenses add real value, one verifier when two reviewers ran, zero managers.
+lenses add real value — the final pass and CRITICAL — one verifier when two
+reviewers ran, zero managers.
 
 ## Commands
 
@@ -78,8 +79,8 @@ before starting the next, and never write one twenty-chunk plan.
 |---|---|---|
 | TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes one minimal chunk file (Goal, Files, Follow this pattern, Do not) → worker → tests → done |
 | STANDARD | one contained subsystem, minor decisions, little architectural impact | short design in-session (1–2 questions, no brainstromming) → coordinator writes plan + 1–2 chunks in-session → worker → one final review, both lenses → fix → verify |
-| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner → one adversarial plan reviewer → chunks with two-lens review → final two-lens review |
-| CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent plan reviewers + verifier, and one specialist reviewer where the task creates a real extra failure domain |
+| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner → one adversarial plan reviewer → chunks, one reviewer each → final two-lens review |
+| CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at plan and chunk checkpoints, and one specialist reviewer where the task creates a real extra failure domain |
 
 `quick` biases to TINY; it does not forbid escalation.
 
@@ -187,8 +188,8 @@ review after every fix.
 |---|---|---|
 | tiny | none | none, unless the diff turned out risky |
 | standard | none | one reviewer, both lenses in one pass |
-| major | correctness + design after each chunk; a small chunk (`git diff --stat <chunk_base>`) gets the standard shape | correctness + design, fresh context |
-| critical | as major | as major + one specialist |
+| major | one reviewer, both lenses, after each chunk | two independent reviewers + verifier |
+| critical | two independent reviewers + verifier after each chunk | as major + one specialist |
 
 Reviewers write `.work/handoffs/<phase>-<lens>.md`. When two or more ran, the
 verifier gets those paths and writes `<phase>-findings.md`; skip the verifier

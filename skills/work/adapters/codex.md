@@ -35,5 +35,6 @@ Frontier session: `codex -m gpt-5.6-sol`.
 
    Build each prompt file per the spawn protocol in SKILL.md. Reasoning depth
    is the `-c model_reasoning_effort` override; there is no `--effort` flag.
-   Do not `codex exec resume` for `$work continue` — the transcript is not
-   the state.
+   The fix pass continues the chunk worker: `codex exec resume --last -` with
+   the findings path on stdin. Never resume for `$work continue` — the
+   transcript is not the state.

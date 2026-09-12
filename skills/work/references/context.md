@@ -14,7 +14,7 @@ source; the references do not restate it.
 | execute chunk | repo rules · design Decisions + Invariants · this chunk · files it names · relevant tests · the one pattern file · previous chunk's handoff (Decisions, Deviations, Relevant files) |
 | chunk review | goal (one paragraph) · design Invariants · **the chunk file** · `git diff <chunk_base>` · neighbouring code — **not** worker reasoning or handoff prose |
 | verify findings | the reviewers' findings files · diff · design/chunk where cited |
-| fix pass | findings file · chunk file · design Invariants · only the files the findings cite |
+| fix pass | continued worker: the findings file only · fresh worker: findings file · chunk file · design Invariants · only the files the findings cite |
 | final review | goal · working design · plan · `git diff <base_ref>` · relevant tests |
 
 "Repo rules" means the project's `CLAUDE.md` / `AGENTS.md` and equivalents,
