@@ -3,11 +3,14 @@
 The interactive phase. Frontier model, this session, the user in the loop.
 Write `base_ref` (HEAD) to `state.yaml` before anything else.
 
-**TINY:** no discovery. **STANDARD:** hold it yourself — read the code first,
-ask the one or two questions that change the shape, offer options with a
-recommendation, distill straight into `.work/working-design.md` below.
+**Obviously local** (provisional TINY/STANDARD): hold it yourself — read the
+code first, ask the one or two questions that change the shape, offer options
+with a recommendation, distill straight into `.work/working-design.md` below.
+The moment it stops looking local — a migration, a second subsystem, several
+phases — switch to brainstromming; nothing is lost, the design file carries
+over.
 
-**MAJOR / CRITICAL: run the `brainstromming` skill** — it already does the
+**Everything else: run the `brainstromming` skill** — it already does the
 job: inspect before inventing, one load-bearing question at a time, options
 with a recommendation, architecture altitude only, a written and verified spec,
 a cross-vendor attack on it. Do not re-implement it. If it is not installed,
@@ -26,8 +29,9 @@ in four ways:
 4. **Its cross-vendor spec review counts.** It is the design's adversarial
    pass; the plan review that follows attacks the plan, not the design again.
 
-STANDARD gets one adversarial pass: the final review. Do not send its design
-out.
+Classify when the design converges, not before (SKILL.md). A brainstromming
+session may well end at STANDARD; then skip its cross-vendor review — STANDARD
+gets one adversarial pass, the final review.
 
 ## Be opinionated about simplicity
 

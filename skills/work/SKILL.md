@@ -57,11 +57,22 @@ next step needs it. Never re-derive in this session what a file already says.
 
 ## Size the work from the code, not the sentence
 
-Never classify from the opening line. Look first: the subsystem, the existing
-pattern, what the change actually touches. Something that sounds large may reuse
-an existing seam and be STANDARD; a "small" change may expose a migration and be
-MAJOR. Classify once the shape is known, record it in `state.yaml`, and
-re-classify if implementation proves it wrong.
+Never classify from the opening line. Two moments, not one:
+
+1. **Before discovery**, a quick look at the code answers one question only —
+   *is this obviously local?* Yes: short in-session discovery. No, or any
+   doubt: brainstromming. That routes discovery; it is not the level.
+2. **When the design converges**, classify for real and record it in
+   `state.yaml`. It can go either way: a brainstromming session that ends at
+   "reuse the existing seam" is STANDARD; a short chat that surfaces a
+   migration, a second subsystem or several phases escalates into
+   brainstromming and lands at MAJOR or CRITICAL. Re-classify if
+   implementation proves it wrong.
+
+When discovery decomposes the work into several independent sub-projects — a
+whole app, a multi-phase rollout — each is its own `/work` run with its own
+plan and chunks. Record the order and dependencies in the design, finish one
+before starting the next, and never write one twenty-chunk plan.
 
 | level | shape | flow |
 |---|---|---|
