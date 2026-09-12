@@ -29,18 +29,18 @@ touch it. That is where lifecycle bugs are visible.
 
 ## The spawn prompt
 
-One template for every agent; fill the brackets, send nothing else. The
-reference file is the agent's instructions — do not paraphrase it.
+One template for both built-in agents (`work-frontier`, `work-worker`);
+fill the brackets, send nothing else. The reference file is the brief — do
+not paraphrase it; the agent definition already covers read-only, the output
+file and the one-line reply.
 
 ```text
-Role: read <skill>/references/<role>.md — it is your whole brief.
-Read-only: nothing under the repo changes; write only your output file.   (reviewers, verifier, planner)
-Task: <plan path>#Chunk N                                                  (worker, reviewers, fix pass)
+Brief: <skill>/references/<role>.md
+Task: <plan path>#Chunk N                          (worker, reviewers, fix pass)
 Context: <pack paths from the table above, one per line>
-Previous: <previous handoff path>                                          (worker)
-Findings: <findings path>                                                  (fix pass)
+Previous: <previous handoff path>                  (worker)
+Findings: <findings path>                          (fix pass)
 Output: <.work/handoffs/... path>
-Reply with the output path and one line of status.
 ```
 
 Project-specific invariants and gotchas go into the chunk section of the

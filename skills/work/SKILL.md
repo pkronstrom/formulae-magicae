@@ -34,7 +34,8 @@ yourself from the diff.
 ## Roles, not model names
 
 The workflow speaks in semantic roles; the adapter for the harness you are in
-maps them to real models and says how to spawn a fresh-context agent. Read
+maps them to real models and names the two built-in agents that carry them —
+`work-frontier` (plan, review, verify) and `work-worker` (implement). Read
 `adapters/claude.md` or `adapters/codex.md` first — once — and never write a
 provider model name anywhere else.
 
@@ -58,19 +59,17 @@ The design conversation runs *in this session*, so this session must be on
 the frontier model. If it is not, say so and stop until the user switches or
 says go.
 
-**Spawn protocol, every fresh-context agent.** The prompt is the template in
-`references/context.md`, filled in — role reference path, pack paths, chunk
-section, output path — and nothing else. The reference file is the agent's
-brief; never paraphrase it, never paste whole files. Project-specific
-invariants belong in the chunk section of the plan, not in the prompt. First line for reviewers and the
-verifier: read-only — nothing under the repo changes, no commits.
-`.work/handoffs/` is always writable: every agent, read-only ones included,
-writes its own output file there. Every agent ends by writing its
-output file (handoff, findings, plan) and replying with **one line** — the
-file path and a count or status. An agent run outside the harness (a
-`phase_map` entry) cannot write `.work`; its whole reply *is* the file and
-the coordinator captures it to the path. The coordinator reads the file only when the
-next step needs it. Never re-derive in this session what a file already says.
+**Spawn protocol.** Every fresh-context step is one of the two built-in
+agents with the template from `references/context.md` as its task — brief
+path, pack paths, chunk section, output path — and nothing else. The agent
+definition already says what it is and how it ends (its output file written,
+a one-line reply); the reference file is the brief. Never paraphrase the
+brief, never paste whole files; project-specific invariants belong in the
+chunk section of the plan, not in the task. An agent run outside the harness
+(a `phase_map` entry) cannot write `.work`; its whole reply *is* the file and
+the coordinator captures it to the path. The coordinator reads an output
+file only when the next step needs it, and never re-derives in this session
+what a file already says.
 
 ## Size the work from the code, not the sentence
 
