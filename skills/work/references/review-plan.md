@@ -38,6 +38,7 @@ Write `.work/handoffs/plan-review-<lens>.md`; reply with the path and count.
 
 ## Afterwards (coordinator)
 
-Run the verifier (`verify-findings.md`) on both files. Amend the design and
+Run the verifier (`verify-findings.md`) on both files unless both are empty.
+Amend the design and
 the chunk sections for verified findings — amend, don't rewrite.
 Record what changed in `.work/handoffs/plan-review.md`, set `phase: execute`.

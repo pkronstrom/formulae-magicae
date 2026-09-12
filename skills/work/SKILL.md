@@ -58,9 +58,12 @@ says go.
 **Spawn protocol, every fresh-context agent.** Prompt = the role's reference
 file path + the context pack from `references/context.md` as file paths — the
 agent reads them; never paste whole files. First line for reviewers and the
-verifier: read-only, no edits, no commits. Every agent ends by writing its
+verifier: read-only — nothing under the repo changes, no commits; the only
+file they produce is their findings file. Every agent ends by writing its
 output file (handoff, findings, plan) and replying with **one line** — the
-file path and a count or status. The coordinator reads the file only when the
+file path and a count or status. Where the harness cannot let a read-only
+agent write at all (adapter says), the agent's whole reply *is* the file
+and the coordinator captures it to the path. The coordinator reads the file only when the
 next step needs it. Never re-derive in this session what a file already says.
 
 ## Size the work from the code, not the sentence
@@ -118,7 +121,10 @@ Interrupt only for a genuinely consequential open decision: materially
 different product behaviour, requirements that conflict, a destructive or
 irreversible action, an architectural fork with real tradeoffs that
 implementation exposed, or a chunk still red after one fresh-worker retry
-(show the failing output). The one scheduled exception is the plan grill:
+(show the failing output). A fix pass that leaves the checks red does not
+commit: the coordinator keeps `chunk_base`, writes the failing output to the
+chunk handoff, launches one fresh worker with the fix-pass pack plus that
+output, and if still red, stops and asks. The one scheduled exception is the plan grill:
 plan-level questions the planner cannot settle from the code, asked once, in
 one batch, before anything is built — a wrong guess there is the expensive
 kind. Bring it with 1–3 options and a recommendation,
@@ -187,6 +193,7 @@ Local, per-run state:
 .work/
 ├── state.yaml          phase, level, current chunk, document paths, verification, open decisions
 ├── handoffs/           plan-review.md, chunk-NN.md, <phase>-<lens>.md, <phase>-findings.md
+├── logs/, prompts/     only when an adapter runs agents from the shell
 └── feedback/           opt-in run records for skill-improver
 ```
 
@@ -203,11 +210,15 @@ chunk_base: 8b77e01       # HEAD immediately before the current chunk's worker l
 docs: {design: docs/plans/2026-09-12-sync-design.md, plan: docs/plans/2026-09-12-sync-implementation.md}
 masterplan_phase: "Phase 2 — Sync"   # when MASTERPLAN.md exists
 last_handoff: .work/handoffs/chunk-01-findings.md
+worker_session: 01a094bf-…    # only when the adapter continues workers by id
 verified: {tests: pass, typecheck: pass, lint: pass, build: n/a}
 open_decisions: []
 ```
 
-`base_ref` is written once, at start. The coordinator sets `chunk_base` to
+Before writing `base_ref`, the tree must be clean: a dirty tree at start is
+the user's work, not the feature's — ask whether to commit it, stash it, or
+include it, and do not start until answered. `base_ref` is written once, at
+start. The coordinator sets `chunk_base` to
 HEAD immediately before launching each chunk's worker — after the previous
 chunk's fix commit — so `git diff <chunk_base>` is exactly this chunk. The
 worker commits the chunk when it reports and the fix pass commits as a
@@ -217,10 +228,10 @@ unless the project wants it tracked. The design, the plan and `MASTERPLAN.md`
 are committed with chunk 01; say so.
 
 A new `/work <task>` over a `.work/` whose phase is `done` replaces everything
-but `feedback/`. Over any other phase, ask: continue it, or discard it.
-`/work` or `/work continue` with phase `done` and an unchecked phase in
-`MASTERPLAN.md` starts that phase — discovery, plan grill, plan review, all
-of it — and says so.
+but `feedback/` and is a new feature, whatever `MASTERPLAN.md` says. Over any
+other phase, ask: continue it, or discard it. `/work continue` with phase
+`done` and an unchecked phase in `MASTERPLAN.md` starts that phase —
+discovery, plan grill, plan review, all of it — and says so.
 
 `/work continue`: read `state.yaml` and the `last_handoff`, re-enter the
 phase. A dirty tree relative to `chunk_base` is partial chunk work: hand the
@@ -252,6 +263,10 @@ review after every fix.
 |---|---|---|
 | tiny | none | none, unless the diff turned out risky |
 | standard | none | one reviewer, both lenses in one pass |
+
+"Both lenses in one pass" = one reviewer given both `review-correctness.md`
+and `review-design.md`, writing one file, `<phase>-review.md`, in the
+correctness format with each finding tagged by lens.
 | major | one reviewer, both lenses, after each chunk | two independent reviewers + verifier |
 | critical | two independent reviewers + verifier after each chunk | as major + one specialist |
 

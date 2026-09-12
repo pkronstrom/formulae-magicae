@@ -23,9 +23,10 @@ launch the verifier.
 
 **`codex:` entries** run from Bash with `run_in_background: true`, prompt on
 stdin, using the `codex exec` lines in `adapters/codex.md` — reviewers and the
-verifier `-s read-only --ephemeral --ignore-user-config` (no MCP servers, no stray context), workers `-s workspace-write`. Launch the
+verifier `-s read-only --ephemeral --ignore-user-config` with `-o <findings path>` (read-only cannot write `.work`, so the reply is captured to the file), workers `-s workspace-write`. Launch the
 two reviewers in one message and wait for the notifications; do not poll. A
-Codex worker's fix pass continues via `codex exec resume --last`.
+Codex worker's fix pass continues via `codex exec resume <session id>` — the
+id is in the worker's log, never `--last`.
 
 **Cross-vendor second opinion** (CRITICAL, optional): if the `review-work`
 skill is installed, its `dispatch.sh` runs one lens on another vendor's model

@@ -1,7 +1,9 @@
 # coordinate — live Claude Code ↔ Codex peer coordination over tmux
 
 Status: design draft, 2026-09-12. Sections 1–2 discussed with the user; 3–6 are
-the author's proposal, not yet approved.
+the author's proposal, not yet approved. Reviewed once by Codex (gpt-5.6-terra,
+high): three findings, all folded in (buffer scoping, best-effort readiness,
+`/work` handoff via state instead of waiting).
 
 ## Goal
 
@@ -108,9 +110,19 @@ Under the hood: `coordinate.py connect <harness> [selector] [--brief …]`.
      dialog is up (permission prompt, menu, AskUserQuestion — those render
      `❯ 1. Yes`-style option lines), or the TUI is not showing a prompt.
 3. If not ready, poll every 2 s up to 30 s.
-4. Ready → `tmux set-buffer -b coordinate <envelope>`, `tmux paste-buffer -p
-   -d -b coordinate -t <pane>` (bracketed paste, so multi-line text is one
-   input), sleep 0.3 s, `tmux send-keys -t <pane> Enter`. Log `delivered`.
+4. Ready → re-check readiness once more immediately before pasting, then
+   `tmux set-buffer -b coordinate-<project-key>-<id> <envelope>` and
+   `tmux paste-buffer -p -d -b <that name> -t <pane>` (bracketed paste, so
+   multi-line text is one input; the buffer name is unique because tmux
+   buffers are server-global and two project pairs may coexist). Sleep 0.3 s,
+   capture again: if the prompt box shows anything other than our envelope
+   (a draft typed in the ms window between check and paste), do **not** press
+   Enter — log `held-mixed`, tell the sender, and let the user submit or clear
+   by hand. Otherwise `tmux send-keys -t <pane> Enter` and log `delivered`.
+
+   The readiness check is best-effort, not a lock: neither TUI offers an input
+   lock, so the guarantee is "never *submit* a mangled prompt", not "never
+   touch the prompt".
 5. Still not ready after 30 s → log `held`, print
    `held: <reason>; retried by the next bridge call` and exit 0. The sending
    agent tells the user in one line and carries on.
@@ -192,17 +204,26 @@ lines.
 
 ## 6. `/work` hook-in
 
-`/work` reads `coordinate.py status --json` when it reaches a phase with a
-peer-shaped role. If a peer is connected and the level is MAJOR or CRITICAL:
+`/work` reads `coordinate.py status --json` when it reaches plan review or
+final review. If a peer is connected and the level is MAJOR or CRITICAL, the
+peer takes **one** of the two independent reviewer slots (it is a different
+model, which is the point); the other fresh-context reviewer and the verifier
+run exactly as today.
 
-- plan review → `ask` the peer to attack `.work/plan.md`, findings to
-  `.work/reviews/<peer>-plan.md`; `/work` waits for the `done` reply (the user
-  sees both panes; no polling — the reply arrives as a new turn).
-- final review → same for the diff.
+`/work` cannot wait for the reply — a pasted peer message arrives as a *new*
+turn and does not resume a running tool sequence. So it hands off through
+state, the way every other `/work` phase boundary works:
 
-The peer replaces the `codex exec` fresh-context reviewer for that phase; the
-other reviewer lens still runs as today. Not connected → `/work` is unchanged.
-Never required.
+1. `/work` sends `ask review-plan .work/plan.md → .work/reviews/<peer>-plan.md`
+   (or the diff equivalent), writes `state.yaml` with
+   `awaiting: peer-plan-review` (`peer-final-review`), and **ends its turn**
+   with one line saying so.
+2. The peer's `done` reply starts a new turn in the main session. The
+   coordinate skill's receiving rule: if `state.yaml` is awaiting that review,
+   run `/work continue`, which reads the findings file, feeds it to the
+   verifier alongside the other reviewer's, and proceeds.
+
+Not connected → `/work` is unchanged. Never required.
 
 ## Non-goals (v1)
 
@@ -218,7 +239,9 @@ persistent service, an MCP facade.
 | pane shows a permission dialog for 30 s | message held; next bridge call delivers |
 | user draft in the target prompt | same |
 | Claude/Codex change the prompt glyph | readiness check fails closed → everything is held; `flush --force` pastes anyway (user's call) |
-| two sends race | file lock on the state dir around drain+send |
+| two sends race (same project) | file lock on the state dir around drain+send |
+| two projects send at once | per-message tmux buffer names; no shared buffer |
+| draft typed in the ms window between check and paste | post-paste check, Enter withheld, `held-mixed` logged |
 | message contains `/` at line start or `!` | envelope always starts with `[`; bracketed paste keeps the body literal |
 
 ## Testing

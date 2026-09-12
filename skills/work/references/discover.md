@@ -15,12 +15,14 @@ over.
 job: inspect before inventing, one load-bearing question at a time, options
 with a recommendation, architecture altitude only, a written and verified spec,
 a cross-vendor attack on it. Do not re-implement it. If it is not installed,
-hold the conversation yourself at the same altitude. Under `/work` it differs
-in four ways:
+hold the conversation yourself at the same altitude. In Codex its
+`AskUserQuestion` is a prose question with lettered options and its step list
+is a markdown checklist — brainstromming already allows both. Under `/work`
+it differs in four ways:
 
 1. **Skip its exit question.** `/work` knows the exit: `brainstorm` stops
    after the spec, `plan` after the plan, plain `/work` runs to done.
-2. **Its spec is the working design.** Point `state.yaml → artifacts.design`
+2. **Its spec is the working design.** Point `state.yaml → docs.design`
    at the file it wrote. Before closing, make sure the spec carries the
    `# Decisions`, `# Invariants`, `# Non-goals` and `# Relevant existing
    architecture` sections below — append them if it did not; every later

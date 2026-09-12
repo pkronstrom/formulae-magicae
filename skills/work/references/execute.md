@@ -46,4 +46,7 @@ section to `chunk-NN.md`, reply with the path and the check results.
 ## After the fix pass (coordinator)
 
 Read only the *Deviations* of `chunk-NN.md`. Amend any later chunk section of the
-plan that names an affected file or interface. Set `chunk_base` = HEAD. Next chunk.
+plan that names an affected file or interface. Then one `state.yaml` write:
+`last_handoff` = this chunk's handoff, `current_chunk` + 1 (or `phase:
+final-review` after the last), `chunk_base` = HEAD, `verified` from the
+handoff. Update the checklist. Next chunk.
