@@ -21,7 +21,9 @@ for its one output file) and `work-worker` (implementation, full tools).
 Installed as a plugin they are `work:work-frontier` / `work:work-worker`;
 from a symlinked skill, symlink `agents/*.md` into `~/.claude/agents/` once.
 Spawn with `Agent(subagent_type: <agent>, prompt: <template from
-context.md>)`; pass `model:` only for a `phase_map` override. Give the phase's
+context.md>)`; pass `model:` only for a `phase_map` override, and
+`effort: medium` for a chunk checkpoint review (final review and plan
+review stay at the agent's default). Give the phase's
 worker and reviewer a `name` (`worker`, `reviewer`) so later chunks, fix
 passes and the final review continue them with `SendMessage` and just the
 new task lines. On CRITICAL, launch the two

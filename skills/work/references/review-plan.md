@@ -41,7 +41,9 @@ reviewer ran both lenses); reply with the path and count.
 
 One reviewer: judge its findings yourself — you hold the plan and the
 design; open the cited code for anything you cannot confirm from them, and
-no verifier. Two reviewers (CRITICAL): run the verifier on both files unless
+no verifier. Then **amend the plan yourself**: a wording, ordering or
+acceptance change is an edit in this session, not a planner round-trip.
+Continue the planner only when a finding re-cuts the chunks. Two reviewers (CRITICAL): run the verifier on both files unless
 both are empty. Amend the design and the chunk sections for the findings
 that hold — amend, don't rewrite.
 Record what changed in `.work/handoffs/plan-review.md`, set `phase: execute`.
