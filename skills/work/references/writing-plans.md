@@ -4,6 +4,10 @@ Frontier model, fresh context for MAJOR/CRITICAL; the coordinator writes it
 in-session for STANDARD and TINY, straight from the working design. Pack in
 `context.md`.
 
+Budget: about 200 lines, and only the files the design names plus the ones
+the chunks will touch — not a survey of the codebase. A question you would
+need more exploration to settle is a grill question, not a reading list.
+
 Read `MASTERPLAN.md` first — its *For the next planner* section is what the
 previous runs learned: the seams to respect, the blockers, the files to
 open. Plan against that picture, not just this phase.

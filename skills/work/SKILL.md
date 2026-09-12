@@ -26,7 +26,7 @@ reviewers ran, zero managers.
 | `/work review` | both lenses + verifier on the current change, report; no fixes |
 | `/work status` | phase, chunk, open decisions, verification state |
 
-`/work` in Codex is `$work`. `review` reviews `git diff <base_ref>` when
+`/work` in Codex is `$work` (or `$<plugin>:work` when installed as a plugin). `review` reviews `git diff <base_ref>` when
 `state.yaml` exists, else the commits ahead of the default branch plus the
 working tree; say the base before launching, and write the goal paragraph
 yourself from the diff.
@@ -45,6 +45,9 @@ worker:   cost-effective implementation         # code, tests, mechanical change
 ```
 
 A map value is `[backend:]model`; no prefix means the harness you are in.
+When the user switches a phase's model mid-run ("use opus for reviews"),
+that is a `phase_map` entry written into `state.yaml`; the adapter already
+holds the invocation — nothing to rediscover.
 An optional `phase_map` overrides the role for one phase (`plan`,
 `plan_review`, `execute`, `chunk_review`, `verify`, `final_review`), so a
 Claude session can send reviews to a Codex model or the reverse — different
@@ -58,8 +61,9 @@ says go.
 **Spawn protocol, every fresh-context agent.** Prompt = the role's reference
 file path + the context pack from `references/context.md` as file paths — the
 agent reads them; never paste whole files. First line for reviewers and the
-verifier: read-only — nothing under the repo changes, no commits; the only
-file they produce is their findings file. Every agent ends by writing its
+verifier: read-only — nothing under the repo changes, no commits.
+`.work/handoffs/` is always writable: every agent, read-only ones included,
+writes its own output file there. Every agent ends by writing its
 output file (handoff, findings, plan) and replying with **one line** — the
 file path and a count or status. An agent run outside the harness (a
 `phase_map` entry) cannot write `.work`; its whole reply *is* the file and
@@ -111,11 +115,10 @@ AUTONOMOUS    attack the plan, amend                                     → ref
               done → offer feedback capture                              → references/feedback.md
 ```
 
-**Announce the transition once**, in one line: level, chunk count, the
-branch chunks will be committed on, and that the next stop is done or a
-consequential decision. Before the first worker launch at any level — TINY
-included — say that chunks commit on the current branch. Then **do not stop
-to ask** "approve plan?", "continue?", "review now?", "next chunk?". Plans,
+**Announce the transition once**, after plan review and before chunk 1, in
+one line: level, chunk count, the branch chunks will be committed on, and
+that the next stop is done or a consequential decision. (TINY: the same
+line before its worker launches.) Then **do not stop to ask** "approve plan?", "continue?", "review now?", "next chunk?". Plans,
 reviewer findings, fixes and refactors the agreed design requires are yours.
 Interrupt only for a genuinely consequential open decision: materially
 different product behaviour, requirements that conflict, a destructive or
@@ -281,7 +284,10 @@ chunk-review pack, and feed it to the verifier like the others.
 
 A feature is done when every chunk is committed, the final review's verified
 findings are fixed, and the deterministic checks in `verified:` all pass in a
-fresh run — not from memory of them passing. Then close the documents:
+fresh run — not from memory of them passing. That fresh run is the
+coordinator's one: per chunk, the worker's pasted check output is the
+evidence, and the reviewer sees the same diff; do not re-run the suites in
+this session after every chunk. Then close the documents:
 set `Status: done <date>` in the plan, tick and date the `MASTERPLAN.md`
 line, update *For the next planner* from the handoffs' Deviations and Risks
 (add what the next phase must know, remove what this run resolved), move the

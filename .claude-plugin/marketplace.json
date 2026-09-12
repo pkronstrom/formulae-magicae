@@ -114,6 +114,12 @@
       "source": "./skills/work",
       "description": "/work <task>: interactive design with the strongest model, then an autonomous plan → review → implement → review pipeline with cheaper workers and fresh-context reviewers.",
       "version": "1.0.0"
+    },
+    {
+      "name": "coordinate",
+      "source": "./skills/coordinate",
+      "description": "/coordinate codex|claude: pair this live session with a live Codex or Claude Code session in another tmux pane and coordinate directly through a tiny bridge.",
+      "version": "1.0.0"
     }
   ]
 }

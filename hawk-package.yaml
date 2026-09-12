@@ -40,6 +40,8 @@ contents:
       name: session-retro
     - path: skills/work/
       name: work
+    - path: skills/coordinate/
+      name: coordinate
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

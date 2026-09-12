@@ -13,12 +13,15 @@ effort: {frontier: high, strong: medium, worker: medium}
 phase_map: {}               # e.g. chunk_review: claude:opus
 ```
 
-Frontier session: `codex -m gpt-5.6-sol`. Checklist: the plan tool if this
-Codex build exposes one (`update_plan`); otherwise a markdown checklist
-restated at the top of each message.
+Frontier session: `codex -m gpt-5.6-sol`. Checklist: a markdown checklist
+restated at the top of each message (no plan tool in codex-cli 0.154).
 
-**Every agent is native:** the runtime's spawn tool (`features.multi_agent`),
-model and effort from the map, prompt per the spawn protocol in SKILL.md.
+**Every agent is native** (`features.multi_agent`, verified codex-cli 0.154):
+`multi_agent_v1__spawn_agent({model, reasoning_effort, message})` with model
+and effort from the map and the prompt per the spawn protocol in SKILL.md;
+`wait_agent({targets, timeout_ms})` to block on several at once;
+`send_input({target, message})` continues a worker for the fix pass;
+`close_agent({target})` once its file is read.
 Reviewers and the verifier are told in their first line to change nothing
 under the repo except their findings file. Native agents share the workspace,
 write their own handoff or findings file, and the fix pass continues the same

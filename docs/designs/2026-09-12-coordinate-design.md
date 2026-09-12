@@ -1,7 +1,6 @@
 # coordinate — live Claude Code ↔ Codex peer coordination over tmux
 
-Status: design draft, 2026-09-12. Sections 1–2 discussed with the user; 3–6 are
-the author's proposal, not yet approved. Reviewed once by Codex (gpt-5.6-terra,
+Status: design draft, 2026-09-12. Sections 1–6 approved by the user. Reviewed once by Codex (gpt-5.6-terra,
 high): three findings, all folded in (buffer scoping, best-effort readiness,
 `/work` handoff via state instead of waiting).
 
@@ -28,7 +27,7 @@ persistent coordinators, not an agent framework.
 | launcher | `coordinate.py launch [--worktree <name>]` inside the skill; `claudex`/`claudexmux` are fish aliases to it | one place |
 | background processes | none | KISS |
 | out of v1 | Claude channel deliverer; more than one pair per project | seam kept for the channel; multi-peer is scope growth |
-| in v1 | `/work` hook-in; role shortcuts (`review-plan`, `review-diff`) | where model diversity actually pays |
+| in v1 | works alongside `/work` without touching it; role shortcuts (`review-plan`, `review-diff`) | where model diversity actually pays |
 
 ## 1. Architecture
 
@@ -202,28 +201,26 @@ message bootstraps it; the skill description also lists the
 `/coordinate status` prints peers, pane liveness, held messages, last 5 log
 lines.
 
-## 6. `/work` hook-in
+## 6. Working alongside `/work`
 
-`/work` reads `coordinate.py status --json` when it reaches plan review or
-final review. If a peer is connected and the level is MAJOR or CRITICAL, the
-peer takes **one** of the two independent reviewer slots (it is a different
-model, which is the point); the other fresh-context reviewer and the verifier
-run exactly as today.
+`skills/work/` is **not modified**. The coordinate skill carries one short
+"when `/work` is running" paragraph, and because both skills sit in the same
+session's context that is sufficient:
 
-`/work` cannot wait for the reply — a pasted peer message arrives as a *new*
-turn and does not resume a running tool sequence. So it hands off through
-state, the way every other `/work` phase boundary works:
+- If a peer is paired and `.work/state.yaml` is at plan review or final review
+  at MAJOR/CRITICAL, route **one** of the two independent reviewer slots to the
+  peer: `send <peer> "ask review-plan .work/plan.md → .work/reviews/<peer>-plan.md"`
+  (or the diff equivalent), leave the other fresh-context reviewer and the
+  verifier as `/work` runs them, write `awaiting: peer-plan-review`
+  (`peer-final-review`) into `state.yaml`, and **end the turn** with one line
+  saying so. `/work` cannot wait: the reply arrives as a new turn.
+  (`awaiting` is a key owned by coordinate; `/work` does not read it.)
+- On the peer's `done` reply, if `state.yaml` is awaiting that review, run
+  `/work continue`; it reads the findings file next to the other reviewer's
+  and proceeds as today.
 
-1. `/work` sends `ask review-plan .work/plan.md → .work/reviews/<peer>-plan.md`
-   (or the diff equivalent), writes `state.yaml` with
-   `awaiting: peer-plan-review` (`peer-final-review`), and **ends its turn**
-   with one line saying so.
-2. The peer's `done` reply starts a new turn in the main session. The
-   coordinate skill's receiving rule: if `state.yaml` is awaiting that review,
-   run `/work continue`, which reads the findings file, feeds it to the
-   verifier alongside the other reviewer's, and proceeds.
-
-Not connected → `/work` is unchanged. Never required.
+Not paired, or coordinate not loaded → `/work` behaves exactly as it does now.
+Typical use is invoking both: `/coordinate codex` then `/work <task>`.
 
 ## Non-goals (v1)
 
