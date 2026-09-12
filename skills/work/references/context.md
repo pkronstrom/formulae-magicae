@@ -27,6 +27,25 @@ files its *Do not* section names, and — for stateful changes — the module th
 *owns* the state (state machine, lifecycle owner) even when the diff does not
 touch it. That is where lifecycle bugs are visible.
 
+## The spawn prompt
+
+One template for every agent; fill the brackets, send nothing else. The
+reference file is the agent's instructions — do not paraphrase it.
+
+```text
+Role: read <skill>/references/<role>.md — it is your whole brief.
+Read-only: nothing under the repo changes; write only your output file.   (reviewers, verifier, planner)
+Task: <plan path>#Chunk N                                                  (worker, reviewers, fix pass)
+Context: <pack paths from the table above, one per line>
+Previous: <previous handoff path>                                          (worker)
+Findings: <findings path>                                                  (fix pass)
+Output: <.work/handoffs/... path>
+Reply with the output path and one line of status.
+```
+
+Project-specific invariants and gotchas go into the chunk section of the
+plan, where reviewers see them too — never into this prompt.
+
 ## Handoffs
 
 A phase boundary is crossed by writing state and reading it back in a fresh

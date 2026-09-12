@@ -58,13 +58,11 @@ The design conversation runs *in this session*, so this session must be on
 the frontier model. If it is not, say so and stop until the user switches or
 says go.
 
-**Spawn protocol, every fresh-context agent.** Prompt = the role's reference
-file path + the context pack from `references/context.md` as file paths — the
-agent reads them; never paste whole files. **Eight lines at most**: role
-reference, pack paths, the chunk section, the output path. Do not restate
-what the reference already says; project-specific invariants belong in the
-chunk section of the plan, where the reviewer sees them too, not in the
-prompt. First line for reviewers and the
+**Spawn protocol, every fresh-context agent.** The prompt is the template in
+`references/context.md`, filled in — role reference path, pack paths, chunk
+section, output path — and nothing else. The reference file is the agent's
+brief; never paraphrase it, never paste whole files. Project-specific
+invariants belong in the chunk section of the plan, not in the prompt. First line for reviewers and the
 verifier: read-only — nothing under the repo changes, no commits.
 `.work/handoffs/` is always writable: every agent, read-only ones included,
 writes its own output file there. Every agent ends by writing its
