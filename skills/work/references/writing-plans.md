@@ -27,13 +27,20 @@ The plan is where a wrong call is cheapest to fix and, once built on, most
 expensive. Before chunking, list every plan-level decision the design leaves
 open: the details brainstromming parked as "plan-time", interface shapes,
 data formats, error and retry policy, names of new public things, what is
-tested and how. Settle each from the code where the code decides it. For
-the rest — the ones where a wrong guess costs a rewrite — ask the user
-**once, in one batch**: up to five inline with a recommendation each; more
-than that, `grill-singlefile` if installed (they answer async), else a
-numbered list. Never a second round; what remains after the answers is the
-planner's call, written down as a decision. A plan with a "TBD" in it is
-not finished.
+tested and how. Settle each from the code where the code decides it. The
+rest — the ones where a wrong guess costs a rewrite — go into a `## Grill`
+section of the draft plan, each with a recommendation, and the draft is
+returned with the plan otherwise complete.
+
+**The coordinator owns the one batch.** It folds its own open items into
+the planner's `## Grill` and asks the user once: up to five inline with the
+recommendation marked; more than that, `grill-singlefile` if installed
+(they answer async), else a numbered list. The user sees every item, even
+those with an obvious answer — a decision made for them is what feels like
+being bypassed. Then the planner is *continued* with the answers and
+returns the final plan, `## Grill` removed. Never a second round; anything
+that surfaces later is the planner's call, written down as a decision. A
+plan with a "TBD" in it is not finished.
 
 STANDARD gets the same discipline in-session, usually as zero or one
 question.

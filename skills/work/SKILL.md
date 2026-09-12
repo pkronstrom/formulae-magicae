@@ -111,7 +111,7 @@ twenty-chunk plan.
 ```text
 INTERACTIVE   user ↔ frontier   discover / inspect / challenge / design   → references/discover.md
               ↓ converged: no open question is likely to reshape the implementation
-              plan; grill the plan-level tail once, batched             → references/writing-plans.md
+              planner drafts with a ## Grill → one batch to the user     → references/writing-plans.md
 AUTONOMOUS    attack the plan, amend                                     → references/review-plan.md
               for each chunk:
                 set chunk_base, worker: implement + tests + commit        → references/execute.md
@@ -315,8 +315,10 @@ evidence, and the reviewer sees the same diff; do not re-run the suites in
 this session after every chunk. Then close the documents:
 set `Status: done <date>` in the plan, tick and date the `MASTERPLAN.md`
 line, update *For the next planner* from the handoffs' Deviations and Risks
-(add what the next phase must know, remove what this run resolved), move the
-design and plan to `docs/plans/archive/` and fix the link, commit as
-`<topic>: done`. Report plainly — and if `MASTERPLAN.md` has an
+(add what the next phase must know, remove what this run resolved), and if
+`MASTERPLAN.md` has grown past ~80 lines, tidy it now — finished phases to
+one line each, the picture to its paragraphs, nothing that the archived
+plans already hold. Move the design and plan to `docs/plans/archive/` and
+fix the link, commit as `<topic>: done`. Report plainly — and if `MASTERPLAN.md` has an
 unchecked phase, name it as the next `/work`. Then ask once: *"Feature complete. Capture this run as feedback for improving /work?"*
 (`references/feedback.md`). Never mutate this skill after a single run.

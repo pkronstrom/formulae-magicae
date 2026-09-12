@@ -12,7 +12,8 @@ model_map:
 phase_map: {}        # e.g. chunk_review: codex:gpt-5.6-terra, final_review: codex:gpt-5.6-sol
 ```
 
-Frontier session: `/model opus`. Checklist: `TodoWrite`.
+Frontier session: `/model opus`. Checklist: `TodoWrite` where the build has
+it; otherwise a markdown checklist restated at the top of each message.
 
 **Two built-in agents**, in `agents/`: `work-frontier` (planner, plan
 reviewers, both review lenses, verifier, specialist — read/grep/glob + write
