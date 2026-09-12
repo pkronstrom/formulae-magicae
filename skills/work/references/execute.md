@@ -16,8 +16,9 @@ loop, not checkpoints.
 Do not reinterpret the architecture. Do not add abstractions, options, files,
 dependencies, config flags or public exports the chunk did not call for. Do
 not touch what the chunk's *Do not* section names. The one escalation: a plan
-that is **provably invalid** in the code, or a decision the chunk does not
-make that would need any of the items just listed. Stop that part, finish
+that is **provably invalid** in the code, a decision the chunk does not
+make that would need any of the items just listed, or any UX or UI choice
+the chunk does not spell out. Stop that part, finish
 what is independent of it, and report it under *Remaining* with evidence —
 do not decide it yourself. Everything else is yours.
 

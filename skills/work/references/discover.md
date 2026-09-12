@@ -55,6 +55,8 @@ implementation's shape. Concretely, these are understood — or irrelevant and
 said to be:
 
 - intended behaviour, scope, non-scope
+- the UX: what the user sees and does, the flow, the screens, what is
+  shown and when — decided with the user, not for them
 - architectural boundaries; who owns which state and data
 - failure behaviour that matters; compatibility and migration
 - likely affected subsystems

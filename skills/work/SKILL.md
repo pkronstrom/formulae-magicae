@@ -106,6 +106,20 @@ twenty-chunk plan.
 
 `quick` biases to TINY; it does not forbid escalation.
 
+## Whose decision
+
+**The user decides:** the seams — where boundaries go and what owns what;
+the architecture and the shape of the thing; the crucial parts, meaning
+anything a rewrite would be needed to undo; and everything the user sees
+and touches — UX flows, screens, interactions, wording, what is shown and
+when. These are asked, live, one at a time, with options and a
+recommendation — never settled by an agent, never buried in a document for
+later. **The agent decides:** how to implement inside an agreed seam —
+naming, internal structure, which helper, test mechanics, the routine
+choices a senior engineer would not raise with a product owner. If a UX or
+UI question surfaces mid-implementation, that is a consequential decision:
+stop that part and ask.
+
 ## The flow
 
 ```text
