@@ -14,21 +14,16 @@ phase_map: {}               # e.g. chunk_review: codex:gpt-5.6-terra, final_revi
 
 Frontier session: `/model opus`. Checklist: `TodoWrite`.
 
-**Fresh-context agent:** the `Agent` tool, `subagent_type: general-purpose`,
+**Every agent is native:** the `Agent` tool, `subagent_type: general-purpose`,
 `model:` from the map, prompt per the spawn protocol in SKILL.md. Give the
-chunk worker a `name` (`worker-02`) so the fix pass can continue it with
+chunk worker a `name` (`worker-02`) so the fix pass continues it with
 `SendMessage` and just the findings path. Launch the two reviewers as two
 `Agent` calls in one message so they run in parallel; wait for both, then
-launch the verifier.
+launch the verifier. Native agents write their own handoff or findings file.
 
-**`codex:` entries** run from Bash with `run_in_background: true`, prompt on
-stdin, using the `codex exec` lines in `adapters/codex.md` — reviewers and the
-verifier `-s read-only --ephemeral --ignore-user-config` with `-o <findings path>` (read-only cannot write `.work`, so the reply is captured to the file), workers `-s workspace-write`. Launch the
-two reviewers in one message and wait for the notifications; do not poll. A
-Codex worker's fix pass continues via `codex exec resume <session id>` — the
-id is in the worker's log, never `--last`.
-
-**Cross-vendor second opinion** (CRITICAL, optional): if the `review-work`
-skill is installed, its `dispatch.sh` runs one lens on another vendor's model
-in isolation — pass `references/review-<lens>.md` as the prompt file. Not
-default; only when uncorrelated failure modes are worth the spend.
+**`codex:` entries in `phase_map`** are the one case that leaves the harness:
+run them through the `codex` skill's review recipe (`codex exec … -s
+read-only --ephemeral --ignore-user-config -o <findings path>`) as a
+background Bash call, prompt per the spawn protocol, told that its whole
+final message is the findings file. Reviewers and the verifier only — a
+foreign worker is not supported.

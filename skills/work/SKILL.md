@@ -61,9 +61,9 @@ agent reads them; never paste whole files. First line for reviewers and the
 verifier: read-only — nothing under the repo changes, no commits; the only
 file they produce is their findings file. Every agent ends by writing its
 output file (handoff, findings, plan) and replying with **one line** — the
-file path and a count or status. Where the harness cannot let a read-only
-agent write at all (adapter says), the agent's whole reply *is* the file
-and the coordinator captures it to the path. The coordinator reads the file only when the
+file path and a count or status. An agent run outside the harness (a
+`phase_map` entry) cannot write `.work`; its whole reply *is* the file and
+the coordinator captures it to the path. The coordinator reads the file only when the
 next step needs it. Never re-derive in this session what a file already says.
 
 ## Size the work from the code, not the sentence
@@ -193,7 +193,7 @@ Local, per-run state:
 .work/
 ├── state.yaml          phase, level, current chunk, document paths, verification, open decisions
 ├── handoffs/           plan-review.md, chunk-NN.md, <phase>-<lens>.md, <phase>-findings.md
-├── logs/, prompts/     only when an adapter runs agents from the shell
+├── prompts/            only for phase_map entries that leave the harness
 └── feedback/           opt-in run records for skill-improver
 ```
 
@@ -210,7 +210,6 @@ chunk_base: 8b77e01       # HEAD immediately before the current chunk's worker l
 docs: {design: docs/plans/2026-09-12-sync-design.md, plan: docs/plans/2026-09-12-sync-implementation.md}
 masterplan_phase: "Phase 2 — Sync"   # when MASTERPLAN.md exists
 last_handoff: .work/handoffs/chunk-01-findings.md
-worker_session: 01a094bf-…    # only when the adapter continues workers by id
 verified: {tests: pass, typecheck: pass, lint: pass, build: n/a}
 open_decisions: []
 ```
