@@ -11,7 +11,7 @@ source; the references do not restate it.
 | discover | repo rules · relevant architecture · code as discovered · working design · the live conversation |
 | plan | repo rules · working design · relevant architecture and source — **not** the discovery transcript |
 | plan review | goal · working design · the plan with its chunk sections · relevant contracts — **not** planner reasoning |
-| execute chunk | repo rules · design Decisions + Invariants · this chunk section of the plan · files it names · relevant tests · the one pattern file · previous chunk's handoff (Decisions, Deviations, Relevant files) |
+| execute chunk | repo rules · design Decisions + Invariants · this chunk section of the plan (TINY: the whole plan, it is one chunk) · files it names · relevant tests · the one pattern file · previous chunk's handoff (Decisions, Deviations, Relevant files) |
 | chunk review | goal (one paragraph) · design Invariants · **the chunk section** · `git diff <chunk_base>` · neighbouring code — **not** worker reasoning or handoff prose |
 | verify findings | the reviewers' findings files · diff · design/chunk where cited |
 | fix pass | continued worker: the findings file only · fresh worker: findings file · chunk section · design Invariants · only the files the findings cite |

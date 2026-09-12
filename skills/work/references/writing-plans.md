@@ -25,7 +25,7 @@ numbered list. Never a second round; what remains after the answers is the
 planner's call, written down as a decision. A plan with a "TBD" in it is
 not finished.
 
-STANDARD gets the same discipline in-session, usually as zero or one
+STANDARD and TINY get the same discipline in-session, usually as zero or one
 question.
 
 ## Chunks
@@ -101,7 +101,8 @@ follow, and why. This is the highest-value line in the chunk: it is what stops
 a worker from inventing a second architectural style. If no such file exists,
 say so — that is itself a design signal worth a sentence.
 
-Add the plan's link to its `MASTERPLAN.md` line if there is one. Close by
+Add or update the run's `MASTERPLAN.md` line with the plan's link (create the
+file if absent). Close by
 writing `state.yaml` (`phase: plan-review` for MAJOR/CRITICAL, `phase:
 execute` otherwise, `current_chunk: 1`). The plan is the handoff; reply with
 the chunk list only.

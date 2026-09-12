@@ -77,8 +77,8 @@ Never classify from the opening line. Two moments, not one:
    brainstromming and lands at MAJOR or CRITICAL. Re-classify if
    implementation proves it wrong.
 
-When discovery decomposes the work into phases — a whole app, a multi-phase
-rollout — they go into `MASTERPLAN.md` (below) and **only the first unchecked
+Every run gets a `MASTERPLAN.md` line. When discovery decomposes the work
+into phases — a whole app, a multi-phase rollout — each phase gets one, and **only the first unchecked
 phase is planned**, fully, before anything is built. Each later phase gets
 its own discovery, plan grill and plan review when its turn comes; the
 overall design is context for it, not a substitute. Never write one
@@ -86,7 +86,7 @@ twenty-chunk plan.
 
 | level | shape | flow |
 |---|---|---|
-| TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes `.work/chunk.md` (Goal, Files, Follow this pattern, Do not) → worker → tests → done |
+| TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes a one-chunk plan (Goal, Files, Follow this pattern, Do not) → worker → tests → done |
 | STANDARD | one contained subsystem, minor decisions, little architectural impact | short design in-session (1–2 questions, no brainstromming) → coordinator writes plan + 1–2 chunks in-session → worker → one final review, both lenses → fix → verify |
 | MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → two adversarial plan reviewers + verifier → chunks, one reviewer each → final two-lens review |
 | CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at chunk checkpoints too, and one specialist reviewer where the task creates a real extra failure domain |
@@ -132,14 +132,15 @@ Load each reference only when entering its phase.
 
 ## Documents and state
 
-Durable documents live in the repo, where the project keeps plans
-(`docs/plans/` unless the repo plainly uses something else), and are
-maintained to the end:
+**All work goes through the master plan and a plan document.** Every run,
+TINY included, is a line in `MASTERPLAN.md` and a plan file; nothing is built
+that neither names. They live where the project keeps plans (`docs/plans/`
+unless the repo plainly uses something else) and are maintained to the end:
 
 ```text
-MASTERPLAN.md                                   phase checklist — only when there is more than one phase, or it already exists
+MASTERPLAN.md                                   the checklist; created on the first run if absent
 docs/plans/<date>-<topic>-design.md             MAJOR/CRITICAL: brainstromming's spec, with the sections discover.md names
-docs/plans/<date>-<topic>-implementation.md     STANDARD+: the plan — Status line, Design (STANDARD only), one `## Chunk N` section per chunk
+docs/plans/<date>-<topic>-implementation.md     every run: Status line, Design section (when there is no design file), one `## Chunk N` section per chunk
 docs/plans/archive/                             both files move here when the work is done
 ```
 
@@ -150,9 +151,9 @@ docs/plans/archive/                             both files move here when the wo
 - [ ] Phase 3 — UI
 ```
 
-One line per phase: status, dependencies, links to its design and plan once
-they exist. Steps are never duplicated here; the plan holds them. TINY work
-writes no documents — its chunk lives in `.work/chunk.md`.
+One line per phase or feature: status, dependencies, links to its design and
+plan once they exist. Steps are never duplicated here; the plan holds them. A
+TINY plan is fifteen lines and is still a plan.
 
 Local, per-run state:
 
