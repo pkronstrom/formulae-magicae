@@ -60,7 +60,11 @@ says go.
 
 **Spawn protocol, every fresh-context agent.** Prompt = the role's reference
 file path + the context pack from `references/context.md` as file paths — the
-agent reads them; never paste whole files. First line for reviewers and the
+agent reads them; never paste whole files. **Eight lines at most**: role
+reference, pack paths, the chunk section, the output path. Do not restate
+what the reference already says; project-specific invariants belong in the
+chunk section of the plan, where the reviewer sees them too, not in the
+prompt. First line for reviewers and the
 verifier: read-only — nothing under the repo changes, no commits.
 `.work/handoffs/` is always writable: every agent, read-only ones included,
 writes its own output file there. Every agent ends by writing its
