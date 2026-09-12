@@ -42,8 +42,10 @@ start, not per agent. Never `codex exec resume` for `$work continue` — the
 transcript is not the state.
 
 **`claude:` entries in `phase_map`** are the one case that leaves the
-harness — reviewers and the verifier only, read-only, so the reply is the
-file; prompt on stdin, run in the background:
+harness — reviewers and the verifier only. Codex's approval system treats
+each artifact sent to them as an external payload and may prompt per review;
+if a prompt blocks, fall back to `work_frontier` for that review rather than
+waiting. Read-only, so the reply is the file; prompt on stdin, background:
 
 ```bash
 claude -p --model opus --no-session-persistence --strict-mcp-config \

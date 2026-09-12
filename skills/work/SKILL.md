@@ -85,6 +85,11 @@ Never classify from the opening line. Two moments, not one:
    brainstromming and lands at MAJOR or CRITICAL. Re-classify if
    implementation proves it wrong.
 
+**A plan has at most four chunks.** If the design needs more, it is more
+than one phase: split it in `MASTERPLAN.md` and plan only the first. This is
+checked before the planner is spawned and again when its plan comes back —
+a five-chunk plan goes back as two phases, not into plan review.
+
 Every STANDARD-or-larger run gets a `MASTERPLAN.md` line. When discovery
 decomposes the work into phases — a whole app, a multi-phase rollout — each phase gets one, and **only the first unchecked
 phase is planned**, fully, before anything is built. Each later phase gets
@@ -133,6 +138,12 @@ plan-level questions the planner cannot settle from the code, asked once, in
 one batch, before anything is built — a wrong guess there is the expensive
 kind. Bring it with 1–3 options and a recommendation,
 write the answer into the design, continue.
+
+An approval the user gave once in this run — source access, an external
+reviewer, "go until done" — stands for the whole run; never re-ask it per
+artifact. If a harness gate still blocks a `phase_map` reviewer outside the
+harness, that reviewer is optional: run the native agent instead, say so in
+one line, and keep going. Never idle "blocked" on a routine gate.
 
 **What the user sees.** A live checklist in the harness's plan tool
 (adapter names it): one item per phase of this run, the current phase's
@@ -235,6 +246,11 @@ but `feedback/` and is a new feature, whatever `MASTERPLAN.md` says. Over any
 other phase, ask: continue it, or discard it. `/work continue` with phase
 `done` and an unchecked phase in `MASTERPLAN.md` starts that phase —
 discovery, plan grill, plan review, all of it — and says so.
+
+When this session has grown long — a feature already finished in it, or
+several chunks behind it — say so at the next phase boundary and offer
+`/work continue` in a fresh session; the state is on disk and the old
+context is only cost.
 
 `/work continue`: read `state.yaml` and the `last_handoff`, re-enter the
 phase. A dirty tree relative to `chunk_base` is partial chunk work: hand the

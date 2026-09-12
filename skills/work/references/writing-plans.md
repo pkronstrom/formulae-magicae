@@ -4,9 +4,11 @@ Frontier model, fresh context for MAJOR/CRITICAL; the coordinator writes it
 in-session for STANDARD and TINY, straight from the working design. Pack in
 `context.md`.
 
-Budget: about 200 lines, and only the files the design names plus the ones
-the chunks will touch — not a survey of the codebase. A question you would
-need more exploration to settle is a grill question, not a reading list.
+Budget: about 200 lines, at most four chunks, and about fifteen file reads —
+the files the design names plus the ones the chunks will touch, not a survey
+of the codebase. A question you would need more exploration to settle is a
+grill question, not a reading list; a plan that needs a fifth chunk is two
+phases — return it as such and stop.
 
 Read `MASTERPLAN.md` first — its *For the next planner* section is what the
 previous runs learned: the seams to respect, the blockers, the files to
@@ -41,7 +43,8 @@ question.
 Split into architecturally meaningful chunks a single worker can own from
 implementation through local verification: *persistence path complete*,
 *domain vertical slice complete*, *API contract complete*, *migration
-complete*. Three to six chunks for a large feature; one or two for STANDARD.
+complete*. Two to four chunks for a MAJOR phase; one or two for STANDARD.
+More than four is a second phase, not a longer plan.
 Never chunk at TDD granularity — "write test / make it pass / refactor" is one
 worker's inner loop, not three review checkpoints.
 
