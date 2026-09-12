@@ -40,16 +40,17 @@ worker's inner loop, not three review checkpoints.
 Order chunks so each leaves the tree building and tests green. If a chunk
 cannot, say what is temporarily allowed to be red and why.
 
-## Files
+## The plan document
 
-`.work/plan.md` — goal, chunk list with one-line goals, the acceptance for the
-whole feature, non-goals, and *things not to redesign*.
-
-`.work/chunks/NN-<slug>.md` — one per chunk, self-contained, because the worker
-receives the chunk and not the plan:
+`docs/plans/<date>-<topic>-implementation.md`, next to the design it
+implements. Header: `Status: in progress` (→ `done <date>` at the end), the
+goal, the design link (or the Design section itself for STANDARD), the chunk
+list with one-line goals, the acceptance for the whole feature, non-goals,
+and *things not to redesign*. Then one `## Chunk N` section per chunk,
+self-contained — the worker is pointed at its section and reads only that:
 
 ```markdown
-# Chunk 2 — Quote pricing resolution
+## Chunk 2 — Quote pricing resolution
 
 ## Goal
 Resolve quote-line prices by the existing price-source priority.
@@ -100,6 +101,7 @@ follow, and why. This is the highest-value line in the chunk: it is what stops
 a worker from inventing a second architectural style. If no such file exists,
 say so — that is itself a design signal worth a sentence.
 
-Close by writing `state.yaml` (`phase: plan-review` for MAJOR/CRITICAL,
-`phase: execute` otherwise, `current_chunk: 1`). The plan is the handoff;
-reply with the chunk list only.
+Add the plan's link to its `MASTERPLAN.md` line if there is one. Close by
+writing `state.yaml` (`phase: plan-review` for MAJOR/CRITICAL, `phase:
+execute` otherwise, `current_chunk: 1`). The plan is the handoff; reply with
+the chunk list only.

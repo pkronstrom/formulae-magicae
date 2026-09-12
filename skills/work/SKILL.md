@@ -77,14 +77,16 @@ Never classify from the opening line. Two moments, not one:
    brainstromming and lands at MAJOR or CRITICAL. Re-classify if
    implementation proves it wrong.
 
-When discovery decomposes the work into several independent sub-projects — a
-whole app, a multi-phase rollout — each is its own `/work` run with its own
-plan and chunks. Record the order and dependencies in the design, finish one
-before starting the next, and never write one twenty-chunk plan.
+When discovery decomposes the work into phases — a whole app, a multi-phase
+rollout — they go into `MASTERPLAN.md` (below) and **only the first unchecked
+phase is planned**, fully, before anything is built. Each later phase gets
+its own discovery, plan grill and plan review when its turn comes; the
+overall design is context for it, not a substitute. Never write one
+twenty-chunk plan.
 
 | level | shape | flow |
 |---|---|---|
-| TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes one minimal chunk file (Goal, Files, Follow this pattern, Do not) → worker → tests → done |
+| TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes `.work/chunk.md` (Goal, Files, Follow this pattern, Do not) → worker → tests → done |
 | STANDARD | one contained subsystem, minor decisions, little architectural impact | short design in-session (1–2 questions, no brainstromming) → coordinator writes plan + 1–2 chunks in-session → worker → one final review, both lenses → fix → verify |
 | MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → two adversarial plan reviewers + verifier → chunks, one reviewer each → final two-lens review |
 | CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at chunk checkpoints too, and one specialist reviewer where the task creates a real extra failure domain |
@@ -101,7 +103,7 @@ AUTONOMOUS    attack the plan, amend                                     → ref
               for each chunk:
                 set chunk_base, launch worker: implement + tests + commit → references/execute.md
                 reviewers (per level) → verifier → fix pass → commit     → references/review-*.md, verify-findings.md
-                propagate Deviations into later chunk files
+                propagate Deviations into later chunk sections
               final whole-change review → fix pass → deterministic checks
               done → offer feedback capture                              → references/feedback.md
 ```
@@ -128,14 +130,35 @@ files reaches the user unless they ask.
 
 Load each reference only when entering its phase.
 
-## State on disk
+## Documents and state
+
+Durable documents live in the repo, where the project keeps plans
+(`docs/plans/` unless the repo plainly uses something else), and are
+maintained to the end:
+
+```text
+MASTERPLAN.md                                   phase checklist — only when there is more than one phase, or it already exists
+docs/plans/<date>-<topic>-design.md             MAJOR/CRITICAL: brainstromming's spec, with the sections discover.md names
+docs/plans/<date>-<topic>-implementation.md     STANDARD+: the plan — Status line, Design (STANDARD only), one `## Chunk N` section per chunk
+docs/plans/archive/                             both files move here when the work is done
+```
+
+```markdown
+# Master plan
+- [x] Phase 1 — Persistence (done 2026-09-10) → docs/plans/archive/2026-09-08-persistence-implementation.md
+- [ ] Phase 2 — Sync (depends on 1) ← current → docs/plans/2026-09-12-sync-implementation.md
+- [ ] Phase 3 — UI
+```
+
+One line per phase: status, dependencies, links to its design and plan once
+they exist. Steps are never duplicated here; the plan holds them. TINY work
+writes no documents — its chunk lives in `.work/chunk.md`.
+
+Local, per-run state:
 
 ```text
 .work/
-├── state.yaml          phase, level, current chunk, artifact paths, verification, open decisions
-├── working-design.md   durable design (or the path the design phase produced — see discover.md)
-├── plan.md             chunk list + acceptance; chunks/NN-<slug>.md hold each chunk
-├── chunks/
+├── state.yaml          phase, level, current chunk, document paths, verification, open decisions
 ├── handoffs/           plan-review.md, chunk-NN.md, <phase>-<lens>.md, <phase>-findings.md
 └── feedback/           opt-in run records for skill-improver
 ```
@@ -150,7 +173,8 @@ phase: execute            # discover | plan | plan-review | execute | review | f
 current_chunk: 2
 base_ref: 3f9c1a2         # HEAD when /work started, written before discovery; final review diffs against it
 chunk_base: 8b77e01       # HEAD immediately before the current chunk's worker launched
-artifacts: {design: .work/working-design.md, plan: .work/plan.md}
+docs: {design: docs/plans/2026-09-12-sync-design.md, plan: docs/plans/2026-09-12-sync-implementation.md}
+masterplan_phase: "Phase 2 — Sync"   # when MASTERPLAN.md exists
 last_handoff: .work/handoffs/chunk-01-findings.md
 verified: {tests: pass, typecheck: pass, lint: pass, build: n/a}
 open_decisions: []
@@ -162,11 +186,14 @@ chunk's fix commit — so `git diff <chunk_base>` is exactly this chunk. The
 worker commits the chunk when it reports and the fix pass commits as a
 follow-up. Do not create branches unless the project's rules ask for it.
 `.work/` is local state — add it to `.git/info/exclude`, not to the repo,
-unless the project wants it tracked. A design spec written under a tracked
-path is committed with chunk 01; say so.
+unless the project wants it tracked. The design, the plan and `MASTERPLAN.md`
+are committed with chunk 01; say so.
 
 A new `/work <task>` over a `.work/` whose phase is `done` replaces everything
 but `feedback/`. Over any other phase, ask: continue it, or discard it.
+`/work` or `/work continue` with phase `done` and an unchecked phase in
+`MASTERPLAN.md` starts that phase — discovery, plan grill, plan review, all
+of it — and says so.
 
 `/work continue`: read `state.yaml` and the `last_handoff`, re-enter the
 phase. A dirty tree relative to `chunk_base` is partial chunk work: hand the
@@ -213,6 +240,9 @@ chunk-review pack, and feed it to the verifier like the others.
 
 A feature is done when every chunk is committed, the final review's verified
 findings are fixed, and the deterministic checks in `verified:` all pass in a
-fresh run — not from memory of them passing. Report that plainly, then ask
-once: *"Feature complete. Capture this run as feedback for improving /work?"*
+fresh run — not from memory of them passing. Then close the documents:
+set `Status: done <date>` in the plan, tick and date the `MASTERPLAN.md`
+line, move the design and plan to `docs/plans/archive/` and fix the link,
+commit as `<topic>: done`. Report plainly — and if `MASTERPLAN.md` has an
+unchecked phase, name it as the next `/work`. Then ask once: *"Feature complete. Capture this run as feedback for improving /work?"*
 (`references/feedback.md`). Never mutate this skill after a single run.

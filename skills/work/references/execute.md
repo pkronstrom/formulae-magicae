@@ -35,7 +35,7 @@ silence is not.
 **The same worker, continued** — its context already holds the chunk, the
 files and the pattern; send it only the findings file (adapter says how).
 Spawn a fresh worker instead only if the chunk worker was noisy or
-contradicted a decision; its pack is then the findings file, the chunk file,
+contradicted a decision; its pack is then the findings file, the chunk section,
 the design's Invariants, and only the files the findings cite. Fix the listed
 findings and nothing else; the chunk's *Do
 not* still applies. A finding you can show is false — `file:line` and the
@@ -45,5 +45,5 @@ section to `chunk-NN.md`, reply with the path and the check results.
 
 ## After the fix pass (coordinator)
 
-Read only the *Deviations* of `chunk-NN.md`. Amend any later chunk file that
-names an affected file or interface. Set `chunk_base` = HEAD. Next chunk.
+Read only the *Deviations* of `chunk-NN.md`. Amend any later chunk section of the
+plan that names an affected file or interface. Set `chunk_base` = HEAD. Next chunk.

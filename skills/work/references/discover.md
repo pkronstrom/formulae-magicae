@@ -5,7 +5,8 @@ Write `base_ref` (HEAD) to `state.yaml` before anything else.
 
 **Obviously local** (provisional TINY/STANDARD): hold it yourself — read the
 code first, ask the one or two questions that change the shape, offer options
-with a recommendation, distill straight into `.work/working-design.md` below.
+with a recommendation, distill straight into the plan's Design section
+(shape below).
 The moment it stops looking local — a migration, a second subsystem, several
 phases — switch to brainstromming; nothing is lost, the design file carries
 over.
@@ -24,8 +25,10 @@ in four ways:
    `# Decisions`, `# Invariants`, `# Non-goals` and `# Relevant existing
    architecture` sections below — append them if it did not; every later
    pack cites them by name.
-3. **Skip `MASTERPLAN.md` and its TodoWrite step tracking.** `.work/plan.md`
-   and `state.yaml` are the only indexes.
+3. **Skip its TodoWrite step tracking; keep `MASTERPLAN.md`.** When it
+   decomposes the work into phases, write them there (shape in SKILL.md),
+   mark the first `← current`, and design *that phase* to convergence —
+   later phases get a line each, not a spec.
 4. **Its cross-vendor spec review counts.** It is the design's adversarial
    pass; the plan review that follows attacks the plan, not the design again.
 
@@ -58,7 +61,8 @@ the checklist.
 
 ## The working design
 
-Whichever file holds it, the design is distilled continuously, not written at
+Whichever file holds it — brainstromming's spec, or the Design section at the
+top of a STANDARD plan — the design is distilled continuously, not written at
 the end. Conclusions only; the conversation is disposable. When an open
 question is answered, it becomes a decision and leaves "Open".
 
