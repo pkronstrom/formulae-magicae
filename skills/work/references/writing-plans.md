@@ -25,7 +25,7 @@ numbered list. Never a second round; what remains after the answers is the
 planner's call, written down as a decision. A plan with a "TBD" in it is
 not finished.
 
-STANDARD and TINY get the same discipline in-session, usually as zero or one
+STANDARD gets the same discipline in-session, usually as zero or one
 question.
 
 ## Chunks
