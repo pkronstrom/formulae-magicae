@@ -38,6 +38,8 @@ contents:
       name: skill-improver
     - path: skills/session-retro/
       name: session-retro
+    - path: skills/work/
+      name: work
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

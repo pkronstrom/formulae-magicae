@@ -108,6 +108,12 @@
       "source": "./skills/session-retro",
       "description": "Retro the session that just finished and fix the instructions that cost time.",
       "version": "1.0.0"
+    },
+    {
+      "name": "work",
+      "source": "./skills/work",
+      "description": "/work <task>: interactive design with the strongest model, then an autonomous plan → review → implement → review pipeline with cheaper workers and fresh-context reviewers.",
+      "version": "1.0.0"
     }
   ]
 }
