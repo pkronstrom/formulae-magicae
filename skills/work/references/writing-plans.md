@@ -11,6 +11,23 @@ explicitly *not* to be touched. Write pseudocode only for a non-obvious
 algorithm or contract. Never pre-write routine production code — the worker
 will write it once, against real code, with the tests running.
 
+## Resolve, don't guess — the plan grill
+
+The plan is where a wrong call is cheapest to fix and, once built on, most
+expensive. Before chunking, list every plan-level decision the design leaves
+open: the details brainstromming parked as "plan-time", interface shapes,
+data formats, error and retry policy, names of new public things, what is
+tested and how. Settle each from the code where the code decides it. For
+the rest — the ones where a wrong guess costs a rewrite — ask the user
+**once, in one batch**: up to five inline with a recommendation each; more
+than that, `grill-singlefile` if installed (they answer async), else a
+numbered list. Never a second round; what remains after the answers is the
+planner's call, written down as a decision. A plan with a "TBD" in it is
+not finished.
+
+STANDARD gets the same discipline in-session, usually as zero or one
+question.
+
 ## Chunks
 
 Split into architecturally meaningful chunks a single worker can own from
@@ -68,6 +85,13 @@ subsystem. Match its shape; do not introduce a second style.
 ## Do not
 - redesign the pricing model; touch unrelated serialization
 ```
+
+## Thorough means
+
+Every chunk names its interfaces, its files, the pattern to follow, its edge
+cases, and an acceptance a worker can run. No chunk depends on a decision
+another chunk has not yet made. The worker should never have to choose a
+shape — only to build one.
 
 ## The one-pattern rule
 

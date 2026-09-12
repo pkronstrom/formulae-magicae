@@ -1,9 +1,10 @@
 # Adversarial plan review
 
-MAJOR and CRITICAL only. Fresh-context frontier reviewer, read-only, both
-lenses in one pass; CRITICAL runs the two lenses as two independent reviewers
-in parallel, never conversing. Pack in `context.md`. The design was already
-attacked at discovery; attack the *plan*.
+MAJOR and CRITICAL only. Two fresh-context frontier reviewers, read-only, one
+lens each, in parallel, never conversing; then the verifier. Once per
+feature, and a wrong plan costs a rewrite — this is the review not to trim.
+Pack in `context.md`. The design was already attacked at discovery; attack
+the *plan*.
 
 Your job is to prove the plan will cause trouble before implementation begins.
 It is not to make the architecture fancier, propose alternatives that seem
@@ -37,7 +38,6 @@ Write `.work/handoffs/plan-review-<lens>.md`; reply with the path and count.
 
 ## Afterwards (coordinator)
 
-One reviewer: its file is the fix list. Two: run the verifier
-(`verify-findings.md`) on both. Amend the design and the chunks for verified
-findings — amend, don't rewrite.
+Run the verifier (`verify-findings.md`) on both files. Amend the design and
+the chunks for verified findings — amend, don't rewrite.
 Record what changed in `.work/handoffs/plan-review.md`, set `phase: execute`.

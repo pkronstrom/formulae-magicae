@@ -86,8 +86,8 @@ before starting the next, and never write one twenty-chunk plan.
 |---|---|---|
 | TINY | local, mechanical, few files, known pattern, no decisions | coordinator writes one minimal chunk file (Goal, Files, Follow this pattern, Do not) → worker → tests → done |
 | STANDARD | one contained subsystem, minor decisions, little architectural impact | short design in-session (1–2 questions, no brainstromming) → coordinator writes plan + 1–2 chunks in-session → worker → one final review, both lenses → fix → verify |
-| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner → one adversarial plan reviewer → chunks, one reviewer each → final two-lens review |
-| CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at plan and chunk checkpoints, and one specialist reviewer where the task creates a real extra failure domain |
+| MAJOR | crosses modules or layers; changes API, schema, data flow; moves a seam; real state/async | brainstromming ↔ user → fresh planner + plan grill → two adversarial plan reviewers + verifier → chunks, one reviewer each → final two-lens review |
+| CRITICAL | security/auth, migration or data-loss risk, distributed/concurrent, infra, large blast radius | MAJOR, with two independent reviewers + verifier at chunk checkpoints too, and one specialist reviewer where the task creates a real extra failure domain |
 
 `quick` biases to TINY; it does not forbid escalation.
 
@@ -96,8 +96,8 @@ before starting the next, and never write one twenty-chunk plan.
 ```text
 INTERACTIVE   user ↔ frontier   discover / inspect / challenge / design   → references/discover.md
               ↓ converged: no open question is likely to reshape the implementation
-AUTONOMOUS    plan                                                       → references/writing-plans.md
-              attack the plan, amend                                     → references/review-plan.md
+              plan; grill the plan-level tail once, batched             → references/writing-plans.md
+AUTONOMOUS    attack the plan, amend                                     → references/review-plan.md
               for each chunk:
                 set chunk_base, launch worker: implement + tests + commit → references/execute.md
                 reviewers (per level) → verifier → fix pass → commit     → references/review-*.md, verify-findings.md
@@ -116,7 +116,10 @@ Interrupt only for a genuinely consequential open decision: materially
 different product behaviour, requirements that conflict, a destructive or
 irreversible action, an architectural fork with real tradeoffs that
 implementation exposed, or a chunk still red after one fresh-worker retry
-(show the failing output). Bring it with 1–3 options and a recommendation,
+(show the failing output). The one scheduled exception is the plan grill:
+plan-level questions the planner cannot settle from the code, asked once, in
+one batch, before anything is built — a wrong guess there is the expensive
+kind. Bring it with 1–3 options and a recommendation,
 write the answer into the design, continue.
 
 **Progress signal.** At every `state.yaml` write print one line — phase,
