@@ -128,7 +128,7 @@ INTERACTIVE   user ↔ frontier   discover / inspect / challenge / design   → 
               grill at plan altitude, one question at a time, live      → references/writing-plans.md
               planner
 AUTONOMOUS    attack the plan, amend                                     → references/review-plan.md
-              for each chunk:
+              for each chunk (two at once when the plan marks them independent):
                 set chunk_base, worker: implement + tests + commit        → references/execute.md
                 review where the next chunk builds on it → fix pass       → references/review-*.md
                 propagate Deviations into later chunk sections
@@ -281,6 +281,16 @@ file, abstraction, dependency, config flag or public interface. That decision
 comes to frontier reasoning (this session, with the design and the worker's
 handoff — not its transcript); the design and later chunks are amended; the
 worker continues. Ordinary coding trouble is the worker's to solve.
+
+**Parallel chunks.** Two chunks the plan marks independent — no dependency
+between them, disjoint *Files* — get two workers at once, on the same
+branch and tree. Each owns its files only: explicit staging (`git add
+<own files>`, never `-A`), never revert or reformat what it does not own,
+and a failure in a file it does not own is reported, not fixed. When one
+must touch the other's file, they coordinate first (adapter says how) and
+agree who edits. The reviewer takes each chunk's diff as `git diff
+<chunk_base> -- <its files>`. Never more than two workers; a third is a
+sign the phase should have been two phases.
 
 **Separate roles, continue within a role.** Every cold context re-reads the
 code; a continued one pays cached input. So a phase has one worker and one

@@ -24,7 +24,8 @@ Spawn with `Agent(subagent_type: <agent>, prompt: <template from
 context.md>)`; pass `model:` only for a `phase_map` override, and
 `effort: medium` for a chunk checkpoint review (final review and plan
 review stay at the agent's default). Give the phase's
-worker and reviewer a `name` (`worker`, `reviewer`) so later chunks, fix
+workers and reviewer a `name` (`worker-a`, `worker-b`, `reviewer`) — parallel
+workers coordinate directly with `SendMessage` to each other's name — so later chunks, fix
 passes and the final review continue them with `SendMessage` and just the
 new task lines. On CRITICAL, launch the two
 reviewers as two `Agent` calls in one message; wait for both, then the

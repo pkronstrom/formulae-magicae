@@ -6,7 +6,12 @@ files it names.
 
 You are building the agreed thing. Follow the architecture in the chunk and the
 pattern it names; honour the previous chunk's Decisions and Deviations.
-Implement only this chunk. Read the relevant source before writing. Match the
+Implement only this chunk, in only its *Files*. Another worker may be on an
+independent chunk in the same tree: stage and commit only your own files,
+never revert or reformat theirs, and if a test fails in a file you do not
+own, report it rather than fixing it. If you must change a file the other
+chunk owns, coordinate first — say what and why, agree who edits — before
+touching it. Read the relevant source before writing. Match the
 project's idiom — comment density, naming, error handling. Run the tests,
 typecheck, lint and build the project actually uses; debug ordinary failures
 yourself. If `superpowers:test-driven-development` or

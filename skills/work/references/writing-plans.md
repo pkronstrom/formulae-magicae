@@ -46,6 +46,75 @@ is not finished.
 STANDARD gets the same discipline in-session, usually as zero or one
 question.
 
+## Chunks
+
+Split into architecturally meaningful chunks a single worker can own from
+implementation through local verification: *persistence path complete*,
+*domain vertical slice complete*, *API contract complete*, *migration
+complete*. Two to four chunks for a MAJOR phase; one or two for STANDARD.
+More than four is a second phase, not a longer plan.
+Never chunk at TDD granularity — "write test / make it pass / refactor" is one
+worker's inner loop, not three review checkpoints.
+
+Order chunks so each leaves the tree building and tests green. If a chunk
+cannot, say what is temporarily allowed to be red and why. Every chunk
+states *Depends on* (a chunk, or none) and its *Files* are its ownership:
+two chunks with disjoint files and no dependency between them are
+parallelizable, and the plan should prefer such cuts where the design
+allows — that is where wall-clock is won.
+
+## The plan document
+
+`docs/plans/<date>-<topic>-implementation.md`, next to the design it
+implements. Header: `Status: in progress` (→ `done <date>` at the end), the
+goal, the design link (or the Design section itself for STANDARD), the chunk
+list with one-line goals, the acceptance for the whole feature, non-goals,
+and *things not to redesign*. Then one `## Chunk N` section per chunk,
+self-contained — the worker is pointed at its section and reads only that:
+
+```markdown
+## Chunk 2 — Quote pricing resolution
+
+## Goal
+Resolve quote-line prices by the existing price-source priority.
+
+## Architecture
+Resolution stays in PricingService. The router validates and delegates.
+
+## Files
+- src/services/pricing.ts
+- src/server/routers/quotes.ts
+- tests/pricing.test.ts
+
+## Depends on
+Chunk 1 (the price-source table). *Files* is ownership: a chunk whose
+files are disjoint from another's and that depends on nothing unfinished
+can run in parallel with it.
+
+## Invariants
+- manual override always wins
+- a missing price never silently becomes zero
+- no pricing rules in the router
+
+## Follow this existing pattern
+src/services/supplier-pricing.ts — the established service boundary for this
+subsystem. Match its shape; do not introduce a second style.
+
+## Implementation notes
+- reuse resolveSupplierPrice(); the transaction boundary stays in QuoteService
+- no generic pricing-strategy framework
+
+## Edge cases
+- ...
+
+## Acceptance
+- tests listed above pass; typecheck and lint clean
+- ...
+
+## Do not
+- redesign the pricing model; touch unrelated serialization
+```
+
 ## Thorough means
 
 No UX or UI choice is left to the worker: every screen, flow and

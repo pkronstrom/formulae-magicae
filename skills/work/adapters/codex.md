@@ -36,8 +36,10 @@ Spawn with `multi_agent_v1__spawn_agent({agent_type: "work_frontier" |
 verified codex-cli 0.154); pass `model` / `reasoning_effort` only for a
 `phase_map` override or `reasoning_effort: "medium"` for a chunk
 checkpoint review (plan and final review stay at the agent's default). `wait_agent({targets, timeout_ms})` blocks on several;
-`send_input({target, message})` continues the phase's worker and reviewer
-across chunks, fix passes and the final review;
+`send_input({target, message})` continues the phase's workers and reviewer
+across chunks, fix passes and the final review; parallel workers coordinate
+through the coordinator — a worker reports the conflict, you relay it with
+`send_input` to the other;
 `close_agent({target})` once its file is read. Native agents share the
 workspace and write their own files. Approve source access once at the
 start, not per agent. Never `codex exec resume` for `$work continue` — the
