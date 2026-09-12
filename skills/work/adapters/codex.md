@@ -10,6 +10,7 @@ model_map:
   strong: gpt-5.6-sol
   worker: gpt-5.6-terra     # "terra"
 effort: {frontier: high, strong: medium, worker: medium}
+phase_map: {}               # e.g. chunk_review: claude:opus
 ```
 
 Frontier session: `codex -m gpt-5.6-sol`.
@@ -38,3 +39,17 @@ Frontier session: `codex -m gpt-5.6-sol`.
    The fix pass continues the chunk worker: `codex exec resume --last -` with
    the findings path on stdin. Never resume for `$work continue` — the
    transcript is not the state.
+
+**`claude:` entries** — reviewers and the verifier, read-only, prompt on
+stdin, run in the background:
+
+```bash
+claude -p --model opus --no-session-persistence --strict-mcp-config \
+  --disable-slash-commands --allowed-tools Read Grep Glob \
+  --disallowed-tools Bash Edit Write NotebookEdit < .work/prompts/review-design-02.md &
+```
+
+Read-only comes from the tool allowlist, not `--permission-mode plan` (plan
+mode makes it plan instead of review). Never put the prompt in a positional
+argument. A `claude:` *worker* needs write tools and a permission mode the
+project accepts; that path is not verified — prefer the native worker.

@@ -44,6 +44,13 @@ strong:   strong reasoning, cheaper than top    # finding verification
 worker:   cost-effective implementation         # code, tests, mechanical changes, routine debugging
 ```
 
+A map value is `[backend:]model`; no prefix means the harness you are in.
+An optional `phase_map` overrides the role for one phase (`plan`,
+`plan_review`, `execute`, `chunk_review`, `verify`, `final_review`), so a
+Claude session can send reviews to a Codex model or the reverse — different
+pretraining lineages fail differently, which is worth more than a second
+reviewer from the same family. Discovery is always this session.
+
 The design conversation runs *in this session*, so this session must be on
 the frontier model. If it is not, say so and stop until the user switches or
 says go.
