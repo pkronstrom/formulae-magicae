@@ -40,6 +40,28 @@ Classify when the design converges, not before (SKILL.md). A brainstromming
 session may well end at STANDARD; then skip its cross-vendor review — STANDARD
 gets one adversarial pass, the final review.
 
+## If it touches UI, design the UI
+
+Never let a screen be "vibed" into existence by the worker. When the change
+touches anything the user sees — a screen, a panel, a flow, a control, a
+message — discovery includes a UI pass, in the same one-question-at-a-time
+rhythm:
+
+- **ASCII wireframe every affected screen or state**, one per message, and
+  ask about it: layout, what is shown and when, the primary action, empty /
+  loading / error / success states, what happens on the edges (long text, no
+  data, slow network). Iterate the frame until the user says it is right;
+  small changes converge in one or two frames.
+- **Bigger UI work — a new screen, a new flow, a new interaction model, or
+  two or more screens changing — ask once** whether to iterate the visual
+  style first with `/prototype-singlefile` (a few rounds on a canvas with
+  comments) before planning. If yes, run it and fold the result back; if
+  no, the ASCII frames are the design.
+- The agreed frames and decisions land in the design under `# UI`, and every
+  chunk that touches a screen cites the frame it implements. The design
+  reviewer checks the implementation against those frames, not against its
+  own taste.
+
 ## Be opinionated about simplicity
 
 Prefer the project's existing patterns. Resist speculative flexibility,
@@ -56,7 +78,8 @@ said to be:
 
 - intended behaviour, scope, non-scope
 - the UX: what the user sees and does, the flow, the screens, what is
-  shown and when — decided with the user, not for them
+  shown and when — wireframed and decided with the user, not for them
+  (see *If it touches UI* above)
 - architectural boundaries; who owns which state and data
 - failure behaviour that matters; compatibility and migration
 - likely affected subsystems
@@ -91,6 +114,10 @@ One paragraph.
 # Relevant existing architecture
 - Retry logic: src/net/retry.ts — reuse, do not fork.
 - Persistence seam: src/store/*.ts follow one shape; the new store follows it.
+
+# UI
+(only when the change touches UI — the agreed ASCII frames, one per screen
+or state, with the decisions under each)
 
 # Open questions
 - (none)

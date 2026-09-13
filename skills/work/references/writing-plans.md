@@ -118,8 +118,8 @@ subsystem. Match its shape; do not introduce a second style.
 ## Thorough means
 
 No UX or UI choice is left to the worker: every screen, flow and
-interaction the chunk touches is described in the chunk section as the user
-decided it.
+interaction the chunk touches cites the frame in the design's `# UI`
+section it implements, as the user decided it.
 
 Every chunk names its interfaces, its files, the pattern to follow, its edge
 cases, and an acceptance a worker can run. No chunk depends on a decision

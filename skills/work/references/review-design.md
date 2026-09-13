@@ -15,6 +15,11 @@ indirection with no payoff · speculative extensibility · premature
 configuration · unnecessary dependencies · scope the design did not ask for ·
 violations of the project's own patterns · code that should simply not exist.
 
+Where the chunk touches UI, check it against the design's `# UI` frames —
+layout, states, primary action — not against your own taste; a screen that
+differs from its frame is a finding, a screen you would have drawn
+differently is not.
+
 Ask of every new unit: what breaks if this is deleted? If the answer is
 "nothing, the caller inlines four lines", say so.
 
