@@ -34,6 +34,7 @@ around that one source tree; they do not fork the skills.
 | [`skill-improver`](skills/skill-improver/) | Mine the sessions where a skill was actually used, triage what went wrong into red/orange/yellow findings, and apply the approved fixes under version control. | `python3`, `git` |
 | [`session-retro`](skills/session-retro/) | Retro the session that just finished — or any Claude, Codex or OpenCode session by id — and fix the instructions that cost time. | `python3` |
 | [`work`](skills/work/) | `/work <task>`: design interactively with the strongest model, then run plan, adversarial plan review, cheaper-worker implementation and fresh-context reviews autonomously to a verified feature. | Optional: `brainstromming`, `skill-improver` |
+| [`cad-studio`](skills/cad-studio/) | Router for cad-studio work — infers fidelity (concept → fabrication), picks the smallest set of existing CAD/scene/fabrication skills, keeps designs reusable across sessions. | Specialist skills discovered at runtime; bootstraps `build123d`/Replicad/Blender only when needed |
 | [`coordinate`](skills/coordinate/) | `/coordinate codex`: pair a live Claude Code session with a live Codex session in another tmux pane; messages are pasted into the peer's TUI and replies come back the same way. | `tmux`, `python3`; optional `workmux` |
 
 ## Quick install
@@ -55,7 +56,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, and skills/coordinate.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, and skills/cad-studio.
 ```
 
 Installed Codex skills appear in the next turn.

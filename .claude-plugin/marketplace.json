@@ -120,6 +120,12 @@
       "source": "./skills/coordinate",
       "description": "/coordinate codex|claude: pair this live session with a live Codex or Claude Code session in another tmux pane and coordinate directly through a tiny bridge.",
       "version": "1.0.0"
+    },
+    {
+      "name": "cad-studio",
+      "source": "./skills/cad-studio",
+      "description": "Router for cad-studio work: infers fidelity, picks the smallest set of existing CAD/scene/fabrication skills, and keeps project artifacts reusable across sessions.",
+      "version": "1.0.0"
     }
   ]
 }
