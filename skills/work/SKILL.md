@@ -139,8 +139,9 @@ AUTONOMOUS    attack the plan, amend                                     → ref
 ```
 
 **Announce the transition once**, after plan review and before chunk 1, in
-one line: level, chunk count, the branch chunks will be committed on, and
-that the next stop is done or a consequential decision. (TINY: the same
+one line: level, chunk count, the branch chunks will be committed on, which
+agent and model fills each role (from the adapter map and any `phase_map`),
+and that the next stop is done or a consequential decision. (TINY: the same
 line before its worker launches.) Then **do not stop to ask** "approve plan?", "continue?", "review now?", "next chunk?". Plans,
 reviewer findings, fixes and refactors the agreed design requires are yours.
 Interrupt only for a genuinely consequential open decision: materially
@@ -264,10 +265,14 @@ other phase, ask: continue it, or discard it. `/work continue` with phase
 `done` and an unchecked phase in `MASTERPLAN.md` starts that phase —
 discovery, plan grill, plan review, all of it — and says so.
 
-When this session has grown long — a feature already finished in it, or
-several chunks behind it — say so at the next phase boundary and offer
-`/work continue` in a fresh session; the state is on disk and the old
-context is only cost.
+At every phase's *done*, recommend — not offer — `/work continue` in a fresh
+session for the next phase, with the reason in numbers ("this session is N
+tool calls deep; every turn re-sends that"); the state is on disk and the
+old context is only cost. Continue here only if the user says so.
+
+At every `/work continue` and every new phase, re-read `SKILL.md` and the
+adapter before acting — they change, and a long session otherwise runs on
+the copy it read hours ago.
 
 `/work continue`: read `state.yaml` and the `last_handoff`, re-enter the
 phase. A dirty tree relative to `chunk_base` is partial chunk work: hand the
@@ -308,8 +313,10 @@ gone noisy. Never escalate a noisy context to a stronger model.
 
 After a review: verified findings → fix pass → tests → commit → continue.
 Re-review only when the fix was large, changed architecture, a finding
-demanded verification, or tests surfaced new uncertainty. Never re-run a full
-review after every fix.
+demanded verification, or tests surfaced new uncertainty — and then by the
+**same reviewer, continued**, on the fix diff only, against its own findings
+file. Never a fresh reviewer, never a full review after every fix; a small
+fix gets none.
 
 | level | checkpoint review | final review |
 |---|---|---|
