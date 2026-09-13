@@ -7,7 +7,7 @@
 Traps this encodes (each cost a round-trip when first met):
   - Shape.project_to_viewport() takes a camera POSITION; a unit vector lands inside the model. Use FAR.
   - Plot visible edges only; hidden lines of a repeated frame are unreadable.
-  - The projection is centred on the shape: world=("X","Z") shifts plotted coords back to world mm.
+  - Default look_at is the shape's own centre → coordinates drift per shape; pass look_at=(0,0,0) so plotted == world mm.
   - Clipped solids yield zero-length edges → skip length < 0.5 and wrap position_at().
   - qlmanage crops PNGs square; cairosvg needs libcairo. Hence matplotlib.
 Axes convention: X across, Y along, Z up.
@@ -27,16 +27,10 @@ VIEWS = {  # name → (camera position, up, world axes for dimensioning or None)
 }
 
 def draw(ax, shape, view, hidden=False, lw=0.9, world=None):
-    """Draw `shape` into `ax` from VIEWS[view] (or a (pos, up) tuple). Returns nothing; ax is equal-aspect, axes off."""
-    pos, up, w = VIEWS[view] if isinstance(view, str) else (view[0], view[1], None)
-    world = world if world is not None else w
-    vis, hid = shape.project_to_viewport(pos, viewport_up=up)
-    ox = oy = 0.0
-    if world:
-        vb, wb = Compound(children=list(vis)).bounding_box(), shape.bounding_box()
-        wc = {a: (getattr(wb.min, a) + getattr(wb.max, a)) / 2 for a in world}
-        ox = wc[world[0]] - (vb.min.X + vb.max.X) / 2
-        oy = wc[world[1]] - (vb.min.Y + vb.max.Y) / 2
+    """Draw `shape` into `ax` from VIEWS[view] (or a (pos, up) tuple). Orthographic; look_at=(0,0,0) makes
+    plotted coordinates equal world mm for the axis views (top X,Y · front X,Z · side Y,Z; rear mirrors X)."""
+    pos, up = (VIEWS[view][0], VIEWS[view][1]) if isinstance(view, str) else (view[0], view[1])
+    vis, hid = shape.project_to_viewport(pos, viewport_up=up, look_at=(0, 0, 0))
     def plot(edges, **kw):
         for e in edges:
             if e.length < 0.5:
@@ -45,7 +39,7 @@ def draw(ax, shape, view, hidden=False, lw=0.9, world=None):
                 pts = [e.position_at(i / 12) for i in range(13)]
             except Exception:
                 continue
-            ax.plot([q.X + ox for q in pts], [q.Y + oy for q in pts], **kw)
+            ax.plot([q.X for q in pts], [q.Y for q in pts], **kw)
     plot(vis.edges(), color="black", lw=lw)
     if hidden:
         plot(hid.edges(), color="grey", lw=0.4, ls=(0, (3, 3)))
