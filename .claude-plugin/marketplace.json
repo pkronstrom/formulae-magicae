@@ -126,6 +126,12 @@
       "source": "./skills/cad-studio",
       "description": "Router for cad-studio work: infers fidelity, picks the smallest set of existing CAD/scene/fabrication skills, and keeps project artifacts reusable across sessions.",
       "version": "1.0.0"
+    },
+    {
+      "name": "cad-construction-pdf",
+      "source": "./skills/cad-construction-pdf",
+      "description": "Construction-ready booklet PDF for small timber builds: staged CAD iteration with gates, then renders, projections, joint details with fasteners, cut list, priced parts and IKEA-style build phases.",
+      "version": "1.0.0"
     }
   ]
 }

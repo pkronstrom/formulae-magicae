@@ -1,6 +1,6 @@
-"""booklet.py — assemble a landscape-A4 PDF from a page list with matplotlib. No LaTeX, no cairo.
+"""pages.py — landscape-A4 PDF page primitives with matplotlib (no LaTeX, no cairo). book.py composes the booklet from these.
 
-    from booklet import build
+    from pages import build
     build([
       ("title", dict(title="A-frame cabin", subtitle="…", image="preview/iso.png", facts="Footprint 4.0 × 4.2 m\\n…")),
       ("image", "drawings/elevations.png", "2 · Elevations", "note under the image"),
@@ -21,6 +21,30 @@ A4L = (11.69, 8.27)
 NUM = re.compile(r"[\d.,]+( m| kpl| sheet| lot| m²| pss)?")
 
 def _title(fig, text): fig.text(0.05, 0.95, text, fontsize=16, weight="bold", va="top")
+title = _title
+
+def watermark(fig, text="DRAFT"):
+    fig.text(0.5, 0.5, text, fontsize=110, color="red", alpha=0.12, ha="center", va="center", rotation=30, weight="bold")
+
+def image_row(fig, paths, y, h, captions=None, x0=0.03, x1=0.97, gap=0.015):
+    """Images side by side between x0..x1 at height h (figure fraction), bottom at y. Missing files are skipped."""
+    paths = [p for p in paths if p and Path(p).exists()]
+    if not paths:
+        return
+    n = len(paths); w = ((x1 - x0) - gap * (n - 1)) / n
+    for i, p in enumerate(paths):
+        ax = fig.add_axes([x0 + i * (w + gap), y, w, h]); ax.imshow(plt.imread(str(p)), interpolation="none"); ax.axis("off")
+        if captions and i < len(captions) and captions[i]:
+            ax.set_title(captions[i], fontsize=8, color="dimgray")
+
+def text_block(fig, x, y, lines, size=8, mono=False, spacing=1.3):
+    fig.text(x, y, "\n".join(lines), fontsize=size, va="top", family="monospace" if mono else None, linespacing=spacing)
+
+def wrap_lines(text, width):
+    out = []
+    for para in str(text).splitlines() or [""]:
+        out += textwrap.wrap(para, width, subsequent_indent="  " if para.lstrip().startswith(("-", "•")) else "") or [""]
+    return out
 
 LINE = 0.022   # figure-fraction height of one text line at fontsize ~7
 

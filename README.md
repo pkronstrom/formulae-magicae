@@ -35,6 +35,7 @@ around that one source tree; they do not fork the skills.
 | [`session-retro`](skills/session-retro/) | Retro the session that just finished — or any Claude, Codex or OpenCode session by id — and fix the instructions that cost time. | `python3` |
 | [`work`](skills/work/) | `/work <task>`: design interactively with the strongest model, then run plan, adversarial plan review, cheaper-worker implementation and fresh-context reviews autonomously to a verified feature. | Optional: `brainstromming`, `skill-improver` |
 | [`cad-studio`](skills/cad-studio/) | Router for cad-studio work — infers fidelity (concept → fabrication), picks the smallest set of existing CAD/scene/fabrication skills, keeps designs reusable across sessions. | Specialist skills discovered at runtime; bootstraps `build123d`/Replicad/Blender only when needed |
+| [`cad-construction-pdf`](skills/cad-construction-pdf/) | Construction-ready booklet for small timber builds (shed, A-frame, gazebo) — staged CAD iteration with gates, then one PDF: renders, dimensioned projections, joints with fasteners, cut list, priced parts, IKEA-style build phases with a render and shopping list each. | `python3` with `build123d`, `matplotlib`, `pyyaml`; Blender optional for shaded renders |
 | [`coordinate`](skills/coordinate/) | `/coordinate codex`: pair a live Claude Code session with a live Codex session in another tmux pane; messages are pasted into the peer's TUI and replies come back the same way. | `tmux`, `python3`; optional `workmux` |
 
 ## Quick install
@@ -56,7 +57,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, and skills/cad-studio.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, and skills/cad-construction-pdf.
 ```
 
 Installed Codex skills appear in the next turn.

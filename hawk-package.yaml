@@ -44,6 +44,8 @@ contents:
       name: coordinate
     - path: skills/cad-studio/
       name: cad-studio
+    - path: skills/cad-construction-pdf/
+      name: cad-construction-pdf
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

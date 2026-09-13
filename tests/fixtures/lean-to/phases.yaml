@@ -1,0 +1,40 @@
+- id: ground
+  title: Ground and piers
+  weekend: 1
+  prerequisites: [gravel delivered, Leca blocks on site]
+  steps:
+    - text: Strip topsoil 0.5 m beyond the 2 × 3 m footprint; 200 mm murske in two lifts, compacted.
+    - text: Set out four pier centres with string lines; check the diagonals are equal.
+    - text: Two courses of Leca P-240 per pier on mortar; tops level.
+  dims:
+    - {view: plan, axis: x, from: 0, to: 2000, label: "2000"}
+    - {view: plan, axis: y, from: 0, to: 3000, label: "3000"}
+  done_state: Four level pier tops. Cure a week.
+  views: [iso, plan]
+- id: frame
+  title: Posts, beams, floor
+  weekend: 2
+  prerequisites: [timber delivered]
+  steps:
+    - text: Stand the four posts on the piers, brace temporarily, plumb.
+    - text: Bolt the two beams to the post tops (joint A).
+    - text: Joists at 488 c/c between the beams.
+    - text: Screw the 22 mm deck sheets.
+      hides_below: true
+  dims:
+    - {view: plan, axis: x, from: 0, to: 488, label: "488 c/c"}
+    - {view: front, axis: z, from: 0, to: 2400, label: "2400"}
+  done_state: A square, braced frame with a deck.
+  views: [iso, plan, front, section]
+- id: roof
+  title: Rafters, battens, pelti
+  weekend: 3
+  steps:
+    - text: Rafters on the beams with kulmarauta both sides (joint B).
+    - text: 32×50 battens at 400 c/c across the rafters.
+    - text: Pelti sheets from the low edge up, screwed to the battens.
+      hides_below: true
+    - text: Wool between rafters from below; tape the vapour barrier seams.
+  dims:
+    - {view: plan, axis: y, from: 0, to: 400, label: "400 c/c"}
+  done_state: Dry inside.

@@ -69,6 +69,9 @@ Typical chains (each line is one skill or tool; add a line only when the level n
 3D-print bracket                   → CAD skill → validate → STL/3MF. No scene work.
 A-frame cabin plans                → (architecture reasoning if unclear) → parametric CAD
                                      → iterate → drawings + cut list only if asked
+Shed / cabin to actually build     → cad-construction-pdf (staged iteration, phases, priced
+  (booklet, phases, "how do I       parts, booklet PDF); it calls back here for modelling
+   build it")
 A-pukki from photo                 → reconstruction → parametric CAD → woodworking → drawings
 Van interior + table/drawers       → layout of the van envelope → CAD for the furniture
                                      with the envelope as a constraint → fabrication if asked
@@ -110,11 +113,11 @@ Rules while coordinating:
   chain from the changed step forward, not from scratch. Each accepted iteration is one
   changelog line in `design.md`, newest first.
 - Preview after every iteration, best available first: a live browser viewer from a
-  specialist skill (Nimbalyst / kernelCAD style) if installed → PNG views via
-  `scripts/views.py` (build123d → matplotlib; encodes the projection traps that cost six
-  round-trips the first time) and opened with `open` → a dimension table. Say which one is
-  in use the first time in a design; the user can override. This skill owns no *viewer*;
-  the helper only rasterises edges and draws dimension lines.
+  specialist skill (Nimbalyst / kernelCAD style) if installed → PNG views via the
+  `cad-construction-pdf` skill's `scripts/views.py` when that skill is active (build123d →
+  matplotlib; encodes the projection traps that cost six round-trips the first time),
+  opened with `open` → a dimension table. Say which one is in use the first time in a
+  design; the user can override. This skill owns no viewer or drawing code.
 - No final exports during iteration. The preview artifact is overwritten each round.
 
 ## 5. Done signal, outputs, resume
@@ -125,11 +128,11 @@ for the pick, generate those, then ask "anything else?":
 
 ```text
 printable part        → STL (3MF if the slicer wants it)
-timber build          → cut list + dimensioned drawings
+timber build          → cut list + dimensioned drawings; to build it for real → cad-construction-pdf
 furniture / fixture   → drawings + STEP
 placement study       → renders of the variants
 rough concept         → the PNG views and design.md, nothing more
-"one document"        → booklet PDF via scripts/booklet.py (title, views, drawings, parts, tables)
+"one document"        → booklet PDF → cad-construction-pdf (contract, phases, priced parts, generator)
 price estimate        → cut list × reference prices; references/sourcing-fi.md says which retailers answer scripts
                         (scripts/bauhaus.py for bauhaus.fi)
 ```
