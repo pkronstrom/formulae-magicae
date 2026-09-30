@@ -48,7 +48,9 @@ Segment 0 is the overview and has no selected file. Write it in this order:
 
 Write the problem and fix without file paths, identifiers, or symbol names. Use the
 ticket when available; otherwise use the PR body and diff. Include a small inline SVG
-only when the change's flow materially benefits from a diagram.
+only when the change's flow materially benefits from a diagram. It is shown as an image, so
+scripts, links, and external resources in it do nothing; give each file's node
+`id="n-<path, non-alphanumerics as ->"` so the rail can light the current file.
 
 Judge the overall approach once. A proportionate change gets one short verdict. A
 negative verdict must name a concretely smaller alternative and what it removes; if

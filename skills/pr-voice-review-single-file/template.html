@@ -117,16 +117,8 @@
   }
   .rail-dir bdi { direction: ltr; }
   .rail-map { margin-bottom: .6rem; }
-  /* An authored diagram hardcodes its colours and then disappears in dark
-     mode. Text follows the theme; shapes keep the author's intent. */
-  .prv-svg text { fill: currentColor; }
-  .prv-svg { color: var(--fg); }
-  .prv-svg [stroke]:not([stroke="none"]):not(.keep-stroke) { stroke: currentColor; }
-  .prv-svg .lit, .rail-map .lit { color: var(--accent); }
-  .prv-svg .lit text { fill: var(--accent); }
-  .rail-map .nav { cursor: pointer; }
-  .rail-map .nav:hover { opacity: .75; }
-  .rail-map .nav:focus-visible { outline: 2px solid var(--accent); }
+  /* The flow map is an <img> (see svgImg): theme colours and the lit node are
+     injected into the SVG itself, since page CSS cannot reach inside an image. */
   .tier-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
   .tier-dot[data-tier="crucial"] { background: var(--danger); }
   .ticks { display: flex; flex-wrap: wrap; gap: 2px; padding-left: 1.15rem; margin: .1rem 0 .45rem; }
@@ -274,10 +266,7 @@
 
   /* ── PR flow map: full width in the overview, miniature in the rail ────── */
   .overview-map, .rail-map { margin-bottom: 1rem; }
-  .overview-map svg, .rail-map svg { max-width: 100%; height: auto; display: block; }
-  .rail-map .lit, .overview-map .lit {
-    outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 2px;
-  }
+  .overview-map img, .rail-map img { max-width: 100%; height: auto; display: block; }
 
   /* ── transport bar ────────────────────────────────────────────────────── */
   /* Fixed rather than sticky: it is a transport, so it stays put whatever the
@@ -1460,49 +1449,76 @@
 
   // ── PR flow map. A hand-written SVG on segments[0], rendered full width in
   // the overview and again in miniature in the rail, with the current file's
-  // node lit. Parsed as a document and never trusted as an HTML string. ─────
+  // node lit. The SVG is model-authored from PR content (so reachable by
+  // prompt injection) and this file gets shared, so it NEVER enters the page
+  // DOM: it is shown as an <img> from a data: URL, where scripts, event
+  // handlers, javascript: links, <animate>/<set> tricks and external loads
+  // never run. The cost: the map is a picture, not a control — navigation is
+  // the file list under it. ─────────────────────────────────────────────────
   function slugFor(path) { return 'n-' + String(path).replace(/[^a-z0-9]+/gi, '-'); }
 
-  function sanitizeSvg(svgText) {
+  // Page CSS cannot reach inside an <img>, so resolve the theme's colours here
+  // and inject them into the SVG as a <style> block.
+  function themeColor(name) {
+    var probe = document.createElement('span');
+    probe.style.color = 'var(' + name + ')';
+    document.body.appendChild(probe);
+    var c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }
+
+  function svgImg(svgText, litPath) {
     if (typeof svgText !== 'string' || !svgText.trim()) return null;
-    var doc2;
-    try { doc2 = new DOMParser().parseFromString(svgText, 'image/svg+xml'); }
-    catch (e) { return null; }
-    if (!doc2 || doc2.querySelector('parsererror')) return null;
-    var root = doc2.documentElement;
-    if (!root || root.nodeName.toLowerCase() !== 'svg') return null;
-    var node = document.importNode(root, true);
-    node.classList.add('prv-svg');
-    // Strip anything executable before this goes anywhere near the page.
-    node.querySelectorAll('script, foreignObject').forEach(function (n) { n.remove(); });
-    // Hardcoded label colours are the reason an authored diagram goes
-    // unreadable in the other theme, so drop them and let CSS decide.
-    node.querySelectorAll('text, tspan').forEach(function (t) {
-      t.removeAttribute('fill');
-      if (t.style) t.style.removeProperty('fill');
-    });
-    var all = node.querySelectorAll('*');
-    all.forEach(function (el) {
-      var attrs = el.attributes;
-      for (var j = attrs.length - 1; j >= 0; j--) {
-        var name = attrs[j].name;
-        if (/^on/i.test(name)) el.removeAttribute(name);
-        if (/^(href|xlink:href)$/i.test(name) && /^\s*javascript:/i.test(attrs[j].value)) el.removeAttribute(name);
-      }
-    });
-    for (var k = node.attributes.length - 1; k >= 0; k--) {
-      if (/^on/i.test(node.attributes[k].name)) node.removeAttribute(node.attributes[k].name);
+    // An inert parse (DOMParser documents run no scripts and load nothing),
+    // only to add the <style> and serialize with the SVG namespace.
+    var root = new DOMParser().parseFromString(svgText, 'text/html').querySelector('svg');
+    if (!root) return null;
+    // An authored diagram hardcodes its colours and then disappears in the
+    // other theme. Text follows the theme; shapes keep the author's intent.
+    var fg = themeColor('--fg'), acc = themeColor('--accent');
+    var css = 'text,tspan{fill:' + fg + ' !important}' +
+      '[stroke]:not([stroke="none"]):not(.keep-stroke){stroke:' + fg + '}';
+    if (litPath) {
+      var id = '[id="' + slugFor(litPath) + '"]';
+      css += id + ' text,' + id + ' tspan{fill:' + acc + ' !important}' +
+        id + '[stroke]:not([stroke="none"]),' + id + ' [stroke]:not([stroke="none"]){stroke:' + acc + '}';
     }
-    return node;
+    var style = root.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = css;
+    root.insertBefore(style, root.firstChild);
+    var img = document.createElement('img');
+    img.alt = 'PR flow diagram';
+    if (!root.getAttribute('width')) img.style.width = '100%';
+    img.src = 'data:image/svg+xml;charset=utf-8,' +
+      encodeURIComponent(new XMLSerializer().serializeToString(root));
+    return img;
   }
 
   function renderOverviewMap(seg) {
     var wrap = $('#overview-map');
     wrap.textContent = '';
-    var node = seg && seg.svg ? sanitizeSvg(seg.svg) : null;
+    var node = seg && seg.svg ? svgImg(seg.svg, null) : null;
     if (!node) { wrap.hidden = true; return; }
     wrap.appendChild(node);
     wrap.hidden = false;
+  }
+
+  var railLitPath = null;
+  function renderRailMap() {
+    var wrap = rail.querySelector('.rail-map');
+    var seg0 = CONTENT.segments[0];
+    if (!wrap || !seg0 || !seg0.svg) return;
+    var img = svgImg(seg0.svg, railLitPath);
+    wrap.textContent = '';
+    if (img) wrap.appendChild(img);
+  }
+
+  // Theme switches re-resolve the injected colours.
+  function refreshMaps() {
+    if (typeof CONTENT === 'undefined' || !CONTENT.segments) return;
+    if (!$('#overview-map').hidden) renderOverviewMap(CONTENT.segments[0]);
+    renderRailMap();
   }
 
   function railItem(i, label, tier) {
@@ -1567,41 +1583,15 @@
     return li;
   }
 
-  // The diagram's nodes carry id="n-<slug>", the same ids updateRailCurrent
-  // lights. If they can be lit they can be clicked.
-  function wireMapNav(svgRoot) {
-    CONTENT.segments.forEach(function (seg, i) {
-      if (!seg.path) return;
-      var node = svgRoot.querySelector('[id="' + slugFor(seg.path) + '"]');
-      if (!node) return;
-      node.classList.add('nav');
-      node.setAttribute('role', 'link');
-      node.setAttribute('tabindex', '0');
-      var go = function (e) {
-        e.preventDefault();
-        var idx = OBS.findIndex(function (o) { return o.i === i && o.c === 0; });
-        if (idx !== -1) gotoObs(idx, false);
-        closeRailOnMobile();
-      };
-      node.addEventListener('click', go);
-      node.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') go(e);
-      });
-    });
-  }
-
   function renderRail() {
-    var old = rail.querySelector('.rail-list, .rail-map');
-    if (old) old.remove();
+    rail.querySelectorAll('.rail-list, .rail-map').forEach(function (n) { n.remove(); });
 
     var seg0 = CONTENT.segments[0];
-    var mapNode = seg0 && seg0.svg ? sanitizeSvg(seg0.svg) : null;
-    if (mapNode) {
+    if (seg0 && seg0.svg) {
       var wrap = document.createElement('div');
       wrap.className = 'rail-map';
-      wrap.appendChild(mapNode);
       rail.appendChild(wrap);
-      wireMapNav(mapNode);
+      renderRailMap();
       // Fall through: the map augments navigation, it does not replace it.
       // Returning here left a diagrammed PR with no file list, no ticks and a
       // dead search box — the rail's whole orientation job, gone.
@@ -1632,16 +1622,9 @@
       t.classList.toggle('current', !!here && ti === here.i && tc === here.c);
       t.classList.toggle('done', pos !== -1 && currentIdx > -1 && pos < currentIdx);
     });
-    var railSvg = rail.querySelector('.rail-map svg');
-    if (railSvg) {
-      railSvg.querySelectorAll('.lit').forEach(function (n) { n.classList.remove('lit'); });
-      var seg = CONTENT.segments[i];
-      var path = seg && seg.path;
-      if (path) {
-        var target = railSvg.querySelector('[id="' + slugFor(path) + '"]');
-        if (target) target.classList.add('lit');
-      }
-    }
+    var seg = CONTENT.segments[i];
+    var lit = (seg && seg.path) || null;
+    if (lit !== railLitPath) { railLitPath = lit; renderRailMap(); }
   }
 
   // ── 6. Playback. Gated by default: one chunk plays, its rows light up,
@@ -2092,6 +2075,11 @@
     if (t === 'auto') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t);
     $('#btn-theme').textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    refreshMaps();
+  }
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', refreshMaps);
   }
   $('#btn-theme').addEventListener('click', function () {
     setTheme(THEMES[(THEMES.indexOf(PREFS.theme || 'auto') + 1) % THEMES.length]);

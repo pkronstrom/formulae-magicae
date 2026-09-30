@@ -281,3 +281,14 @@ def test_shell_cli_writes_an_openable_file_and_its_slices(tmp_path):
     assert [s["path"] for s in content["segments"]] == [None, "a.py", "b.py", "c.py"]
     assert build.extract_block(out.read_text(), "review-feedback") == {"v": 1, "items": []}
     assert sorted(p.name for p in (tmp_path / "slices").iterdir()) == ["01.json", "02.json"]
+
+
+def test_template_renders_flow_map_as_image_never_inline():
+    """The SVG is model-authored from PR content: it must never enter the page
+    DOM (a blocklist sanitizer was bypassable via <set>/<animate> and entity-
+    encoded javascript: URLs). An <img> from a data: URL runs no script."""
+    html = TEMPLATE.read_text()
+    assert "data:image/svg+xml;charset=utf-8," in html
+    assert "encodeURIComponent(new XMLSerializer().serializeToString(root))" in html
+    assert "sanitizeSvg" not in html
+    assert "importNode" not in html
