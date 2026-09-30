@@ -5,9 +5,7 @@
 > **Ars Automata** — a grimoire of small, practical spells for software agents.
 
 Formulae Magicae is Peter Kronström's portable skill collection for Claude Code,
-Codex, Hawk, and other hosts that understand the open `SKILL.md` convention. The
-repository is private and pre-release while the catalog and distribution story are
-being finished.
+Codex, Hawk, and other hosts that understand the open `SKILL.md` convention.
 
 Each canonical skill lives in `skills/<name>/` with its scripts, templates,
 references, and other runtime resources beside it. Vendor manifests are wrappers
@@ -39,8 +37,6 @@ around that one source tree; they do not fork the skills.
 | [`coordinate`](skills/coordinate/) | `/coordinate codex`: pair a live Claude Code session with a live Codex session in another tmux pane; messages are pasted into the peer's TUI and replies come back the same way. | `tmux`, `python3`; optional `workmux` |
 
 ## Quick install
-
-This is a private repository, so your environment must already have GitHub access.
 
 ### Codex — one formula
 
@@ -100,8 +96,7 @@ hawk download git@github.com:pkronstrom/formulae-magicae.git --enable
 
 Use the complete-collection commands in [Quick install](#quick-install).
 
-Because the repository is private, GitHub authentication must grant access. Install
-one formula instead by replacing the plugin name in the one-formula example above.
+Install one formula instead by replacing the plugin name in the one-formula example above.
 
 The available individual plugin names are the directory names in the table above.
 Individual entries use Claude Code's root-`SKILL.md` plugin layout and require
@@ -150,7 +145,7 @@ The root [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json) describes the
 complete collection for Codex plugin tooling. No personal Codex marketplace entry
 is modified by this repository.
 
-As an optional cross-host installer, OpenSkills can scan the private repository and
+As an optional cross-host installer, OpenSkills can scan the repository and
 let you select formulae interactively; see [Quick install](#quick-install).
 
 OpenSkills is a convenience layer, not the canonical package format.
@@ -158,10 +153,7 @@ OpenSkills is a convenience layer, not the canonical package format.
 ### Hawk
 
 The root [`hawk-package.yaml`](hawk-package.yaml) lets Hawk discover the collection
-as one package. The Hawk repository itself remains unchanged during this migration;
-use the verified command in [Quick install](#quick-install). The proposed follow-up
-is documented in
-[`docs/hawk-hooks-transition.md`](docs/hawk-hooks-transition.md).
+as one package; use the verified command in [Quick install](#quick-install).
 
 ## Repository layout
 
@@ -170,7 +162,7 @@ formulae-magicae/
 ├── .claude-plugin/       # Claude marketplace and all-skills plugin metadata
 ├── .codex-plugin/        # Codex all-skills plugin metadata
 ├── assets/               # Repository artwork
-├── docs/                 # Migration and stewardship notes
+├── docs/                 # Design notes for individual skills
 ├── skills/               # Canonical, portable skill directories
 ├── tests/                # Repository-level regression and validation tests
 ├── hawk-package.yaml     # Hawk package metadata

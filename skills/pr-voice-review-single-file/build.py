@@ -9,8 +9,6 @@ tier, role, overview) plus the raw `gh api` output into the shell file and
 the per-slice briefs the authoring fan-out reads. Everything it does was
 previously hand-written as a throwaway script on every single run, which
 cost three minutes of reading this module to rediscover its own API.
-
-See docs/superpowers/specs/2026-08-11-pr-voice-review-single-file-design.md
 """
 
 import argparse

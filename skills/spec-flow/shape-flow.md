@@ -26,7 +26,7 @@ If unclear, ask one question: *"Is this more about deciding what we want, or abo
 
 ### 2. Run brainstorming (if selected)
 
-Invoke the `superpowers:brainstorming` skill. Constraints:
+Invoke the `superpowers:brainstorming` skill (from the [Superpowers](https://github.com/obra/superpowers) plugin; if it is not installed, run the same discovery conversation inline). Constraints:
 - Do not write application code.
 - Do not save a separate design doc to `docs/superpowers/specs/` — the output goes into the exploration seed in step 4.
 - Stop when there's a clear direction or 2–3 named alternatives with tradeoffs.

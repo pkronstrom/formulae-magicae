@@ -149,10 +149,6 @@ def test_readme_quick_install_documents_every_supported_install_path():
 
     quick_start = h2_matches[quick_index].end()
     quick_section = readme[quick_start:next_h2.start()]
-    assert (
-        "This is a private repository, so your environment must already have "
-        "GitHub access."
-    ) in quick_section
     expected_identifiers = {
         "pkronstrom/formulae-magicae",
         "formulae-magicae@formulae-magicae",

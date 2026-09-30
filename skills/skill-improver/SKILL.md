@@ -159,7 +159,7 @@ was wrong. Mining friction will never surface it; only asking the world will.
 
 It has been the single highest-value step on every target where it was run.
 `/codex` documented `--full-auto` through nine invocations after the flag was
-removed — `codex exec --help` said `error: unexpected argument`. The `aarni`
+removed — `codex exec --help` said `error: unexpected argument`. A home-server
 skill said in bold that backups were installed but unscheduled and to report
 them as broken; both systemd timers were active and had run ten hours earlier.
 

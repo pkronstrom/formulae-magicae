@@ -1,7 +1,7 @@
 """Pure helpers: patch parsing, block-safe JSON, size projection.
 
 Nothing here touches the filesystem, so every hostile-input case is cheap
-to test. See docs/superpowers/specs/2026-08-11-pr-voice-review-single-file-design.md
+to test.
 """
 
 import json
