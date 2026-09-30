@@ -129,7 +129,7 @@
   PRV.auto = !!PRV.auto;              // default off — no surprise audio on load
   PRV.silent = !!PRV.silent;
   const autoOn = () => PRV.auto && !PRV.silent;
-  PRV.v = 55;
+  PRV.v = 56;
   if (PRV.c == null) PRV.c = 0;
   // The LENS the walk is narrated through. Chosen once and fixed for the session.
   // Not a volume dial — architect is not guided with the detail deleted, it is the
@@ -289,6 +289,24 @@
   const md = s => esc(s)
     .replace(/`([^`]+)`/g, '<code style="font-family:ui-monospace,monospace;font-size:12px;padding:1px 5px;border-radius:4px;background:rgba(110,118,129,.22)">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  // Note charts are model-authored SVG. Never put them in the DOM as markup:
+  // render as <img src="data:..."> so any <script>/on* handler inside is inert
+  // (GitHub's CSP img-src allows data:). DOMParser runs no script; it only lets
+  // us set the root's color so currentColor still follows the light/dark theme.
+  const svgImg = (svg, style = "") => {
+    // Inline SVG may omit xmlns; as an image it then renders nothing.
+    let src = String(svg).replace(/<svg\b(?![^>]*\bxmlns=)/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+    try {
+      const doc = new DOMParser().parseFromString(src, "image/svg+xml");
+      const root = doc.documentElement;
+      if (root && root.localName === "svg" && !doc.querySelector("parsererror")) {
+        root.style.color = dark() ? "#e6edf3" : "#1f2328";
+        src = new XMLSerializer().serializeToString(root);
+      }
+    } catch (_) { /* fall back to the raw string — still inert inside <img> */ }
+    return `<img alt="chart" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(src)}"` +
+      ` style="display:block;max-width:none;${style}">`;
+  };
 
   const TIERS = { crucial: "\u{1F534}", normal: "\u{1F7E1}", skim: "\u{26AA}", ignore: "\u{2B1C}" };
 
@@ -798,9 +816,8 @@
     z.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.72);" +
       "display:flex;align-items:center;justify-content:center;cursor:zoom-out;backdrop-filter:blur(3px)";
     z.innerHTML = `<div style="background:${d ? "#161b22" : "#fff"};color:${d ? "#e6edf3" : "#1f2328"};` +
-      `border-radius:12px;padding:30px;max-width:94vw;max-height:90vh;overflow:auto">${svgHtml}</div>`;
-    const svg = z.querySelector("svg");
-    if (svg) { svg.style.width = "min(1400px, 90vw)"; svg.style.height = "auto"; svg.removeAttribute("height"); }
+      `border-radius:12px;padding:30px;max-width:94vw;max-height:90vh;overflow:auto">` +
+      `${svgImg(svgHtml, "width:min(1400px, 90vw);height:auto")}</div>`;
     const close = () => { z.remove(); document.removeEventListener("keydown", esc, true); };
     const esc = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
     z.addEventListener("click", close);
@@ -891,7 +908,7 @@
         `background:${n.byUser ? "rgba(31,111,235,.14)" : "rgba(110,118,129,.10)"};` +
         `border-left:3px solid ${n.byUser ? "#1f6feb" : n.q ? "#238636" : "#6e7681"}`;
       const range = n.from ? `<span style="opacity:.6;font-family:ui-monospace,monospace;font-size:11px;white-space:nowrap">L${n.from}${n.to && n.to !== n.from ? "–" + n.to : ""}</span>` : "";
-      const svg = n.svg ? `<div class="prv-svg" data-zoom="1" title="click to enlarge" style="margin-top:6px;overflow-x:auto;cursor:zoom-in">${n.svg}</div>` : "";
+      const svg = n.svg ? `<div class="prv-svg" data-zoom="1" title="click to enlarge" style="margin-top:6px;overflow-x:auto;cursor:zoom-in">${svgImg(n.svg)}</div>` : "";
       const q = n.q ? `<div style="font-weight:600;margin-bottom:5px;padding:3px 9px;border-radius:6px;background:rgba(31,111,235,.16);border-left:3px solid #1f6feb;display:inline-block">${md(n.q)}</div>` : "";
       const body = n.pending
         ? `<div style="padding-left:12px;opacity:.55;font-style:italic">&#8627; ${n.digPending ? "digging into this file" : "thinking"}&hellip;</div>`

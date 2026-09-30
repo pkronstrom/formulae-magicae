@@ -11,13 +11,21 @@ Serves pre-rendered narration audio to the browser (via the extension's
 service-worker proxy) and relays overlay events to the agent, replacing the
 browser-tool long-poll with a cheap curl.
 
-  GET  /ping              -> {"ok": true, "v": 26, "warm": bool, "synthPending": n, ...}
+  GET  /ping              -> {"ok": true, "v": 27, "warm": bool, "synthPending": n, ...}
   GET  /audio/<name>      -> wav bytes from the --audio-dir (basenames only)
   POST /event             -> queue one JSON event from the overlay
   GET  /wait[?ms=3600000] -> long-poll: first queued event, else {"action":"TIMEOUT"}
                              defaults to 60 min, which is also the cap — each return
                              wakes the agent's harness, so short windows spam the user
   GET  /drain             -> all queued events, clearing the queue
+
+Request guard (every endpoint): Host must be 127.0.0.1:<port> or localhost:<port>
+(defeats DNS rebinding); an Origin, if sent, must be chrome-extension://… (a web
+page cannot pose as the user by POSTing /event); and any request that looks like
+it came from a browser (Origin or Sec-Fetch-* present) must also carry the header
+`X-PRV: 1`, which only the extension's service worker adds — a web page cannot set
+a custom header cross-origin without a CORS preflight, and this server answers no
+preflight. Plain local tools (curl, no Origin) pass unchanged.
 
 Usage:  server.py --port 8765 --audio-dir /tmp/.../audio [--pidfile PATH]
 """
@@ -696,9 +704,32 @@ def enqueue_synthesis(segments):
         enqueue_segment(i, seg)
 
 
+PORT = 8765
+
+
+def request_refusal(headers, port):
+    """Why this request must be refused, or None. See the module docstring."""
+    host = (headers.get("Host") or "").strip().lower()
+    if host not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+        return "bad host"
+    origin = headers.get("Origin")
+    if origin is not None and not origin.startswith("chrome-extension://"):
+        return "foreign origin"
+    browser = origin is not None or any(k.lower().startswith("sec-fetch-") for k in headers.keys())
+    if browser and headers.get("X-PRV") != "1":
+        return "browser request without X-PRV header"
+    return None
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):  # quiet
         pass
+
+    def _refused(self):
+        why = request_refusal(self.headers, PORT)
+        if why:
+            self._json({"ok": False, "why": why, "pendingEvents": None}, 403)  # no queue stamp
+        return bool(why)
 
     def parse_request(self):
         global LAST_REQUEST
@@ -731,9 +762,11 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if self._refused():
+            return
         u = urlparse(self.path)
         if u.path == "/ping":
-            return self._json({"ok": True, "v": 26, "warm": WARM is not None and WARM.poll() is None, "synthPending": SYNTH.qsize() + BUSY, "synthErrors": len(SYNTH_ERRORS), "lastError": (SYNTH_ERRORS[-1] if SYNTH_ERRORS else None)})
+            return self._json({"ok": True, "v": 27, "warm": WARM is not None and WARM.poll() is None, "synthPending": SYNTH.qsize() + BUSY, "synthErrors": len(SYNTH_ERRORS), "lastError": (SYNTH_ERRORS[-1] if SYNTH_ERRORS else None)})
         if u.path == "/status":
             with SEG_LOCK:
                 total = len(SEGMENTS)
@@ -820,6 +853,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         global SEGMENTS
+        if self._refused():
+            return
         path = urlparse(self.path).path
         if path == "/play":
             # The page cannot play audio itself: GitHub's CSP media-src forbids
@@ -964,6 +999,8 @@ def main():
                     help="sound played when the panel becomes usable; '' disables")
     a = ap.parse_args()
     AUDIO_DIR = a.audio_dir
+    global PORT
+    PORT = a.port
     global PLAYPID
     PLAYPID = os.path.join(a.audio_dir, ".playing.pid")
     global DATA_DIR

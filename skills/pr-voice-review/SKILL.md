@@ -198,6 +198,11 @@ python3 "<skill dir>/server.py" --port 8765 --audio-dir "$D/audio" --pidfile "$D
 # it chimes (Tink) the moment the panel is navigable — `--chime ''` disables, `--chime PATH` swaps
 ```
 
+The server answers only `Host: 127.0.0.1:<port>`/`localhost:<port>` and refuses any
+web-page Origin, so plain `curl` works but a browser tab cannot inject events. The
+extension is pinned to port 8765 — keep the default unless you also edit
+`extension-src/background.js`, the manifest and `PRV.server`, then `./build.sh`.
+
 </details> With the extension installed, the overlay
 links to it automatically: audio then plays **in the page** (stop/mute/repeat instant)
 and events arrive at the server instead of the in-page queue. **Leave it running** when
@@ -418,8 +423,10 @@ half that tends to swallow the whole overview; keep it below the story, never in
 of it.
 
 When the shape warrants it, add a small hand-written inline `svg` sketch of the flow (a
-few boxes and arrows — never a diagram library). Speak the whole thing as the opening
-before any file.
+few boxes and arrows — never a diagram library). It is shown as an image, so scripts,
+external refs and page CSS variables do nothing: give the root `<svg>` a `viewBox` and
+`width`, and use `currentColor` for strokes and text so it follows light/dark. Speak the
+whole thing as the opening before any file.
 
 **Order segments as a story, not a ranking.** Tier decides how much you say; the
 *narrative* decides the sequence: start at the most abstract point — where the feature
