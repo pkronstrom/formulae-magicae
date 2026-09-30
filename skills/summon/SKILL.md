@@ -37,8 +37,10 @@ you place received files, so keep it put. Then run `sh "$HELPER" …`.
 
 ## Prerequisite
 
-`croc` must be installed (`brew install croc`). The first transfer may trigger a
-macOS network-permission prompt — the user must allow it.
+`croc` **>= 10.0.13** must be installed (`brew install croc`; check with
+`croc --version`) — earlier versions have path-traversal CVEs on receive. The
+first transfer may trigger a macOS network-permission prompt — the user must
+allow it.
 
 ## SENDING ("send this to a teammate", "share this with the team")
 
@@ -54,7 +56,9 @@ macOS network-permission prompt — the user must allow it.
    for a high-entropy hex secret instead of 3 words: `sh "$HELPER" send --strong
    "<path>"`. No human reads it, so entropy beats memorability.
 2. Read the background output for the `incantation` and `share_line` (the share
-   line is also copied to the clipboard). Relay it in-theme, e.g.:
+   line is also copied to the clipboard). A teammate without Summon receives with
+   `CROC_SECRET=<incantation> croc` — croc v10+ refuses the secret as a bare
+   command-line argument on macOS/Linux. Relay it in-theme, e.g.:
    > ✨ Bound and ready. Incantation: `brim-gloss-kite`
    > Copied a one-liner to your clipboard — pass it to your teammate.
 3. The send keeps serving in the background until the teammate receives, then

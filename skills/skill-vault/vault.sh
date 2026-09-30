@@ -516,7 +516,7 @@ cmd_add() {
   if [[ -z "$name" ]]; then
     name=$(basename "$url" .git)
   fi
-  git clone "$url" "$category/$name"
+  git clone -- "$url" "$category/$name"
 }
 
 cmd_remove() {

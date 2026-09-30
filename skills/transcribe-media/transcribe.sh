@@ -81,7 +81,7 @@ trap cleanup EXIT
 # Aggregator links (Pocket Casts and friends) are directories, not media: yt-dlp has
 # no extractor for them. resolve.py finds the show's feed and the matching enclosure.
 # It no-ops without touching the network for everything else.
-"$PY" "$HERE/resolve.py" "$URL" > "$WORK/resolve.json" 2>/dev/null || true
+"$PY" "$HERE/resolve.py" -- "$URL" > "$WORK/resolve.json" 2>/dev/null || true
 eval "$(
   "$PY" - "$WORK/resolve.json" <<'PYEOF'
 import json, shlex, sys
@@ -101,7 +101,7 @@ if [ -n "$RESOLVED_TITLE" ] && [ -z "$TITLE_OVERRIDE" ]; then
 fi
 
 say "==> fetching metadata"
-yt-dlp --dump-single-json --skip-download "$URL" > "$WORK/raw.json" 2>"$WORK/err" \
+yt-dlp --dump-single-json --skip-download -- "$URL" > "$WORK/raw.json" 2>"$WORK/err" \
   || { sed 's/^/    /' "$WORK/err" >&2; die "could not read that video (private, removed, or geo-blocked?)"; }
 
 eval "$(
@@ -268,7 +268,7 @@ fi
 
 if [ "$SOURCE" = "asr" ]; then
   say "==> no usable captions, transcribing locally ($ENGINE)"
-  yt-dlp -q -f "ba[ext=m4a]/ba/b" -o "$WORK/audio.%(ext)s" "$URL" >/dev/null
+  yt-dlp -q -f "ba[ext=m4a]/ba/b" -o "$WORK/audio.%(ext)s" -- "$URL" >/dev/null
   AUDIO="$(find "$WORK" -name 'audio.*' -maxdepth 1 | head -1)"
   [ -n "$AUDIO" ] || die "audio download failed"
   if [ "$DURATION" -eq 0 ]; then
@@ -331,10 +331,10 @@ elif [ "$SOURCE" != "parakeet" ] && [ "$SOURCE" != "mlx-whisper" ] \
   # Exact language code only: a glob pulls translated tracks and earns a 429.
   if [ "$SUB_MODE" = "manual" ]; then
     yt-dlp -q --skip-download --write-subs --sub-lang "$SUB_LANG" \
-      --sub-format vtt -o "$WORK/sub" "$URL" >/dev/null
+      --sub-format vtt -o "$WORK/sub" -- "$URL" >/dev/null
   else
     yt-dlp -q --skip-download --write-auto-subs --sub-lang "$SUB_LANG" \
-      --sub-format vtt -o "$WORK/sub" "$URL" >/dev/null
+      --sub-format vtt -o "$WORK/sub" -- "$URL" >/dev/null
   fi
   FOUND="$(find "$WORK" -name 'sub*.vtt' -maxdepth 1 | head -1)"
   [ -n "$FOUND" ] || die "caption download produced nothing"
@@ -358,7 +358,7 @@ if [ "$WANT_FRAMES" -eq 1 ]; then
 
   say "==> downloading video (<=${HEIGHT}p)"
   yt-dlp -q -f "bv[height<=$HEIGHT][ext=mp4]/bv[height<=$HEIGHT]/b[height<=$HEIGHT]" \
-    -o "$WORK/video.%(ext)s" "$URL" >/dev/null
+    -o "$WORK/video.%(ext)s" -- "$URL" >/dev/null
   VIDEO="$(find "$WORK" -name 'video.*' -maxdepth 1 | head -1)"
   [ -n "$VIDEO" ] || die "video download failed"
   if [ "$DURATION" -eq 0 ]; then

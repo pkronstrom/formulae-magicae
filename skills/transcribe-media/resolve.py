@@ -150,6 +150,9 @@ def match_in_feed(feed_url, episode_title):
         enclosure = re.search(r"<enclosure[^>]+url=[\"'](.*?)[\"']", item, re.S)
         if not title or not enclosure:
             continue
+        # The feed is untrusted: only hand yt-dlp a web URL, never file:// or friends.
+        if urllib.parse.urlparse(unescape(enclosure.group(1))).scheme not in ("http", "https"):
+            continue
         score = similarity(episode_title, unescape(title.group(1)))
         if best is None or score > best[0]:
             duration = re.search(r"<itunes:duration>(.*?)</itunes:duration>", item, re.S)

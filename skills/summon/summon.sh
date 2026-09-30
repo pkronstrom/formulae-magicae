@@ -88,7 +88,7 @@ do_send() {
         } >&2
     else
         code="$(gen_incantation)"
-        share="Summon this: $code  ($name) — receive with: croc $code"
+        share="Summon this: $code  ($name) — receive with: CROC_SECRET=$code croc"
         clip="no"
         command -v pbcopy >/dev/null 2>&1 && printf '%s' "$share" | pbcopy && clip="yes"
         {

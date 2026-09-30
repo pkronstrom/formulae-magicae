@@ -449,7 +449,7 @@ cmd_add() {
     if [[ -n "$token" ]]; then
       umask 077
       touch "$ENV_FILE"
-      printf '%s=%s\n' "$token_env" "$token" >> "$ENV_FILE"
+      printf '%s=%q\n' "$token_env" "$token" >> "$ENV_FILE"
       echo "✓ token stored in .env as \$$token_env"
     else
       echo "· expects \$$token_env — vaulted cold until you run: vault.sh warm $name --token"
@@ -526,7 +526,7 @@ cmd_warm() {
       grep -vE "^[[:space:]]*(export[[:space:]]+)?${var}=" "$ENV_FILE" > "$tmpf"
       mv "$tmpf" "$ENV_FILE"
     fi
-    printf '%s=%s\n' "$var" "$token" >> "$ENV_FILE"
+    printf '%s=%q\n' "$var" "$token" >> "$ENV_FILE"
     python3 -c '
 import json,sys
 path, name, var = sys.argv[1:4]
