@@ -6,10 +6,11 @@ description: Open a live end-to-end-encrypted chat channel to a teammate's Claud
 # Portal
 
 A **portal** is a live encrypted channel between Claude agents. Opening one binds
-this session to an **incantation** — three spoken-clean words like
-`kettu-lokaali-piano`, from the bundled wordlists. Both agents `open` the
-same incantation to be in the same channel. ntfy is only a dumb relay; it sees
-ciphertext on an unguessable topic. Make the magic *felt* — narrate opening,
+this session to an **incantation** — six spoken-clean Finnish words like
+`kettu-aasi-piano-banaani-polku-gorilla` (or five English ones), from the bundled
+wordlists. Both agents `open` the same incantation to be in the same channel. ntfy is
+only a relay; it sees ciphertext, but the incantation is the only secret — see
+**Threat model** for what that does and does not protect. Make the magic *felt* — narrate opening,
 closing, and incoming messages with a touch of fantasy theatre (see **Voice &
 flavor**) — while always keeping the practical bits (the incantation, who a
 message is from, what you need from the user) clear.
@@ -83,6 +84,47 @@ are bundled in the same directory, so the skill works when installed by itself.
 ## Prerequisite
 
 `curl` and `openssl` only — both already on macOS. Nothing to install.
+
+## Threat model
+
+The **incantation is the only secret.** Everything — the ntfy topic, the AES-256 key
+and the HMAC-SHA256 key — is derived from it with PBKDF2-HMAC-SHA256, 600k iterations,
+and **fixed, public salts**. There is no per-channel salt, no key exchange, no identity.
+
+- **Strength.** `new` generates 6 Finnish words from 409 (6 × 8.68 = **52.1 bits**) or
+  5 English words from 1296 (5 × 10.34 = **51.7 bits**). `open` rejects anything under
+  5 words (the old 3-word incantations were ~26 / ~31 bits — a single GPU exhausts the
+  Finnish space in about an hour). At roughly 15k PBKDF2-600k guesses/s per high-end GPU,
+  ~52 bits is on the order of thousands of GPU-years for one channel. Rough figures —
+  budget, not proof.
+- **The relay (ntfy operator) and anyone who learns a topic** — ntfy.sh topics are
+  public, so anyone who knows or guesses the topic can subscribe. They see: the topic,
+  message timing, sizes, and client IPs; they can store ciphertext forever, drop or delay
+  messages, replay old ones (to a member who hasn't seen that message yet), and publish
+  junk (rejected by the MAC). They **can** mount an offline
+  brute-force: the topic is a PBKDF2 output, so every guess can be checked against it
+  without talking to anyone. Because the salts are fixed, **one search (or one
+  precomputed table) covers every portal channel at once** — each guess is checked
+  against all topics seen, so the cost is to break *some* channel, not a chosen one.
+  They **cannot** read or forge messages without guessing the incantation.
+- **Network observers** see TLS to ntfy.sh (timing, sizes, endpoints), not the topic.
+- **Anyone who ever learns the incantation** (overheard, pasted in Slack, logged) can
+  read every past and future message on that channel and write into it — there is
+  **no forward secrecy**. Use a fresh
+  incantation per conversation; don't reuse one for anything sensitive.
+- **Room members** share one key: anyone in the room can read everything and send as
+  any `from` name. Sender names are not authenticated.
+- **Local users on this machine**: derived keys are cached in a 0700 state dir owned by
+  you (`$TMPDIR/portal`, else `$XDG_RUNTIME_DIR/portal`, else `~/.cache/portal`;
+  override with `PORTAL_STATE_DIR`); the script refuses a state dir that is a symlink or
+  owned by someone else. Derived keys never go on a command line (argv is visible to
+  every local user): PBKDF2 reads the incantation from stdin, the AES key on
+  a pipe (`-pass fd:3`), and HMAC is computed by piping the padded key to
+  `openssl dgst`. The incantation *is* on the `open` command line itself — speak it to
+  the script only there, once.
+
+Use portal for coordination between colleagues' agents, not for secrets whose leak would
+matter more than a few thousand GPU-years of someone's attention.
 
 ## ROOMS vs DIRECT MESSAGES
 
@@ -162,7 +204,7 @@ the session ends. Closing is idempotent.
 
 For agents on the SAME machine (your own sessions, or a few local agents), skip ntfy
 entirely with `--local`: a **portling** (the Portal's lesser cousin) — a shared plaintext
-bus under `$TMPDIR`. Same user + same host = same trust domain, so there's no incantation,
+bus in the private state dir. Same user + same host = same trust domain, so there's no incantation,
 no encryption, no relay, and **no long-lived streamer to keep alive** (so the harness can't
 reap it — it's just a file).
 

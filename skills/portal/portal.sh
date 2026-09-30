@@ -1,20 +1,22 @@
 #!/bin/sh
 # portal.sh — thin wrapper for end-to-end-encrypted agent-to-agent chat over ntfy.
 #
-# A channel is identified by a 3-word incantation (same wordlists as the summon
-# skill). The incantation is run through PBKDF2-HMAC-SHA256 to derive the ntfy topic
-# plus two keys (so the relay can't cheaply brute-force the spoken secret); every
+# A channel is identified by a spoken incantation: 6 Finnish words (~52 bits) or 5
+# English words (~52 bits) from the bundled wordlists. It is run through PBKDF2-HMAC-
+# SHA256 (600k iterations, FIXED salts) to derive the ntfy topic plus two keys; every
 # message is then AES-256-CBC encrypted and HMAC-SHA256 authenticated (encrypt-then-
-# MAC), so ntfy only ever relays ciphertext on a topic nobody can guess.
+# MAC). The incantation is the ONLY secret: the relay sees the topic, which is a
+# PBKDF2 output it can test guesses against offline — see SKILL.md "Threat model".
 #
 # The incantation is spoken to the script ONCE, at `open`: it derives the keys,
 # stores them (derived keys only, never the words; umask 077) in the channel's
-# $TMPDIR dir, and marks that channel "active". Afterwards send/read/wait/close
+# dir under the private state dir, and marks that channel "active". Afterwards send/read/wait/close
 # need no incantation — they act on the active channel (or an explicit, non-secret
 # --channel <topic>). This keeps the spoken secret out of the argv of every call.
 #
-# This script NEVER deletes anything. The channel dir (keys, inbox) lives under
-# $TMPDIR and is reaped by the OS; `close` only stops the background streamer.
+# This script NEVER deletes anything. The channel dir (keys, inbox) lives under the
+# state dir (see STATE_ROOT) and is reaped by the OS when that is $TMPDIR; `close`
+# only stops the background streamer.
 #
 # Subcommands:
 #   new [--fi|--en]                       generate an incantation to share out-of-band
@@ -35,7 +37,10 @@ umask 077
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 WORDLIST_DIR="$SCRIPT_DIR"
 NTFY_BASE="${PORTAL_NTFY_BASE:-https://ntfy.sh}"
-STATE_ROOT="${TMPDIR:-/tmp}"
+# All state (channel keys, inboxes, the local bus) lives in ONE private dir: mode 0700
+# and owned by us, so another local user can't pre-create or plant files in it. Never
+# a bare /tmp fallback — /tmp/portal-* names are predictable and squattable.
+STATE_ROOT="${PORTAL_STATE_DIR:-${TMPDIR:-${XDG_RUNTIME_DIR:-$HOME/.cache}}/portal}"
 # ntfy.sh silently truncates message bodies above ~4000 bytes (still returning HTTP
 # 200), which would corrupt the ciphertext so the receiver drops it — a send that
 # looks successful but never arrives. Reject oversized messages loudly instead. Raise
@@ -59,6 +64,24 @@ MAGIC_NOUN="fox whistle thistle lantern sparrow willow quill cinder bramble hero
 
 die() { echo "status: error"; echo "error: $*"; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 not found"; }
+
+ensure_state_root() { # create STATE_ROOT 0700, refuse one we don't own (or a symlink)
+    [ -L "$STATE_ROOT" ] && die "state dir $STATE_ROOT is a symlink — refusing (set PORTAL_STATE_DIR to a private dir)"
+    mkdir -p "$STATE_ROOT" 2>/dev/null || die "cannot create state dir $STATE_ROOT (set PORTAL_STATE_DIR)"
+    [ -O "$STATE_ROOT" ] || die "state dir $STATE_ROOT is not owned by you — refusing (another user may have pre-created it; set PORTAL_STATE_DIR)"
+    chmod 700 "$STATE_ROOT" || die "cannot chmod 700 $STATE_ROOT"
+}
+
+# Incantation length. log2(409)=8.68 bits/word (fi), log2(1296)=10.34 (en), so
+# fi 6 words = 52.1 bits, en 5 words = 51.7 bits. 5 words is the minimum accepted on
+# open (the old 3-word, ~26-31-bit incantations are rejected: too weak — see SKILL.md).
+WORDS_FI=6
+WORDS_EN=5
+MIN_WORDS=5
+check_incantation() { # $1=incantation — reject too-short ones before deriving anything
+    n="$(normalize_incantation "$1" | tr '-' ' ' | wc -w | tr -d ' ')"
+    [ "$n" -ge "$MIN_WORDS" ] || die "incantation has $n words; at least $MIN_WORDS are required (older 3-word incantations are too weak and no longer accepted). Generate a new one with: portal.sh new"
+}
 
 # Accept the incantation however it was spoken/typed — spaces or hyphens, any case
 # ("banaani polku gorilla" == "Banaani-Polku-Gorilla") — and fold it to the canonical
@@ -131,37 +154,72 @@ load_keys() { # $1=channel dir -> sets ek, mk
 session_id() { printf '%s' "${CLAUDE_CODE_SESSION_ID:-default}" | tr -c 'a-zA-Z0-9-' '_'; }
 
 pick_word() { r="$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"; sed -n "$(( (r % $1) + 1 ))p" "$2"; }
-gen_incantation() {
+gen_incantation() { # $1=wordlist $2=word count
     wl="$1"
     [ -f "$wl" ] || die "wordlist missing: $wl"
     n="$(wc -l < "$wl" | tr -d ' ')"
     [ "$n" -gt 0 ] || die "wordlist is empty: $wl"
-    printf '%s-%s-%s' "$(pick_word "$n" "$wl")" "$(pick_word "$n" "$wl")" "$(pick_word "$n" "$wl")"
+    out="$(pick_word "$n" "$wl")"; i=1
+    while [ "$i" -lt "$2" ]; do out="$out-$(pick_word "$n" "$wl")"; i=$((i+1)); done
+    printf '%s' "$out"
 }
 
 b64()   { openssl base64 -A; }
 unb64() { openssl base64 -d -A; }
-# NOTE: the key is the 64-char ASCII hex digest used verbatim as the HMAC string
-# key (64 bytes = HMAC-SHA256's block size, carrying the full 256 bits of entropy).
-# This is intentional and portable across OpenSSL/LibreSSL. Do NOT "improve" it to
-# `-macopt hexkey:` — that interprets the key as raw bytes and changes every MAC,
-# breaking the v1 wire format and the golden test values.
-hmac_hex() { openssl dgst -sha256 -hmac "$1" | awk '{print $NF}'; }
 
-encrypt_with() { # $1=enc_key $2=mac_key $3=plaintext -> v2.<iv_hex>.<ct_b64>.<mac_hex>
+# --- keys never go on argv -------------------------------------------------------
+# argv is readable by every local user (ps, /proc/<pid>/cmdline), so no key is ever an
+# argument to openssl. `openssl enc` has no argv-free raw-key option (-K is argv only),
+# and neither does `dgst -hmac` / `-macopt`. So:
+#  * AES: the cached enc key (64 hex chars) is fed as a PASSPHRASE on fd 3 (-pass fd:3,
+#    a pipe) and stretched with PBKDF2-SHA256, 1 iteration, empty salt (-nosalt) into
+#    the actual AES-256 key; the random per-message -iv overrides the derived IV.
+#    Identical on OpenSSL 3 and stock-macOS LibreSSL (verified; -nosalt keeps
+#    LibreSSL from prepending a "Salted__" header).
+#  * HMAC: computed from its definition, H((K^opad) || H((K^ipad) || m)), with the
+#    padded keys emitted by the shell's builtin printf into a pipe — same result as
+#    `openssl dgst -hmac <key>`. The key is the 64-char ASCII hex digest used verbatim
+#    as the HMAC key (64 bytes = SHA-256's block size, so no key hashing/padding).
+hmac_pads() { # $1=64 lowercase hex chars -> sets _ip/_op as printf %b escape strings (no forks)
+    _k="$1"; _ip=""; _op=""
+    [ "${#_k}" -eq 64 ] || return 1
+    while [ -n "$_k" ]; do
+        _c="${_k%"${_k#?}"}"; _k="${_k#?}"
+        case "$_c" in
+            [0-9]) _v=$(( 48 + _c )) ;;
+            a) _v=97 ;; b) _v=98 ;; c) _v=99 ;; d) _v=100 ;; e) _v=101 ;; f) _v=102 ;;
+            *) return 1 ;;
+        esac
+        _x=$(( _v ^ 54 )); _ip="$_ip\\0$(( _x / 64 ))$(( _x / 8 % 8 ))$(( _x % 8 ))"
+        _x=$(( _v ^ 92 )); _op="$_op\\0$(( _x / 64 ))$(( _x / 8 % 8 ))$(( _x % 8 ))"
+    done
+}
+hmac_hex() { # $1=mac key, message on stdin -> hex MAC
+    hmac_pads "$1" || die "malformed mac key"
+    { printf '%b' "$_op"; { printf '%b' "$_ip"; cat; } | openssl dgst -sha256 -binary; } \
+        | openssl dgst -sha256 | awk '{print $NF}'
+}
+aes() { # $1=enc key $2=-e|-d $3=iv, data on stdin; the key reaches openssl on fd 3 only
+    # fd 4 = caller's stdin (the data); the key is piped in and moved to fd 3.
+    { printf '%s\n' "$1" | openssl enc "$2" -aes-256-cbc -nosalt -pbkdf2 -iter 1 -md sha256 -iv "$3" -pass fd:3 3<&0 <&4 4<&-; } 4<&0
+}
+
+encrypt_with() { # $1=enc_key $2=mac_key $3=plaintext -> v3.<iv_hex>.<ct_b64>.<mac_hex>
     iv="$(openssl rand -hex 16)"
-    ct="$(printf '%s' "$3" | openssl enc -aes-256-cbc -K "$1" -iv "$iv" | b64)"
+    ct="$(printf '%s' "$3" | aes "$1" -e "$iv" | b64)"
     mac="$(printf '%s%s' "$iv" "$ct" | hmac_hex "$2")"
-    printf 'v2.%s.%s.%s' "$iv" "$ct" "$mac"
+    printf 'v3.%s.%s.%s' "$iv" "$ct" "$mac"
 }
 encrypt_msg() { encrypt_with "$(enc_key_for "$1")" "$(mac_key_for "$1")" "$2"; }  # stateless (for _encrypt / tests)
 
 decrypt_with() { # $1=enc_key $2=mac_key $3=wire -> plaintext on stdout; return 1 on any failure
-    case "$3" in v2.*.*.*) ;; *) return 1 ;; esac
-    rest="${3#v2.}"; iv="${rest%%.*}"; rest="${rest#*.}"; ct="${rest%%.*}"; mac="${rest#*.}"
+    case "$3" in v3.*.*.*) ;; *) return 1 ;; esac
+    rest="${3#v3.}"; iv="${rest%%.*}"; rest="${rest#*.}"; ct="${rest%%.*}"; mac="${rest#*.}"
+    case "$iv" in *[!0-9a-f]*|"") return 1 ;; esac
+    [ "${#iv}" -eq 32 ] || return 1
     want="$(printf '%s%s' "$iv" "$ct" | hmac_hex "$2")"
     [ "$want" = "$mac" ] || return 1
-    printf '%s' "$ct" | unb64 | openssl enc -d -aes-256-cbc -K "$1" -iv "$iv" 2>/dev/null
+    printf '%s' "$ct" | unb64 | aes "$1" -d "$iv" 2>/dev/null
 }
 decrypt_msg() { decrypt_with "$(enc_key_for "$1")" "$(mac_key_for "$1")" "$2"; }  # stateless (for _decrypt / tests)
 
@@ -223,7 +281,7 @@ do_open() { # $1=incantation — bind the channel, then BLOCK streaming; run in 
             case "$line" in *'"event":"message"'*) ;; *) continue ;; esac
             nid="$(printf '%s' "$line" | json_field id)"
             [ -n "$nid" ] && printf '%s' "$nid" > "$d/last.id"
-            blob="$(printf '%s' "$line" | sed -n 's/.*"message":"\(v2\.[^"]*\)".*/\1/p')"
+            blob="$(printf '%s' "$line" | sed -n 's/.*"message":"\(v3\.[^"]*\)".*/\1/p')"
             [ -n "$blob" ] || continue
             pt="$(decrypt_with "$ek" "$mk" "$blob")" || continue
             mid="$(printf '%s' "$pt" | json_field id)"
@@ -357,13 +415,15 @@ do_who() {
 do_new() {
     lang=fi
     case "${1:-}" in --en) lang=en ;; --fi|"") lang=fi ;; *) die "usage: portal.sh new [--fi|--en]" ;; esac
-    inc="$(gen_incantation "$WORDLIST_DIR/wordlist.$lang.txt")"
+    if [ "$lang" = en ]; then words=$WORDS_EN; else words=$WORDS_FI; fi
+    inc="$(gen_incantation "$WORDLIST_DIR/wordlist.$lang.txt" "$words")"
     echo "status: ok"
     echo "incantation: $inc"
 }
 
 # --- dispatch ---
 cmd="${1:-}"; [ "$#" -gt 0 ] && shift || true
+case "$cmd" in send|read|wait|close|who) ensure_state_root ;; esac
 case "$cmd" in
     new) do_new "${1:-}" ;;
     send)
@@ -385,7 +445,7 @@ case "$cmd" in
         else
             do_send "$s_ch" "$s_text" "$s_from" "$s_to"
         fi ;;
-    open) [ "$#" -ge 1 ] || die "usage: portal.sh open <incantation>"; do_open "$1" ;;
+    open) [ "$#" -ge 1 ] || die "usage: portal.sh open <incantation>"; check_incantation "$1"; ensure_state_root; do_open "$1" ;;
     read)
         loc=0; ch=""
         while [ "$#" -gt 0 ]; do case "$1" in
@@ -403,12 +463,13 @@ case "$cmd" in
     close) ch=""; case "${1:-}" in "") ;; --channel) ch="${2:-}" ;; *) die "usage: portal.sh close [--channel <topic>]" ;; esac; do_close "$ch" ;;
     who)    need openssl; do_who ;;
     whoami) need openssl; printf '%s\n' "$(session_name)" ;;
-    _bind) [ "$#" -ge 1 ] || die "usage: _bind <inc>"; need openssl; bind_channel "$1" >/dev/null; echo "status: bound" ;;
+    _bind) [ "$#" -ge 1 ] || die "usage: _bind <inc>"; need openssl; check_incantation "$1"; ensure_state_root; bind_channel "$1" >/dev/null; echo "status: bound" ;;
     _topic)  [ "$#" -ge 1 ] || die "usage: _topic <inc>";  need openssl; topic_for "$1" ;;
     _enckey) [ "$#" -ge 1 ] || die "usage: _enckey <inc>"; need openssl; enc_key_for "$1" ;;
     _mackey) [ "$#" -ge 1 ] || die "usage: _mackey <inc>"; need openssl; mac_key_for "$1" ;;
     _encrypt) [ "$#" -ge 2 ] || die "usage: _encrypt <inc> <plaintext>"; need openssl; encrypt_msg "$1" "$2" ;;
     _decrypt) [ "$#" -ge 2 ] || die "usage: _decrypt <inc> <wire>"; need openssl; decrypt_msg "$1" "$2" ;;
+    _statedir) ensure_state_root; printf '%s\n' "$STATE_ROOT" ;;
     _msgtext) [ "$#" -ge 1 ] || die "usage: _msgtext <plaintext-json>"; printf '%s' "$1" | msg_text ;;
     *)   die "unknown command: ${cmd:-(none)}" ;;
 esac
