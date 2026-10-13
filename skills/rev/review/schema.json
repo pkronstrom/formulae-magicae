@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["agent", "scope", "status", "findings", "summary"],
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "Agent identifier matching the role (e.g. code-quality, design-alignment, architecture, ui-ux)"
+    },
+    "scope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Repo-relative paths reviewed"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "warn", "fail"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "confidence", "file", "line", "category", "message", "suggested_fix"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "file": { "type": ["string", "null"] },
+          "line": { "type": "integer", "minimum": 0 },
+          "category": { "type": "string" },
+          "message": { "type": "string" },
+          "suggested_fix": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "summary": { "type": "string" }
+  }
+}

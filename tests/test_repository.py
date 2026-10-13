@@ -9,6 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 EXPECTED_SKILLS = {
+    "codex",
+    "claude",
+    "pr",
+    "rev",
     "bento-slides",
     "mcp-vault",
     "portal",
@@ -197,7 +201,7 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, "
         "skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, "
         "skills/summon, skills/transcribe-media, skills/tts, "
-        "skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, and skills/cad-construction-pdf."
+        "skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev."
     ]
     assert fenced_commands(h3_sections["### Claude Code"]) == [
         "/plugin marketplace add pkronstrom/formulae-magicae\n"
@@ -270,3 +274,32 @@ def test_shell_entrypoints_keep_executable_bits():
 
 def test_readme_cover_exists():
     assert (ROOT / "assets/formulae-magicae-cover.png").is_file()
+
+
+def test_review_aliases_route_to_self_contained_rev_skill():
+    aliases = {
+        "rev1": "1", "rev2": "2", "rev3": "3", "revx": "x",
+        "revxflash": "xflash", "revxhigh": "xhigh", "revxultra": "xultra",
+    }
+    for alias, mode in aliases.items():
+        text = (ROOT / "commands" / f"{alias}.md").read_text()
+        assert f"/rev {mode} $ARGUMENTS" in text
+    legacy = (ROOT / "commands/review-work.md").read_text()
+    assert "review/SKILL.md" in legacy
+    assert "`full`" in legacy
+    rev = SKILLS / "rev"
+    for path in ("review/SKILL.md", "review/dispatch.sh", "review/schema.json",
+                 "review/scripts/preflight.py"):
+        assert (rev / path).is_file()
+    text = (rev / "SKILL.md").read_text()
+    assert "sibling `review-work/SKILL.md`" not in text
+    assert "review/SKILL.md" in text
+
+
+def test_agent_commands_have_no_private_paths_or_hawk_target_metadata():
+    for name in ("codex", "claude", "pr", "rev"):
+        for path in (SKILLS / name).rglob("*.md"):
+            text = path.read_text()
+            assert "/Users/" not in text, str(path)
+            assert not re.search(r"(?m)^tools:", text), str(path)
+            assert "company allowance" not in text, str(path)

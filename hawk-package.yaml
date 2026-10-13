@@ -46,6 +46,31 @@ contents:
       name: cad-studio
     - path: skills/cad-construction-pdf/
       name: cad-construction-pdf
+    - path: skills/codex/
+      name: codex
+    - path: skills/claude/
+      name: claude
+    - path: skills/pr/
+      name: pr
+    - path: skills/rev/
+      name: rev
+  commands:
+    - path: commands/rev1.md
+      name: rev1
+    - path: commands/rev2.md
+      name: rev2
+    - path: commands/rev3.md
+      name: rev3
+    - path: commands/revx.md
+      name: revx
+    - path: commands/revxflash.md
+      name: revxflash
+    - path: commands/revxhigh.md
+      name: revxhigh
+    - path: commands/revxultra.md
+      name: revxultra
+    - path: commands/review-work.md
+      name: review-work
 tags: [agent-skills, automation, developer-tools]
 compatibility:
   tools: [claude, codex, gemini, opencode]

@@ -36,6 +36,17 @@ around that one source tree; they do not fork the skills.
 | [`cad-construction-pdf`](skills/cad-construction-pdf/) | Construction-ready booklet for small timber builds (shed, A-frame, gazebo) — staged CAD iteration with gates, then one PDF: renders, dimensioned projections, joints with fasteners, cut list, priced parts, IKEA-style build phases with a render and shopping list each. | `python3` with `build123d`, `matplotlib`, `pyyaml`; Blender optional for shaded renders |
 | [`coordinate`](skills/coordinate/) | `/coordinate codex`: pair a live Claude Code session with a live Codex session in another tmux pane; messages are pasted into the peer's TUI and replies come back the same way. | `tmux`, `python3`; optional `workmux` |
 
+The agent-command suite is also included:
+
+| Skill | Purpose | Dependencies |
+| --- | --- | --- |
+| [`codex`](skills/codex/) | Delegate to Codex CLI with explicit model/effort and host-aware completion handling. | `codex` |
+| [`claude`](skills/claude/) | Delegate to Claude Code CLI; defaults to Opus 5.5 at medium effort. | `claude` |
+| [`pr`](skills/pr/) | Create or babysit pull requests, inspect CI and reviews, and apply authorized fixes. | `git`, `gh`; Claude Code `/loop` for session polling |
+| [`rev`](skills/rev/) | Isolated single-model, multi-angle, or cross-vendor reviews; includes its dispatcher and all presets. | `bash`, Python 3; selected backend CLIs/API |
+
+`/rev 1`, `/rev 2`, `/rev 3`, `/rev x`, `/rev xflash`, `/rev xhigh`, and `/rev xultra` work from an independent Rev install. The complete Claude/Hawk package also includes compatibility command aliases `/rev1`–`/rev3`, `/revx*`, and `/review-work`. In Codex, invoke the skill as `$rev <mode>`.
+
 ## Quick install
 
 ### Codex — one formula
@@ -53,7 +64,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, and skills/cad-construction-pdf.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
 ```
 
 Installed Codex skills appear in the next turn.
@@ -197,3 +208,7 @@ own license files inside the skills that use them. Summon's English wordlist is
 derived from the EFF Short Wordlist under CC BY 3.0 US. See
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for attribution and bundled-asset
 details.
+
+## Canonical agent-command sources
+
+Magicae owns `skills/codex`, `skills/claude`, `skills/pr`, and `skills/rev`. The Rev skill includes its review playbook and runtime files; edits belong here before they are propagated to installed copies. These portable workflows moved from the private Arcanae vault. Arcanae keeps private workflows and compatibility copies that point here for these definitions. Existing installed activation and package ownership remain unchanged.

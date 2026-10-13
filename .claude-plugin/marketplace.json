@@ -132,6 +132,30 @@
       "source": "./skills/cad-construction-pdf",
       "description": "Construction-ready booklet PDF for small timber builds: staged CAD iteration with gates, then renders, projections, joint details with fasteners, cut list, priced parts and IKEA-style build phases.",
       "version": "1.0.0"
+    },
+    {
+      "name": "codex",
+      "source": "./skills/codex",
+      "description": "Leverage OpenAI GPT models for autonomous code implementation via Codex CLI. Use when the user asks to invoke/call/run Codex, use codex CLI or codex exec, mention GPT models for implementation, or delegate coding tasks to Codex. Default model is gpt-6.1-sol at medium effort.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "claude",
+      "source": "./skills/claude",
+      "description": "Leverage Anthropic Claude models for autonomous code implementation via Claude Code CLI. Use when the user asks to invoke/call/run Claude Code, use claude CLI, mention Claude models for implementation, or delegate coding tasks to Claude.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "pr",
+      "source": "./skills/pr",
+      "description": "Create, monitor, and babysit pull requests — CI checks, reviews, and auto-fixes",
+      "version": "1.0.0"
+    },
+    {
+      "name": "rev",
+      "source": "./skills/rev",
+      "description": "Review code changes, plans, or documents with isolated reviewers. Use for /rev, /rev1, /rev2, /rev3, /revx, /revxflash, /revxhigh, /revxultra, or a requested multi-model review.",
+      "version": "1.0.0"
     }
   ]
 }
