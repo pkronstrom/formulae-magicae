@@ -110,6 +110,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "neuralyzer",
+      "source": "./skills/neuralyzer",
+      "description": "List what your agents remember, or make them forget one thing everywhere: memory, docs and transcripts.",
+      "version": "1.0.0"
+    },
+    {
       "name": "work",
       "source": "./skills/work",
       "description": "/work <task>: interactive design with the strongest model, then an autonomous plan → review → implement → review pipeline with cheaper workers and fresh-context reviewers.",

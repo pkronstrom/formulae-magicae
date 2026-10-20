@@ -32,6 +32,7 @@ around that one source tree; they do not fork the skills.
 | [`mcp-vault`](skills/mcp-vault/) | Stash MCP servers out of the active tool namespace; browse their cached tools, then connect only the one you need. | `mcpc`, `python3` |
 | [`skill-improver`](skills/skill-improver/) | Mine the sessions where a skill was actually used, triage what went wrong into red/orange/yellow findings, and apply the approved fixes under version control. | `python3`, `git` |
 | [`session-retro`](skills/session-retro/) | Retro the session that just finished — or any Claude, Codex or OpenCode session by id — and fix the instructions that cost time. | `python3` |
+| [`neuralyzer`](skills/neuralyzer/) | List what your agents remember, or make them forget one thing everywhere: memory files, memory MCPs, project docs and, with approval, past Claude, Codex, Gemini and OpenCode transcripts, including the current session. | `python3`; `rg` and `fd` optional |
 | [`work`](skills/work/) | `/work <task>`: design interactively with the strongest model, then run plan, adversarial plan review, cheaper-worker implementation and fresh-context reviews autonomously to a verified feature. | Optional: `brainstromming`, `skill-improver` |
 | [`cad-studio`](skills/cad-studio/) | Router for cad-studio work — infers fidelity (concept → fabrication), picks the smallest set of existing CAD/scene/fabrication skills, keeps designs reusable across sessions. | Specialist skills discovered at runtime; bootstraps `build123d`/Replicad/Blender only when needed |
 | [`cad-construction-pdf`](skills/cad-construction-pdf/) | Construction-ready booklet for small timber builds (shed, A-frame, gazebo) — staged CAD iteration with gates, then one PDF: renders, dimensioned projections, joints with fasteners, cut list, priced parts, IKEA-style build phases with a render and shopping list each. | `python3` with `build123d`, `matplotlib`, `pyyaml`; Blender optional for shaded renders |
@@ -47,6 +48,8 @@ The agent-command suite is also included:
 | [`rev`](skills/rev/) | Isolated single-model, multi-angle, or cross-vendor reviews; includes its dispatcher and all presets. | `bash`, Python 3; selected backend CLIs/API |
 
 `/rev 1`, `/rev 2`, `/rev 3`, `/rev x`, `/rev xflash`, `/rev xhigh`, and `/rev xultra` work from an independent Rev install. The complete Claude/Hawk package also includes compatibility command aliases `/rev1`–`/rev3`, `/revx*`, and `/review-work`. In Codex, invoke the skill as `$rev <mode>`.
+
+The complete Claude/Hawk package also includes `/neuralyzer-forget`, an alias for `/neuralyzer forget`.
 
 ## Quick install
 
@@ -65,7 +68,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-improver, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
 ```
 
 Installed Codex skills appear in the next turn.
