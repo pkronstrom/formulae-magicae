@@ -54,6 +54,8 @@ contents:
       name: pr
     - path: skills/rev/
       name: rev
+    - path: skills/share/
+      name: share
   commands:
     - path: commands/rev1.md
       name: rev1

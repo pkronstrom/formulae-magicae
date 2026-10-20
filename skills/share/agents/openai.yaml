@@ -1,0 +1,4 @@
+interface:
+  display_name: "Share"
+  short_description: "Offline collectible cards carrying your original assets"
+  default_prompt: "Use $share to create a collectible HTML card containing these assets."

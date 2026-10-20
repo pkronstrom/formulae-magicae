@@ -21,6 +21,7 @@ EXPECTED_SKILLS = {
     "prototype-singlefile",
     "session-retro",
     "singlefile",
+    "share",
     "skill-improver",
     "skill-vault",
     "spec-flow",
@@ -70,7 +71,7 @@ def test_claude_marketplace_has_complete_and_individual_plugins():
     assert set(names) == EXPECTED_SKILLS | {"formulae-magicae"}
 
     for plugin in plugins:
-        assert plugin["version"] == VERSION
+        assert plugin["version"] == ("0.1.0" if plugin["name"] == "share" else VERSION)
         source = plugin["source"]
         assert source.startswith("./")
         source_path = (ROOT / source).resolve()
@@ -199,7 +200,7 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "$skill-installer Install all of these skills from "
         "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
         "skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, "
-        "skills/singlefile, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, "
+        "skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/skill-improver, skills/skill-vault, skills/spec-flow, "
         "skills/summon, skills/transcribe-media, skills/tts, "
         "skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev."
     ]
