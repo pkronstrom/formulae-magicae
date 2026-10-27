@@ -14,7 +14,11 @@ chunk owns, coordinate first — say what and why, agree who edits — before
 touching it. Read the relevant source before writing. Match the
 project's idiom — comment density, naming, error handling. Run the tests,
 typecheck, lint and build the project actually uses; debug ordinary failures
-yourself. If `superpowers:test-driven-development` or
+yourself. Run every check in the foreground with a timeout longer than the
+check; never end your turn while one runs in the background — nothing wakes
+you, and the coordinator waits on your silence. Per chunk, run the fast
+gate; perf, load and long scenario steps belong to the final gate unless the
+chunk section names them. If `superpowers:test-driven-development` or
 `superpowers:systematic-debugging` are available, use them; they are the inner
 loop, not checkpoints.
 

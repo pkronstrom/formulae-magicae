@@ -7,13 +7,13 @@ model slugs.
 ```yaml
 harness: codex
 model_map:
-  frontier: gpt-5.6-sol     # work_frontier.toml — a ChatGPT-plan account refuses sol (HTTP 400); use gpt-5.6-terra at xhigh there
-  strong: gpt-5.6-sol
+  frontier: gpt-6.1-sol     # work_frontier.toml — a ChatGPT-plan account refuses sol (HTTP 400); use gpt-5.6-terra at xhigh there
+  strong: gpt-6.1-sol
   worker: gpt-5.6-terra     # work_worker.toml
 phase_map: {}               # e.g. chunk_review: claude:opus
 ```
 
-Frontier session: `codex -m gpt-5.6-sol`. Checklist: a markdown checklist
+Frontier session: `codex -m gpt-6.1-sol`. Checklist: a markdown checklist
 restated at the top of each message (no plan tool in codex-cli 0.154).
 
 **Two built-in agents**, in `adapters/codex-agents/`: `work_frontier`

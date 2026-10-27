@@ -69,7 +69,9 @@ chunk section of the plan, not in the task. An agent run outside the harness
 (a `phase_map` entry) cannot write `.work`; its whole reply *is* the file and
 the coordinator captures it to the path. The coordinator reads an output
 file only when the next step needs it, and never re-derives in this session
-what a file already says.
+what a file already says. An idle notice, or a message restating a result
+already read, gets no reply and no tool call; when the user nudges while an
+agent runs, answer with one status line.
 
 ## Size the work from the code, not the sentence
 
@@ -88,7 +90,9 @@ Never classify from the opening line. Two moments, not one:
 **A plan has at most four chunks.** If the design needs more, it is more
 than one phase: split it in `MASTERPLAN.md` and plan only the first. This is
 checked before the planner is spawned and again when its plan comes back —
-a five-chunk plan goes back as two phases, not into plan review.
+a five-chunk plan goes back as two phases, not into plan review, and a plan
+over ~300 lines, or a chunk section over ~100, goes back to be cut to
+decisions.
 
 Every STANDARD-or-larger run gets a `MASTERPLAN.md` line. When discovery
 decomposes the work into phases — a whole app, a multi-phase rollout — each phase gets one, and **only the first unchecked
@@ -120,7 +124,8 @@ ASCII wireframe pass in discovery, and bigger UI work an offer of
 naming, internal structure, which helper, test mechanics, the routine
 choices a senior engineer would not raise with a product owner. If a UX or
 UI question surfaces mid-implementation, that is a consequential decision:
-stop that part and ask.
+stop that part and ask. If the user is away, decide provisionally, record it
+in `open_decisions`, build at most one chunk on it, and ask on return.
 
 ## The flow
 
@@ -138,11 +143,15 @@ AUTONOMOUS    attack the plan, amend                                     → ref
               done → offer feedback capture                              → references/feedback.md
 ```
 
-**Announce the transition once**, after plan review and before chunk 1, in
-one line: level, chunk count, the branch chunks will be committed on, which
-agent and model fills each role (from the adapter map and any `phase_map`),
-and that the next stop is done or a consequential decision. (TINY: the same
-line before its worker launches.) Then **do not stop to ask** "approve plan?", "continue?", "review now?", "next chunk?". Plans,
+**Announce the transition once**, after plan review and before chunk 1, as
+this line filled in from `state.yaml`, the adapter map and any `phase_map`
+(TINY: the same line before its worker launches):
+
+```text
+Building: MAJOR · 4 chunks · subagents · branch feat/x · planner+reviewer work-frontier (opus) · worker work-worker (sonnet) · next stop: done or a decision
+```
+
+Then **do not stop to ask** "approve plan?", "continue?", "review now?", "next chunk?". Plans,
 reviewer findings, fixes and refactors the agreed design requires are yours.
 Interrupt only for a genuinely consequential open decision: materially
 different product behaviour, requirements that conflict, a destructive or
@@ -218,7 +227,10 @@ fresh planner must read or know to make a cohesive decision for the next
 phase: seams to respect, blockers, debt worth collapsing, files to read
 first. Pointers, not essays; ten lines is plenty; remove an entry the run
 that resolves it. It is written at *done* from the run's Deviations and
-Risks, and read at the start of the next discovery and plan.
+Risks, and read at the start of the next discovery and plan. At the start
+of a run, read only the phase lines and *For the next planner* (`grep -n
+'^#\|^- \['`, then that section); a `MASTERPLAN.md` that predates `/work`
+gets lines added, not restructured.
 
 Local, per-run state:
 
@@ -238,6 +250,7 @@ task: add offline telemetry buffering to the gateway
 level: major
 phase: execute            # discover | plan | plan-review | execute | review | final-review | done
 current_chunk: 2
+done_means: merge         # branch | merge | deploy — asked in the plan grill
 base_ref: 3f9c1a2         # HEAD when /work started, written before discovery; final review diffs against it
 chunk_base: 8b77e01       # HEAD immediately before the current chunk's worker launched
 docs: {design: docs/plans/2026-09-12-sync-design.md, plan: docs/plans/2026-09-12-sync-implementation.md}
@@ -255,6 +268,10 @@ HEAD immediately before launching each chunk's worker — after the previous
 chunk's fix commit — so `git diff <chunk_base>` is exactly this chunk. The
 worker commits the chunk when it reports and the fix pass commits as a
 follow-up. Do not create branches unless the project's rules ask for it.
+Exception: when another session or agent is working in this checkout, or
+owns the root `.work/`, create a `git worktree` on a branch of its own and
+keep this run's `.work/` there — the coordinator makes it, not the user —
+and record `workspace` and `branch` in `state.yaml`.
 `.work/` is local state — add it to `.git/info/exclude`, not to the repo,
 unless the project wants it tracked. The design, the plan and `MASTERPLAN.md`
 are committed with chunk 01; say so.
@@ -275,7 +292,8 @@ adapter before acting — they change, and a long session otherwise runs on
 the copy it read hours ago.
 
 `/work continue`: read `state.yaml` and the `last_handoff`, re-enter the
-phase. A dirty tree relative to `chunk_base` is partial chunk work: hand the
+phase. Starting a new phase, first move `state.yaml` and `handoffs/` to
+`.work/archive/<phase>/`. A dirty tree relative to `chunk_base` is partial chunk work: hand the
 worker `git diff <chunk_base>` as prior progress; never reset it without
 asking. Nothing else from the previous session is needed; if it is, the
 handoff was written badly — fix the handoff, not the process.
@@ -290,7 +308,8 @@ handoff — not its transcript); the design and later chunks are amended; the
 worker continues. Ordinary coding trouble is the worker's to solve.
 
 **Parallel chunks.** Two chunks the plan marks independent — no dependency
-between them, disjoint *Files* — get two workers at once, on the same
+between them, disjoint *Files*, and no shared gate, database, port or lock
+that the other's half-done work would turn red — get two workers at once, on the same
 branch and tree. Each owns its files only: explicit staging (`git add
 <own files>`, never `-A`), never revert or reformat what it does not own,
 and a failure in a file it does not own is reported, not fixed. When one
@@ -346,7 +365,13 @@ findings are fixed, and the deterministic checks in `verified:` all pass in a
 fresh run — not from memory of them passing. That fresh run is the
 coordinator's one: per chunk, the worker's pasted check output is the
 evidence, and the reviewer sees the same diff; do not re-run the suites in
-this session after every chunk. Then close the documents:
+this session after every chunk. Close the documents first — they are part
+of the tree — then run the fresh check once at the head you hand over. A
+base that moved earns one re-run at the merged head; a diff touching no
+source or tests runs only the affected checks. A plan may end with a
+`## Release` section the coordinator runs itself (deploy, observe,
+receipt), as far as `done_means` goes; done comes after it, and the report
+says whether the goal was *observed* or only *built*. Closing the documents:
 set `Status: done <date>` in the plan, tick and date the `MASTERPLAN.md`
 line, update *For the next planner* from the handoffs' Deviations and Risks
 (add what the next phase must know, remove what this run resolved), and if

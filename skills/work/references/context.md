@@ -20,7 +20,9 @@ source; the references do not restate it.
 "Repo rules" means the project's `CLAUDE.md` / `AGENTS.md` and equivalents,
 which most harnesses load anyway — do not paste them twice. The diff is the
 review target; reviewers open changed files themselves where a hunk needs its
-surroundings — do not hand them whole files.
+surroundings — do not hand them whole files. Frontier agents have no shell:
+wherever a pack says `git diff …`, the coordinator writes that diff to
+`.work/handoffs/<step>.diff` and the pack names the file.
 
 "Neighbouring code" is defined, not guessed: the chunk's pattern file, the
 files its *Do not* section names, and — for stateful changes — the module that

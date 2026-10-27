@@ -53,8 +53,8 @@ rhythm:
   data, slow network). Iterate the frame until the user says it is right;
   small changes converge in one or two frames.
 - **Bigger UI work — a new screen, a new flow, a new interaction model, or
-  two or more screens changing — ask once** whether to iterate the visual
-  style first with `/prototype-singlefile` (a few rounds on a canvas with
+  two or more screens changing — ask once**, if `/prototype-singlefile` is
+  installed, whether to iterate the visual style first with it (a few rounds on a canvas with
   comments) before planning. If yes, run it and fold the result back; if
   no, the ASCII frames are the design.
 - The agreed frames and decisions land in the design under `# UI`, and every

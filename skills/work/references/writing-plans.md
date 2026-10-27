@@ -29,8 +29,9 @@ at plan altitude, brainstromming-style**: the conversation simply continues
 past design convergence into the plan-level decisions the design leaves open
 — the details brainstromming parked as "plan-time", interface shapes, data
 formats, error and retry policy, names of new public things, what is tested
-and how, and any UX or UI detail the design left open (SKILL.md, *Whose
-decision*). Settle from the code whatever the code decides; ask the rest
+and how, any UX or UI detail the design left open (SKILL.md, *Whose
+decision*), and how far *done* goes — branch, merge or deploy, and whether a
+production deploy is pre-approved (`done_means` in `state.yaml`). Settle from the code whatever the code decides; ask the rest
 **one question per message**, live, with 2–4 options and the recommendation
 marked (`AskUserQuestion` where the harness has it, prose otherwise). Stop
 when you could predict the answer to the next one — usually two to five
@@ -41,7 +42,9 @@ The planner receives a design with those decisions made and does not grill.
 If it still meets a decision it cannot settle from the code and the design,
 it returns that question instead of guessing; this session asks it the same
 way, then continues the planner with the answer. A plan with a "TBD" in it
-is not finished.
+is not finished. Every choice the design did not make goes under `## Decisions
+made`; the coordinator relays them to the user in one line before plan
+review and asks any that are the user's (SKILL.md, *Whose decision*).
 
 STANDARD gets the same discipline in-session, usually as zero or one
 question.

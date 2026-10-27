@@ -1,6 +1,6 @@
 name = "work_frontier"
 description = "Fresh-context frontier agent for the $work pipeline: planner, plan reviewer, correctness/design reviewer, verifier, specialist. The task names the brief."
-model = "gpt-5.6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 
