@@ -122,6 +122,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "task-tracker",
+      "source": "./skills/task-tracker",
+      "description": "Find the task system a repo uses, or help choose one by the size of the work, and write phased work as a chain in it.",
+      "version": "1.0.0"
+    },
+    {
       "name": "coordinate",
       "source": "./skills/coordinate",
       "description": "/coordinate codex|claude: pair this live session with a live Codex or Claude Code session in another tmux pane and coordinate directly through a tiny bridge.",

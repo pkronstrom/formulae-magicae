@@ -137,7 +137,9 @@ a worker from inventing a second architectural style. If no such file exists,
 say so — that is itself a design signal worth a sentence.
 
 Add or update the run's `MASTERPLAN.md` line with the plan's link (create the
-file if absent). Close by
+file if absent). When the task gives you `.work/tracker.md` in its place, or says
+the repo keeps no plan file, leave this step to the coordinator and create no
+`MASTERPLAN.md`. Close by
 writing `state.yaml` (`phase: plan-review` for MAJOR/CRITICAL, `phase:
 execute` otherwise, `current_chunk: 1`). The plan is the handoff; reply with
 the chunk list only.

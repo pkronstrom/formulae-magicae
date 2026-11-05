@@ -42,6 +42,8 @@ contents:
       name: neuralyzer
     - path: skills/work/
       name: work
+    - path: skills/task-tracker/
+      name: task-tracker
     - path: skills/coordinate/
       name: coordinate
     - path: skills/cad-studio/

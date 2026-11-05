@@ -94,7 +94,8 @@ a five-chunk plan goes back as two phases, not into plan review, and a plan
 over ~300 lines, or a chunk section over ~100, goes back to be cut to
 decisions.
 
-Every STANDARD-or-larger run gets a `MASTERPLAN.md` line. When discovery
+Every STANDARD-or-larger run gets a `MASTERPLAN.md` line, or its equivalent in the
+repo's tracker (see *Documents and state*). When discovery
 decomposes the work into phases — a whole app, a multi-phase rollout — each phase gets one, and **only the first unchecked
 phase is planned**, fully, before anything is built. Each later phase gets
 its own discovery, plan grill and plan review when its turn comes; the
@@ -187,6 +188,18 @@ Load each reference only when entering its phase.
 
 ## Documents and state
 
+**The repo's task system wins.** `MASTERPLAN.md` throughout this skill and its
+references means whichever tracker the repo uses, and this table overrides anything
+that says otherwise. Before its first read, run `cat CLAUDE.md AGENTS.md 2>/dev/null |
+sed -n 's/^Task tracker: //p'`, and take the first row that applies:
+
+| Found | Then |
+|---|---|
+| `masterplan`, or no name and `MASTERPLAN.md` exists | everything here applies as written |
+| any other name | the `task-tracker` skill says how to use it; create no `MASTERPLAN.md`. The coordinator is the only writer, and refreshes `.work/tracker.md` before spawning a planner, as agents without tool access read that in its place |
+| nothing, single-phase run at any level | the live checklist is the record, and no file is created beyond the plan |
+| nothing, several phases | the `task-tracker` skill asks the user which system to use; apply the row for the answer |
+
 **All work goes through the master plan and a plan document.** Every
 STANDARD-or-larger run is a line in `MASTERPLAN.md` and a plan file; nothing
 is built that neither names. TINY skips the plan file — its chunk is
@@ -254,7 +267,7 @@ done_means: merge         # branch | merge | deploy — asked in the plan grill
 base_ref: 3f9c1a2         # HEAD when /work started, written before discovery; final review diffs against it
 chunk_base: 8b77e01       # HEAD immediately before the current chunk's worker launched
 docs: {design: docs/plans/2026-09-12-sync-design.md, plan: docs/plans/2026-09-12-sync-implementation.md}
-masterplan_phase: "Phase 2 — Sync"   # when MASTERPLAN.md exists
+masterplan_phase: "Phase 2 — Sync"   # when the repo has a tracker; its item ID and title if it isn't MASTERPLAN.md
 last_handoff: .work/handoffs/chunk-01-findings.md
 verified: {tests: pass, typecheck: pass, lint: pass, build: n/a}
 open_decisions: []
@@ -273,8 +286,8 @@ owns the root `.work/`, create a `git worktree` on a branch of its own and
 keep this run's `.work/` there — the coordinator makes it, not the user —
 and record `workspace` and `branch` in `state.yaml`.
 `.work/` is local state — add it to `.git/info/exclude`, not to the repo,
-unless the project wants it tracked. The design, the plan and `MASTERPLAN.md`
-are committed with chunk 01; say so.
+unless the project wants it tracked. The design and the plan are committed with
+chunk 01, plus `MASTERPLAN.md` when that is the tracker; say so.
 
 A new `/work <task>` over a `.work/` whose phase is `done` replaces everything
 but `feedback/` and is a new feature, whatever `MASTERPLAN.md` says. Over any
