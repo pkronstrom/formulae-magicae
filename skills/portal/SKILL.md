@@ -1,6 +1,6 @@
 ---
 name: portal
-description: Open a live end-to-end-encrypted chat channel to a teammate's Claude over ntfy, unlocked by a spoken incantation. Use to talk, collaborate, or relay in real time with a colleague's agent — also invoked as commune, whisper, telepathy, or seance. Companion to summon.
+description: "Live end-to-end-encrypted channel to a teammate's Claude over ntfy, unlocked by a spoken incantation. /portal, commune, whisper, seance."
 ---
 
 # Portal

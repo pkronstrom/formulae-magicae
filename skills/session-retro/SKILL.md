@@ -1,6 +1,6 @@
 ---
 name: session-retro
-description: Run a retrospective on the work session that just finished — where the time actually went, which instruction in CLAUDE.md, AGENTS.md, a skill or a hook caused it, and what to remove, add or change so the next session is cheaper. Produces a fixed report — what worked, what cost time, proposed edits, working-practice and test changes — and applies only the edits the user approves. Accepts a session id from Claude Code, Codex or OpenCode (`/session-retro <session-id>`) to retro a session you were not part of, and has an experimental group mode that samples similar sessions from the same project and reports only what recurs. Use this whenever the user runs /session-retro, says "let's do a retro", "post-mortem", "what did we learn", "why was that so slow", "that took way too long", asks why the agent keeps doing something pointless, or wonders whether the project's agent instructions are helping or hurting. Offer it unprompted at the end of a long, painful, or surprising piece of work — the evidence is in this session's context and is gone once the session ends.
+description: "Retro on the session that just finished — where time went, which instruction caused it, what to change. /session-retro, or when the user says retro, post-mortem, or 'why was that so slow'."
 ---
 
 # Session Retro

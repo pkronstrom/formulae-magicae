@@ -1,6 +1,6 @@
 ---
 name: visualize
-description: Render a plan, architecture, data flow, or system model as a single self-contained HTML page, open it in the browser, and read back the user's annotations. Use when the user asks to visualize, diagram, or map out a system or plan, or wants something they can look at and share.
+description: "Render a plan, architecture or data flow as one self-contained HTML page, open it, and read back annotations. /visualize."
 ---
 
 # visualize

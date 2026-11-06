@@ -1,6 +1,7 @@
 ---
 name: cad-construction-pdf
 description: "Construction-ready plans for small timber builds — garden shed, A-frame cabin, gazebo, sauna, deck. Iterates the CAD model in stages with gates, then produces one booklet PDF: renders, dimensioned projections, joint details with fasteners, parts with cut angles, cut list, priced parts list for the user's country, and IKEA-style build phases with a render, dimensions, hardware and shopping list per phase. Use for /cad-construction-pdf, 'construction plans', 'build booklet', 'how do I build it', 'phased build', or when cad-studio reaches a timber build that must be built."
+disable-model-invocation: true
 ---
 
 # Construction booklet for small timber builds

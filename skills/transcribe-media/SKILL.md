@@ -1,6 +1,6 @@
 ---
 name: transcribe-media
-description: Pull a video, YouTube link, talk, or podcast into context as a timestamped transcript with key frames. USE WHENEVER THE USER PASTES A YOUTUBE OR VIDEO URL, even a bare link with no instructions. Also for summarizing a talk or extracting on-screen diagrams, UIs, or code. Any yt-dlp-supported site.
+description: "Pull a video, YouTube link, talk or podcast into context as a timestamped transcript with key frames. USE WHENEVER THE USER PASTES A VIDEO OR YOUTUBE URL."
 ---
 
 # transcribe-media
