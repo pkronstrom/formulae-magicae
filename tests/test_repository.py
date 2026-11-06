@@ -32,6 +32,7 @@ EXPECTED_SKILLS = {
     "visualize",
     "wire-trigger",
     "work",
+    "task-tracker",
     "coordinate",
     "cad-studio",
     "cad-construction-pdf",
@@ -203,7 +204,7 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, "
         "skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-improver, skills/skill-vault, skills/spec-flow, "
         "skills/summon, skills/transcribe-media, skills/tts, "
-        "skills/visualize, skills/wire-trigger, skills/work, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev."
+        "skills/visualize, skills/wire-trigger, skills/work, skills/task-tracker, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev."
     ]
     assert fenced_commands(h3_sections["### Claude Code"]) == [
         "/plugin marketplace add pkronstrom/formulae-magicae\n"

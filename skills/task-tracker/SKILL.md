@@ -1,6 +1,7 @@
 ---
 name: task-tracker
 description: Use when a workflow is about to plan, record or read work across more than one session, before creating a MASTERPLAN.md or TODO file, or when the user asks which task system a repo should use.
+user-invocable: false
 ---
 
 # Task tracker
