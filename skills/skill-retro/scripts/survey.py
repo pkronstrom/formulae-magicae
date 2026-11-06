@@ -90,7 +90,7 @@ def main():
     ap.add_argument("--min-sessions", type=int, default=2)
     ap.add_argument("--limit", type=int, default=25)
     ap.add_argument("--projects", default=os.path.expanduser("~/.claude/projects"))
-    ap.add_argument("--ledgers", default=os.path.expanduser("~/.claude/skill-improver"))
+    ap.add_argument("--ledgers", default=os.path.expanduser("~/.claude/skill-retro"))
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 

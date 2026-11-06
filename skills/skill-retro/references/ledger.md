@@ -1,6 +1,6 @@
 # The ledger
 
-`~/.claude/skill-improver/<target>/ledger.md` is the memory of this loop. Without
+`~/.claude/skill-retro/<target>/ledger.md` is the memory of this loop. Without
 it, every run re-proposes what the user already rejected and nobody ever learns
 whether last month's edit worked.
 

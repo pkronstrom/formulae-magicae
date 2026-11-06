@@ -34,8 +34,8 @@ contents:
       name: skill-vault
     - path: skills/mcp-vault/
       name: mcp-vault
-    - path: skills/skill-improver/
-      name: skill-improver
+    - path: skills/skill-retro/
+      name: skill-retro
     - path: skills/session-retro/
       name: session-retro
     - path: skills/neuralyzer/

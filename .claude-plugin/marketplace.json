@@ -98,8 +98,8 @@
       "version": "1.0.0"
     },
     {
-      "name": "skill-improver",
-      "source": "./skills/skill-improver",
+      "name": "skill-retro",
+      "source": "./skills/skill-retro",
       "description": "Mine the sessions where a skill was used and apply approved fixes.",
       "version": "1.0.0"
     },

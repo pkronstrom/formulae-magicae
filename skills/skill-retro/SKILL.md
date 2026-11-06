@@ -1,9 +1,10 @@
 ---
-name: skill-improver
-description: Improve an existing skill, slash command, subagent, MCP server, CLAUDE.md, or artifact by mining the real sessions where it was actually used — finding the quirks, wrong turns, ignored rules, wasted tokens and misunderstandings it produced in practice — then proposing a red/orange/yellow triage table of fixes for approval and applying the approved ones under version control. Use this whenever the user runs /skill-improver, says a skill feels sluggish, bloated, unreliable, or "never triggers", asks why an agent keeps making the same mistake with a skill, asks to review, tune, audit, optimize or clean up a skill, or wants to know which of their skills are worth keeping. Prefer this over editing a skill from memory or intuition: the whole point is that the evidence comes from transcripts, not from guessing. Run with no target, or with --survey, when the user asks which skills are worth improving, what they use most, what has never been reviewed, or where to start — it ranks their real usage against review history and recommends a target.
+name: skill-retro
+description: "Improve an existing skill, slash command, subagent, MCP server, CLAUDE.md, or artifact by mining the real sessions where it was actually used — finding the quirks, wrong turns, ignored rules, wasted tokens and misunderstandings it produced in practice — then proposing a red/orange/yellow triage table of fixes for approval and applying the approved ones under version control. Use this whenever the user runs /skill-retro, says a skill feels sluggish, bloated, unreliable, or \"never triggers\", asks why an agent keeps making the same mistake with a skill, asks to review, tune, audit, optimize or clean up a skill, or wants to know which of their skills are worth keeping. Prefer this over editing a skill from memory or intuition: the whole point is that the evidence comes from transcripts, not from guessing. Run with no target, or with --survey, when the user asks which skills are worth improving, what they use most, what has never been reviewed, or where to start — it ranks their real usage against review history and recommends a target."
+disable-model-invocation: true
 ---
 
-# Skill Improver
+# Skill Retro
 
 Skills are written once and then run hundreds of times. Everything you need to
 know about whether a skill is any good is already recorded in the transcripts of
@@ -66,7 +67,7 @@ which to run, and continue from Step 1 with their answer.
 
 ## Step 1 — Resolve the target and its home
 
-The user names a skill (`/skill-improver bento-slides`) or gestures at one
+The user names a skill (`/skill-retro bento-slides`) or gestures at one
 ("the transcribe thing keeps failing"). Resolve it to a directory:
 
 ```bash
@@ -87,7 +88,7 @@ itself, an artifact is its source HTML. The mining is identical; only the
 
 ## Step 2 — Load the ledger
 
-State lives at `~/.claude/skill-improver/<target>/`:
+State lives at `~/.claude/skill-retro/<target>/`:
 
 ```
 ledger.md        every finding ever raised, with its verdict
@@ -343,7 +344,7 @@ If it is not a repo, offer to initialise one:
 > state first, then the changes."
 
 If the user agrees: `git init`, commit everything as a baseline, then apply, then
-commit the edits with a message naming the findings (`skill-improver(bento-slides):
+commit the edits with a message naming the findings (`skill-retro(bento-slides):
 F1,F2 — stop re-reading config; enforce snapshot via script`). If the user
 declines, copy the target to `snapshots/<date>/` before editing.
 
