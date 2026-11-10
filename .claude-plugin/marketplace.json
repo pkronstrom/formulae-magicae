@@ -128,6 +128,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "backlog",
+      "source": "./skills/backlog",
+      "description": "Keep a small task backlog as Markdown files in the repo's backlog/ folder, committed with the code.",
+      "version": "1.0.0"
+    },
+    {
       "name": "coordinate",
       "source": "./skills/coordinate",
       "description": "/coordinate codex|claude: pair this live session with a live Codex or Claude Code session in another tmux pane and coordinate directly through a tiny bridge.",

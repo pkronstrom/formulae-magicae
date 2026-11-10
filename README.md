@@ -35,6 +35,7 @@ around that one source tree; they do not fork the skills.
 | [`neuralyzer`](skills/neuralyzer/) | List what your agents remember, or make them forget one thing everywhere: memory files, memory MCPs, project docs and, with approval, past Claude, Codex, Gemini and OpenCode transcripts, including the current session. | `python3`; `rg` and `fd` optional |
 | [`work`](skills/work/) | `/work <task>`: design interactively with the strongest model, then run plan, adversarial plan review, cheaper-worker implementation and fresh-context reviews autonomously to a verified feature. | Optional: `brainstromming`, `skill-retro`, `task-tracker` |
 | [`task-tracker`](skills/task-tracker/) | Find the task system a repo uses, or help choose one by the size of the work, and write phased work as a chain in it. | None |
+| [`backlog`](skills/backlog/) | Keep a small task backlog as Markdown files in the repo's `backlog/` folder, committed with the code, with nothing to install. | None |
 | [`cad-studio`](skills/cad-studio/) | Router for cad-studio work — infers fidelity (concept → fabrication), picks the smallest set of existing CAD/scene/fabrication skills, keeps designs reusable across sessions. | Specialist skills discovered at runtime; bootstraps `build123d`/Replicad/Blender only when needed |
 | [`cad-construction-pdf`](skills/cad-construction-pdf/) | Construction-ready booklet for small timber builds (shed, A-frame, gazebo) — staged CAD iteration with gates, then one PDF: renders, dimensioned projections, joints with fasteners, cut list, priced parts, IKEA-style build phases with a render and shopping list each. | `python3` with `build123d`, `matplotlib`, `pyyaml`; Blender optional for shaded renders |
 | [`coordinate`](skills/coordinate/) | `/coordinate codex`: pair a live Claude Code session with a live Codex session in another tmux pane; messages are pasted into the peer's TUI and replies come back the same way. | `tmux`, `python3`; optional `workmux` |
@@ -69,7 +70,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/task-tracker, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/task-tracker, skills/backlog, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
 ```
 
 Installed Codex skills appear in the next turn.

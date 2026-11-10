@@ -44,6 +44,8 @@ contents:
       name: work
     - path: skills/task-tracker/
       name: task-tracker
+    - path: skills/backlog/
+      name: backlog
     - path: skills/coordinate/
       name: coordinate
     - path: skills/cad-studio/
