@@ -56,14 +56,17 @@ $VAULT/vault.sh find <query>
 ```
 
 It matches names, descriptions and notes, printing hits in catalog format
-under their category heading, with long descriptions truncated. Matching is
-case-insensitive and literal, so `find '['` searches for a bracket rather
-than erroring.
+under their category heading, with long descriptions truncated. Every word
+must appear somewhere in an entry, in any order, so `find math animation`
+finds "mathematical animations"; quoting is optional. Each word is a
+case-insensitive literal substring, so `find '['` searches for a bracket
+rather than erroring, and `mcp` also hits skills that merely mention MCP.
 
-A query is a substring, not a concept: `find mcp` finds skills whose name or
-description contains "mcp", and will also return skills that merely mention
-it in passing. Skim the hits and read the promising one. If a search comes
-back empty or too noisy, browse instead.
+Hits are ranked — the exact name first, then name, description, path — and
+only the best 15 print, followed by a count of the rest. A skill's literal
+name always ranks first, so the cap never hides it. A large remainder means
+the query is too broad: add a word. Skim the hits and read the promising one.
+If a search comes back empty, browse instead.
 
 ## Step 2: Browse what's available
 

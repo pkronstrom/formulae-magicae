@@ -121,6 +121,57 @@ def test_find_matches_notes_text(vault: Path):
     assert "eval harness" in out
 
 
+def test_find_matches_words_in_any_order(vault: Path):
+    """Words are matched one by one, not as a single phrase."""
+    assert "**pdf**" in run(vault, "find", "merge pdf").stdout
+
+
+def test_find_requires_every_word(vault: Path):
+    """"mcp" is only in mcp-builder and "forms" only in pdf: neither has both."""
+    assert "no skill matches" in run(vault, "find", "mcp forms").stdout
+
+
+def test_find_joins_unquoted_words(vault: Path):
+    """`vault.sh find mcp forms` without quotes means the same as quoted."""
+    assert "no skill matches" in run(vault, "find", "mcp", "forms").stdout
+
+
+def test_find_matches_note_words_across_lines(vault: Path):
+    (vault / "NOTES.md").write_text(
+        "## anthropic/mcp-builder\naka: mcp\nThe eval harness is the good part.\n"
+    )
+    out = run(vault, "find", "harness mcp").stdout
+    assert "## anthropic/mcp-builder" in out
+
+
+# --- ranking --------------------------------------------------------------
+
+
+def test_find_ranks_name_hits_above_description_hits(vault: Path):
+    """Category order alone would list aaa's description-only hit first."""
+    write_skill(vault / "aaa/kit/skills/helper", "helper", "Has a widget inside.")
+    write_skill(vault / "zzz/kit/skills/widget", "widget", "Does things.")
+    out = run(vault, "find", "widget").stdout
+    assert out.index("**widget**") < out.index("**helper**")
+
+
+def test_find_ranks_exact_name_first(vault: Path):
+    """Searching a skill's literal name must put that skill on top."""
+    write_skill(vault / "aaa/kit/skills/pdf-forms", "pdf-forms", "Fill pdf forms.")
+    out = run(vault, "find", "pdf").stdout
+    assert out.index("**pdf**") < out.index("**pdf-forms**")
+
+
+def test_find_shows_top_hits_and_counts_the_rest(vault: Path):
+    for i in range(20):
+        write_skill(
+            vault / f"engineering/many/skills/gadget{i:02d}", f"gadget{i:02d}", "A gadget."
+        )
+    out = run(vault, "find", "gadget").stdout
+    assert out.count("- **gadget") == 15
+    assert "5 more" in out
+
+
 # --- attribution ----------------------------------------------------------
 
 
@@ -167,6 +218,41 @@ def test_find_treats_regex_metacharacters_literally(vault: Path):
     result = run(vault, "find", "[")
     assert "bracket" in result.stdout
     assert "no skill matches" not in result.stdout
+
+
+def test_find_names_skill_by_directory_when_name_is_blank(vault: Path):
+    """A `name:` holding only a tab once turned the description into the name."""
+    skill = vault / "engineering/toolkit/skills/link-download"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text(
+        "---\nname: \t\ndescription: >\n  Download videos with yt-dlp.\n---\n"
+    )
+    out = run(vault, "find", "yt-dlp").stdout
+    assert "**link-download** — Download videos with yt-dlp." in out
+
+
+def test_find_reads_block_scalar_descriptions(vault: Path):
+    skill = vault / "engineering/toolkit/skills/folded"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text(
+        "---\nname: folded\ndescription: |\n  First line\n  second line.\nmetadata: x\n---\n"
+    )
+    assert "**folded** — First line second line. (" in run(vault, "find", "folded").stdout
+
+
+def test_catalog_does_not_carry_a_description_into_the_next_file(vault: Path):
+    """All files are parsed by one awk process, so per-file state must reset.
+    find follows directory order, which APFS does not sort: interleave ten
+    described and ten bare skills so some bare one is read after a described
+    one, whatever the order."""
+    for i in range(10):
+        write_skill(vault / f"engineering/toolkit/skills/said{i}", f"said{i}", "Leaky text.")
+        bare = vault / f"engineering/toolkit/skills/bare{i}"
+        bare.mkdir(parents=True)
+        (bare / "SKILL.md").write_text(f"---\nname: bare{i}\n---\n")
+    lines = [l for l in run(vault, "catalog").stdout.splitlines() if "**bare" in l]
+    assert len(lines) == 10
+    assert not [l for l in lines if "Leaky" in l]
 
 
 def test_find_no_match_message_and_zero_exit(vault: Path):
@@ -216,7 +302,9 @@ def test_find_truncates_long_descriptions(vault: Path):
     line = next(
         l for l in run(vault, "find", "verbose").stdout.splitlines() if "verbose" in l
     )
-    assert line.endswith("...")
+    # The path survives truncation: it is what the caller reads next.
+    assert " ... (" in line
+    assert line.endswith("(engineering/toolkit/skills/verbose/SKILL.md)")
     assert len(line) < 300
 
 

@@ -60,28 +60,35 @@ is_reserved() {
 dedup_skills_in_category() {
   local category="$1"
   local raw
+  # One awk reads every file in the category. An awk per file cost two forks
+  # each under macOS bash 3.2 — about 5,800 for a 2,900-skill vault, and 8s
+  # per find. Per-file state resets on each file's first line; a file prints
+  # when the next one starts, and the last one in END.
   raw=$(
-    find "$category" -name SKILL.md 2>/dev/null | while IFS= read -r skill_md; do
+    find "$category" -name SKILL.md -print0 2>/dev/null | xargs -0 awk '
       # Frontmatter description may be a single line ("description: text")
       # or a YAML block scalar ("description: |"/">" with the text on
       # indented lines below) — collapse either form to one line.
-      IFS=$'\t' read -r name description <<< "$(awk '
-        BEGIN { name = ""; desc = ""; in_desc = 0; desc_done = 0 }
-        !in_desc && name == "" && /^name: / { n = $0; sub(/^name: */, "", n); name = n; next }
-        !desc_done && !in_desc && /^description: *[|>]/ { in_desc = 1; next }
-        !desc_done && !in_desc && /^description: / { d = $0; sub(/^description: */, "", d); desc = d; desc_done = 1; next }
-        in_desc {
-          if ($0 ~ /^[^ \t]/) { in_desc = 0; desc_done = 1; next }
-          if ($0 == "") { next }
-          line = $0; sub(/^[ \t]+/, "", line)
-          desc = (desc == "") ? line : desc " " line
-          next
-        }
-        END { print name "\t" desc }
-      ' "$skill_md")"
-      [[ -z "$name" ]] && continue
-      printf '%s\t%s\t%s\n' "$name" "$description" "$skill_md"
-    done
+      function emit(   dir) {
+        if (file == "" || (name == "" && desc == "")) return
+        # A blank or missing name falls back to the skill directory, rather
+        # than the description sliding into the name column.
+        if (name == "") { dir = file; sub(/\/SKILL\.md$/, "", dir); sub(/.*\//, "", dir); name = dir }
+        printf "%s\t%s\t%s\n", name, desc, file
+      }
+      FNR == 1 { emit(); file = FILENAME; name = ""; desc = ""; in_desc = 0; desc_done = 0 }
+      !in_desc && name == "" && /^name: / { n = $0; sub(/^name: */, "", n); sub(/[ \t]+$/, "", n); name = n; next }
+      !desc_done && !in_desc && /^description: *[|>]/ { in_desc = 1; next }
+      !desc_done && !in_desc && /^description: / { d = $0; sub(/^description: */, "", d); desc = d; desc_done = 1; next }
+      in_desc {
+        if ($0 ~ /^[^ \t]/) { in_desc = 0; desc_done = 1; next }
+        if ($0 == "") { next }
+        line = $0; sub(/^[ \t]+/, "", line)
+        desc = (desc == "") ? line : desc " " line
+        next
+      }
+      END { emit() }
+    '
   )
 
   [[ -z "$raw" ]] && return
@@ -138,15 +145,20 @@ cmd_catalog() {
   done
 }
 
-# Search names, descriptions and NOTES.md. Filters cmd_catalog output rather
-# than the filesystem, so dedup of tool-mirror copies comes for free and hits
-# print in the same format the catalog uses.
+# Search names, descriptions and NOTES.md. Every word of the query must
+# appear somewhere in an entry, in any order. Hits rank by where the words
+# land — the whole query as the exact name first, then name, description,
+# path — and only the best $limit print, with a count of the rest: a broad
+# word like "video" otherwise dumps a hundred hits in category order.
+# Filters cmd_catalog output rather than the filesystem, so dedup of
+# tool-mirror copies comes for free and hits print in the same format the
+# catalog uses, path included.
 cmd_find() {
-  local query="${1:-}"
-  [[ -n "$query" ]] || { echo "usage: vault.sh find <query>" >&2; exit 1; }
+  local query="$*"
+  [[ -n "${query//[[:space:]]/}" ]] || { echo "usage: vault.sh find <query>" >&2; exit 1; }
   cd "$VAULT_DIR"
 
-  local lq found=0
+  local lq found=0 limit=15
   lq=$(printf '%s' "$query" | tr '[:upper:]' '[:lower:]')
 
   # index() is a fixed-string search: regex metacharacters in the query are
@@ -154,34 +166,83 @@ cmd_find() {
   # bare `grep -i -- "$query" || true` does.
   local hits
   hits=$(cmd_catalog | awk -v q="$lq" '
+    BEGIN {
+      nw = split(q, words)
+      exact = words[1]; for (i = 2; i <= nw; i++) exact = exact " " words[i]
+    }
+    /^## / { cat = substr($0, 4); next }
+    /^- \*\*/ {
+      line = tolower($0); name = line; desc = line; path = ""
+      sub(/^- \*\*/, "", name); sub(/\*\* — .*/, "", name)
+      if (match(line, / \([^()]*skill\.md\)$/)) { path = substr(line, RSTART); desc = substr(line, 1, RSTART - 1) }
+      pre = "- **" name "** — "
+      if (index(desc, pre) == 1) desc = substr(desc, length(pre) + 1)
+      score = 0
+      for (i = 1; i <= nw; i++) {
+        w = 0
+        if (index(name, words[i])) w += 5
+        if (index(desc, words[i])) w += 2
+        if (index(path, words[i])) w += 1
+        if (!w) next
+        score += w
+      }
+      bare = name; gsub(/"/, "", bare)
+      if (bare == exact) score += 100
+      # Catalog line number breaks ties, so equal scores keep catalog order.
+      printf "%d\t%d\t%s\t%s\n", score, NR, cat, $0
+    }
+  ' | sort -t "$(printf '\t')" -k1,1nr -k2,2n | awk -F'\t' -v limit="$limit" '
     # Truncate on a word boundary. Split points are ASCII spaces, so a
     # multibyte character is never cut in half — substr() does exactly that
     # under LC_ALL=C and emits illegal bytes.
-    function truncate(s,   n, i, out) {
-      if (length(s) <= 150) return s
+    # Split the trailing "(vault/relative/path/SKILL.md)" off before
+    # truncating and re-append it afterwards. The path is the one field the
+    # caller needs in order to act on a hit, and it sits at the end of the
+    # line — without this, every entry whose description exceeds the limit
+    # loses it, and find cannot be the single call it is documented as.
+    function truncate(s,   n, i, out, path) {
+      path = ""
+      if (match(s, / \([^()]*SKILL\.md\)$/)) {
+        path = substr(s, RSTART, RLENGTH)
+        s = substr(s, 1, RSTART - 1)
+      }
+      if (length(s) <= 150) return s path
       n = split(s, w, " "); out = w[1]
       for (i = 2; i <= n; i++) {
-        if (length(out) + 1 + length(w[i]) > 150) return out " ..."
+        if (length(out) + 1 + length(w[i]) > 150) return out " ..." path
         out = out " " w[i]
       }
-      return out
+      return out path
     }
-    /^## / { cat = $0; next }
-    index(tolower($0), q) {
-      if (cat != shown) { if (shown != "") print ""; print cat; shown = cat }
-      print truncate($0)
+    # Best hits first, still under their category headings: a category is
+    # placed where its best hit ranks.
+    NR <= limit {
+      line = $0; sub(/^[^\t]*\t[^\t]*\t[^\t]*\t/, "", line)
+      if (!($3 in body)) order[++n] = $3
+      body[$3] = body[$3] truncate(line) "\n"
+    }
+    END {
+      for (i = 1; i <= n; i++) printf "%s## %s\n%s", (i > 1 ? "\n" : ""), order[i], body[order[i]]
+      if (NR > limit) printf "\n(%d more matches not shown; add a word to narrow)\n", NR - limit
     }
   ')
   [[ -n "$hits" ]] && { printf '%s\n' "$hits"; found=1; }
 
   # Whole "## "-bounded sections, so a match on any line of a note still
-  # prints the heading that says which skill the note is about.
+  # prints the heading that says which skill the note is about. Every word
+  # must appear somewhere in the section, not necessarily on one line.
   if [[ -f NOTES.md ]]; then
     local notes
     notes=$(awk -v q="$lq" '
-      function flush() { if (hit && buf != "") print buf "\n" }
-      /^## / { flush(); buf = $0; hit = index(tolower($0), q) ? 1 : 0; next }
-      buf != "" { buf = buf "\n" $0; if (index(tolower($0), q)) hit = 1 }
+      BEGIN { nw = split(q, words) }
+      function flush(   i, lb) {
+        if (buf == "") return
+        lb = tolower(buf)
+        for (i = 1; i <= nw; i++) if (!index(lb, words[i])) return
+        print buf "\n"
+      }
+      /^## / { flush(); buf = $0; next }
+      buf != "" { buf = buf "\n" $0 }
       END { flush() }
     ' NOTES.md)
     [[ -n "$notes" ]] && { printf '\n## notes\n\n%s' "$notes"; found=1; }
