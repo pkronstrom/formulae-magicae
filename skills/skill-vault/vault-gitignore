@@ -4,3 +4,6 @@
 
 # Machine-local promotion ledger.
 /.promoted
+
+# Machine-local scan ledger: the commit each repo was last scanned at.
+/.scanned
