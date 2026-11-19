@@ -4,7 +4,7 @@ Two separate opt-ins, asked only after the feature is done and verified:
 
 1. *"Feature complete. Capture this run as feedback for improving /work?"*
 2. If yes, and `history.jsonl` now holds more than one record: *"Run
-   skill-improver against the accumulated /work feedback now?"*
+   skill-retro against the accumulated /work feedback now?"*
 
 No on the first ends it. Never mutate this skill from one run's evidence.
 
@@ -42,7 +42,7 @@ design lens — that is the only pass that sees all chunks together.
 
 ## Improving the skill
 
-Run `skill-improver` with `work` as the target and point it at the history
+Run `skill-retro` with `work` as the target and point it at the history
 file as extra evidence beside the transcripts. It reasons across multiple
 runs and proposes the smallest change; it distinguishes model failure,
 missing context, bad planning, bad implementation, review miss, false-positive

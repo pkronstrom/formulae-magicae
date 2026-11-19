@@ -4,6 +4,10 @@ Worker model; one worker per phase, continued chunk to chunk (SKILL.md).
 Pack in `context.md` — on continuation only the new chunk section and the
 files it names.
 
+With `execution: session` the coordinator is the worker: read this file as
+your own instructions, write the same handoff, then hand the diff to the
+fresh-context reviewer as usual.
+
 You are building the agreed thing. Follow the architecture in the chunk and the
 pattern it names; honour the previous chunk's Decisions and Deviations.
 Implement only this chunk, in only its *Files*. Another worker may be on an

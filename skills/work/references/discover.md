@@ -123,6 +123,7 @@ or state, with the decisions under each)
 - (none)
 ```
 
-Close the phase by writing `state.yaml` (`level`, `phase: plan`) and
+Close the phase by asking where the code is written (SKILL.md), writing
+`state.yaml` (`level`, `execution`, `phase: plan`) and
 announcing the transition (SKILL.md). The design file is the handoff; do not
 write a second one.

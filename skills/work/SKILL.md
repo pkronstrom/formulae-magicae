@@ -111,6 +111,24 @@ twenty-chunk plan.
 
 `quick` biases to TINY; it does not forbid escalation.
 
+## Where the code is written
+
+At classification, ask once — `AskUserQuestion`, recommendation first — and
+record the answer as `execution` in `state.yaml`:
+
+- **`session`** — this session writes the chunks itself, following
+  `execute.md` as the worker. No cold re-read of the code, no spawn overhead;
+  but the frontier model types the code and this context grows. Recommend
+  for TINY and STANDARD.
+- **`subagents`** — the `work-worker` agent writes the chunks, as described
+  everywhere below. Recommend for MAJOR and CRITICAL, or when this session is
+  already deep.
+
+Skip the question when the user already said ("do it here", "use
+subagents"). Reviewers, planner and verifier stay fresh-context agents
+either way: the author never reviews its own work. Under `session`, parallel
+chunks run one after the other, and the fix pass is this session again.
+
 ## Whose decision
 
 **The user decides:** the seams — where boundaries go and what owns what;
@@ -252,7 +270,7 @@ Local, per-run state:
 ├── state.yaml          phase, level, current chunk, document paths, verification, open decisions
 ├── handoffs/           plan-review.md, chunk-NN.md, <phase>-<lens>.md, <phase>-findings.md
 ├── prompts/            only for phase_map entries that leave the harness
-└── feedback/           opt-in run records for skill-improver
+└── feedback/           opt-in run records for skill-retro
 ```
 
 `state.yaml` is written at every phase boundary and read by `/work continue`
@@ -261,6 +279,7 @@ and `/work status`. Keep it flat:
 ```yaml
 task: add offline telemetry buffering to the gateway
 level: major
+execution: subagents      # session | subagents — asked at classification
 phase: execute            # discover | plan | plan-review | execute | review | final-review | done
 current_chunk: 2
 done_means: merge         # branch | merge | deploy — asked in the plan grill
