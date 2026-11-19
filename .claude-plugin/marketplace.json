@@ -116,6 +116,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "harness-security-audit",
+      "source": "./skills/harness-security-audit",
+      "description": "Audit the live Claude Code and Codex setup with a pinned AgentShield scan and triage what matters.",
+      "version": "1.0.0"
+    },
+    {
       "name": "neuralyzer",
       "source": "./skills/neuralyzer",
       "description": "List what your agents remember, or make them forget one thing everywhere: memory, docs and transcripts.",

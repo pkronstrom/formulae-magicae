@@ -20,6 +20,7 @@ EXPECTED_SKILLS = {
     "pr-voice-review-single-file",
     "prototype-singlefile",
     "session-retro",
+    "harness-security-audit",
     "neuralyzer",
     "singlefile",
     "share",
@@ -204,7 +205,7 @@ def test_readme_quick_install_documents_every_supported_install_path():
         "$skill-installer Install all of these skills from "
         "pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, "
         "skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, "
-        "skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, "
+        "skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/harness-security-audit, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, "
         "skills/summon, skills/transcribe-media, skills/tts, "
         "skills/visualize, skills/term-viz, skills/wire-trigger, skills/work, skills/task-tracker, skills/backlog, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev."
     ]

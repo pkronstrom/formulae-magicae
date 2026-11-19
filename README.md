@@ -33,6 +33,7 @@ around that one source tree; they do not fork the skills.
 | [`mcp-vault`](skills/mcp-vault/) | Stash MCP servers out of the active tool namespace; browse their cached tools, then connect only the one you need. | `mcpc`, `python3` |
 | [`skill-retro`](skills/skill-retro/) | Mine the sessions where a skill was actually used, triage what went wrong into red/orange/yellow findings, and apply the approved fixes under version control. | `python3`, `git` |
 | [`session-retro`](skills/session-retro/) | Retro the session that just finished — or any Claude, Codex or OpenCode session by id — and fix the instructions that cost time. | `python3` |
+| [`harness-security-audit`](skills/harness-security-audit/) | Audit the live Claude Code and Codex setup — permissions, hooks, MCP servers, agents, skills, enabled plugins, project trust — with a pinned AgentShield scan, then triage the findings and apply approved fixes. | `python3`, `npm` (installs `ecc-agentshield@1.6.0` with `--ignore-scripts`) |
 | [`neuralyzer`](skills/neuralyzer/) | List what your agents remember, or make them forget one thing everywhere: memory files, memory MCPs, project docs and, with approval, past Claude, Codex, Gemini and OpenCode transcripts, including the current session. | `python3`; `rg` and `fd` optional |
 | [`work`](skills/work/) | `/work <task>`: design interactively with the strongest model, then run plan, adversarial plan review, cheaper-worker implementation and fresh-context reviews autonomously to a verified feature. | Optional: `brainstromming`, `skill-retro`, `task-tracker` |
 | [`task-tracker`](skills/task-tracker/) | Find the task system a repo uses, or help choose one by the size of the work, and write phased work as a chain in it. | None |
@@ -71,7 +72,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/term-viz, skills/wire-trigger, skills/work, skills/task-tracker, skills/backlog, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/harness-security-audit, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/term-viz, skills/wire-trigger, skills/work, skills/task-tracker, skills/backlog, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
 ```
 
 Installed Codex skills appear in the next turn.

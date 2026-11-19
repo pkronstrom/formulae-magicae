@@ -40,6 +40,8 @@ contents:
       name: skill-retro
     - path: skills/session-retro/
       name: session-retro
+    - path: skills/harness-security-audit/
+      name: harness-security-audit
     - path: skills/neuralyzer/
       name: neuralyzer
     - path: skills/work/
