@@ -50,6 +50,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "term-viz",
+      "source": "./skills/term-viz",
+      "description": "Draw diagrams as text in the terminal reply: architecture, dependencies, UML, sequence, state, flow, gantt, bars.",
+      "version": "1.0.0"
+    },
+    {
       "name": "transcribe-media",
       "source": "./skills/transcribe-media",
       "description": "Turn video or audio into transcripts, key frames, and contact sheets.",

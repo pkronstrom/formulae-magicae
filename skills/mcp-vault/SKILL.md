@@ -1,6 +1,6 @@
 ---
 name: mcp-vault
-description: A vault of MCP servers kept out of the active tool namespace until needed — rare, special-case, or one-off servers. Use to see which MCP servers are stashed and what tools they have, to connect ("warm up") one and call its tools, or to probe what an unknown MCP URL offers. Also use when asked to add an MCP server, to decide whether it belongs in the vault or permanently in the agent's own MCP config — ask the user which unless they said.
+description: "Vault of inactive MCP servers — list what's stashed, warm one up, add one, or probe an unknown MCP URL. /vault-mcp or /mv."
 ---
 
 # MCP Vault
@@ -34,13 +34,27 @@ takes an explicit `use` first.
 When the user only wants to know what a server offers before deciding, neither
 applies yet — run `vault.sh inspect <url>` (below), which saves nothing.
 
+**When a vaulted server is also loaded natively.** A server can end up in both
+places — vaulted earlier, later added to the agent's own MCP config, or served
+by a dedicated skill. The native route wins: it needs no `use` and no
+subprocess per call. Say so once, use the native tools, and ask whether to
+`forget` the vault entry rather than leaving two paths to the same server and
+picking one silently.
+
 ## Step 0: Find or create the vault
 
+Capture the path — every snippet below uses `$VAULT`, so assign it once:
+
 ```bash
-<skill's base directory>/bootstrap.sh check
+VAULT=$(<skill's base directory>/bootstrap.sh check) && echo "$VAULT"
 ```
 
-If it prints a path, that's the vault (`$VAULT`) — go to Step 1.
+`<skill's base directory>` is the directory this SKILL.md was loaded from,
+printed at the top of the skill. Don't go searching the filesystem for it, and
+don't hardcode the vault path — `bootstrap.sh check` is the only thing that
+knows where the vault lives on this machine.
+
+If it prints a path, that's `$VAULT` — go to Step 1.
 
 If it prints nothing (exit 1), no vault exists yet. Ask the user:
 
@@ -62,22 +76,34 @@ it's missing.
 
 ## Step 1: See what's vaulted
 
+**If the request already names a server, skip `list` and go straight to
+`show <name>`.** `list` is for finding a server you can't name yet.
+
 ```bash
 $VAULT/vault.sh list
-```
-
-Servers are grouped by tag, each showing its description, credential state, and
-how many tools it had when last connected — no connections are made. Narrow to
-one tag when the task is clearly in that area:
-
-```bash
 $VAULT/vault.sh list homelab      # only #homelab servers
 ```
 
-For one server's full tool list, notes, and description:
+Servers are grouped by tag, each showing its description, credential state, and
+how many tools it had when last connected — no connections are made.
+
+For one server's detail:
 
 ```bash
 $VAULT/vault.sh show <name>
+```
+
+An unknown name is safe to try: `show` and `use` both refuse with
+`error: no vaulted server named 'x'. Available: …` and list every server. Don't
+wrap them in a `|| list` fallback — the error already is the list.
+
+`show` prints the description, the notes, and the full cached tool list, and
+that last part can be large — `miro` is over 7,000 tokens, `obsidian` over
+2,000. When you only want the notes, read them directly rather than paging
+`show`:
+
+```bash
+python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("note",""))' "$VAULT/meta/<name>.json"
 ```
 
 **● warm** means credentials are ready and connecting is one fast command.
@@ -86,11 +112,25 @@ not running processes — mcpc manages sessions itself.
 
 ## Step 2: Use a server
 
+**Read the entry's notes before you connect. Every time.** This is the step
+that pays for the whole vault, and skipping it is the most expensive mistake
+available here: one session spent six tool calls rediscovering a renamed note
+path that another session had already recorded two days earlier — and then
+wrote the same fact into the entry a second time. The notes are there so that
+does not happen. `use` is reachable directly from Step 0; do not take that
+shortcut.
+
+**Check whether you already have it.** If this session already exposes the
+server's tools natively — `mcp__<name>__*` in the tool namespace, or a
+dedicated skill for it — use those instead. They are cheaper than a subprocess
+per call, and the vault route exists for sessions that don't have them.
+
 ```bash
 $VAULT/vault.sh use <name>       # connects, refreshes the cached tool list
 ```
 
-Then call its tools through mcpc directly:
+Run it — don't assume a warm server is already connected, and never report
+`use` as done if you skipped it. Then call its tools through mcpc:
 
 ```bash
 mcpc @<name> tools-list
@@ -98,6 +138,8 @@ mcpc @<name> tools-get <tool>                    # full schema for one tool
 mcpc @<name> tools-call <tool> arg:="value"
 mcpc @<name> tools-call <tool> --json            # machine-readable output
 ```
+
+A tool's schema is stable for the session — fetch it once and keep it.
 
 mcpc covers the rest of MCP too — `resources-list`, `resources-read`,
 `prompts-list`, `prompts-get`, `tasks-list`. Run `mcpc --help`, or read its own
@@ -177,6 +219,17 @@ $VAULT/vault.sh note <name> --clear
 
 This is the vault's memory. The cached tool list says what a server *has*;
 notes say what it's *for* and what bit you last time.
+
+**Writing them is the half that already works. Reading them is the half that
+doesn't.** Notes only pay off if they are read before acting, not after
+something fails — and in a long session, read them again before the next round
+of calls rather than trusting what you remember from an hour ago. Before you
+append, check whether the fact is already there; the entry currently records
+one renamed path twice because two sessions discovered it independently.
+
+Prune while you're in there. Notes grow without bound and `show` prints all of
+them; when an entry's notes describe a version of the server that no longer
+exists, `--set` the whole thing rather than appending another layer.
 
 ## Probing an unknown server
 

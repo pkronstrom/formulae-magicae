@@ -18,6 +18,8 @@ contents:
       name: prototype-singlefile
     - path: skills/visualize/
       name: visualize
+    - path: skills/term-viz/
+      name: term-viz
     - path: skills/transcribe-media/
       name: transcribe-media
     - path: skills/tts/

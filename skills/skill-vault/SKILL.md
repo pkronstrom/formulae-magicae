@@ -1,6 +1,6 @@
 ---
 name: skill-vault
-description: Catalog of downloaded-but-inactive skills in a personal vault, grouped by category. Use when a specialized vaulted skill might beat improvising — e.g. frontend/design work — when asked to add, update, remove or scan one for malicious content, or to see which vaulted skills get used often enough to promote into the active skill set.
+description: "Catalog of downloaded-but-inactive skills — browse, add, scan, promote or demote. /vault-skills or /sv."
 ---
 
 # Skill Vault

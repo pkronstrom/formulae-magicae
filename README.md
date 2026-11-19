@@ -22,6 +22,7 @@ around that one source tree; they do not fork the skills.
 | [`share`](skills/share/) **0.1.0** | Package meshes, rigs, animations or other originals inside a playful offline collectible HTML card with foil and flip-to-details. | Python 3; a browser; image generation optional |
 | [`prototype-singlefile`](skills/prototype-singlefile/) | Explore UI screens on a pan-and-zoom canvas with draggable frames, comments, drawing, and portable HTML saves. | Python 3 to build; a browser to use |
 | [`visualize`](skills/visualize/) | Render plans and system models as annotatable, self-contained HTML. | A browser |
+| [`term-viz`](skills/term-viz/) | Draw diagrams as text right in the terminal reply — architecture, dependency graphs, UML class, sequence, state, flowchart, gantt, bars and sparklines. | None; `node` and `npm` for large flowcharts and sequences |
 | [`transcribe-media`](skills/transcribe-media/) | Turn video or audio into a timestamped transcript, key frames, and contact sheets. | `yt-dlp`, `ffmpeg`, Python tools described by the skill |
 | [`tts`](skills/tts/) | Speak text locally with Kokoro or a configured system/custom engine. | Python/Kokoro or a supported fallback |
 | [`pr-voice-review`](skills/pr-voice-review/) | Walk through a GitHub pull request aloud while the browser follows the review. | `gh`, browser, optional `tts` |
@@ -70,7 +71,7 @@ The skill appears in Codex in the next turn.
 Ask the built-in skill installer:
 
 ```text
-$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/wire-trigger, skills/work, skills/task-tracker, skills/backlog, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
+$skill-installer Install all of these skills from pkronstrom/formulae-magicae: skills/bento-slides, skills/portal, skills/mcp-vault, skills/pr-voice-review, skills/pr-voice-review-single-file, skills/singlefile, skills/share, skills/prototype-singlefile, skills/session-retro, skills/neuralyzer, skills/skill-retro, skills/skill-vault, skills/spec-flow, skills/summon, skills/transcribe-media, skills/tts, skills/visualize, skills/term-viz, skills/wire-trigger, skills/work, skills/task-tracker, skills/backlog, skills/coordinate, skills/cad-studio, skills/cad-construction-pdf, skills/codex, skills/claude, skills/pr, and skills/rev.
 ```
 
 Installed Codex skills appear in the next turn.
