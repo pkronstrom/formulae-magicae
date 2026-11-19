@@ -5,18 +5,82 @@
 </script>
 <title>Prototype canvas</title>
 <style>
-:root{font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e4e6ed;background:#17191f;color-scheme:dark}*{box-sizing:border-box}body{margin:0;overflow:hidden}button,input,textarea{font:inherit}button{background:#30343e;color:inherit;border:1px solid #484e5c;border-radius:7px;padding:7px 10px;cursor:pointer}button:hover{background:#414856}button[aria-pressed=true]{background:#c9f27c;color:#18230c;border-color:#c9f27c}:focus-visible{outline:3px solid #b4dbff;outline-offset:2px}header{position:relative;z-index:5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 18px;background:#22252d;border-bottom:1px solid #383e49;min-height:66px}header h1{font-size:15px;margin:0 16px 0 0}.group{display:flex;gap:4px}.spacer{flex:1}#stage{position:absolute;inset:var(--bar,66px) 300px 32px 0;overflow:hidden;touch-action:none;background-image:radial-gradient(#363b48 1px,transparent 1px);background-size:24px 24px;outline-offset:-3px}#world{position:absolute;transform-origin:0 0;width:0;height:0}#frames{position:absolute}.frame{position:absolute;background:white;box-shadow:0 16px 60px #0005;border-radius:4px;isolation:isolate}.frame.selected{outline:3px solid #c9f27c}.frame>button{position:absolute;bottom:100%;left:0;border:0;background:transparent;color:#d7dce5;white-space:nowrap;padding:8px 0;max-width:100%;overflow:hidden;text-overflow:ellipsis;cursor:grab;text-align:left}.frame iframe{display:block;width:100%;height:100%;border:0;background:white;pointer-events:none}.preview .frame iframe{pointer-events:auto}.shield{position:absolute;inset:0}.preview .shield{display:none}#ink,#pins{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}#ink{width:1px;height:1px}#pins .pin{position:absolute;transform:translate(-50%,-50%);border-radius:50%;width:30px;height:30px;padding:0;background:#ffce70;color:#34260b;border:2px solid #fff;pointer-events:auto}#pins .pin.resolved{background:#8d9aab}aside{position:absolute;right:0;top:var(--bar,66px);bottom:32px;width:300px;border-left:1px solid #383e49;background:#22252d;padding:18px;overflow:auto}aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#aab2c2;margin:0 0 12px}.screen-link{display:block;text-align:left;width:100%;margin:5px 0}.note{padding:12px 0;border-top:1px solid #414754}.note p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.note small{color:#aab2c2}.note button{font-size:12px;margin-right:5px}.muted{font-size:12px;color:#aab2c2}footer{position:absolute;bottom:0;left:0;right:0;height:32px;padding:7px 16px;font-size:12px;background:#22252d;color:#afb7c8;display:flex;justify-content:space-between;gap:10px}dialog{color:inherit;background:#282d37;border:1px solid #566074;border-radius:12px;max-width:540px;width:calc(100% - 32px)}dialog::backdrop{background:#0008}dialog textarea{width:100%;min-height:140px;background:#181b22;color:inherit;padding:12px;border:1px solid #68758b;border-radius:6px}dialog .group{justify-content:flex-end;margin-top:14px}#status{color:#c9f27c}#empty{position:absolute;left:40px;top:50px;color:#aab2c2}#color{width:32px;height:32px;padding:2px;background:none;border:0}#width{width:55px;background:#30343e;color:white;border:1px solid #484e5c;border-radius:6px;padding:4px}@media(max-width:780px){#stage{right:0}aside{display:none}header{padding:8px}.spacer{display:none}header h1{width:100%}footer .hint{display:none}body.show-notes aside{display:block;width:min(300px,90vw);z-index:6}#notes-toggle{display:block}}@media(min-width:781px){#notes-toggle{display:none}}
+:root{--chrome:#1c1e23;--canvas:#15161a;--dot:#2c2f36;--line:#2b2e35;--raised:#2a2d34;--hover:#33363e;--ink:#e6e7ea;--ink2:#9ba1ab;--note:#ffcf6b;--note-ink:#2e2306;--side:280px;--bar:48px;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--canvas);color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;overflow:hidden}button,input,textarea{font:inherit;color:inherit}
+button{background:transparent;border:0;border-radius:6px;padding:6px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}button:hover{background:var(--hover)}
+:focus-visible{outline:2px solid #9cc7ff;outline-offset:1px}
+.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icon{width:34px;height:34px;padding:0;justify-content:center}
+header{position:relative;z-index:5;display:flex;gap:4px;align-items:center;height:var(--bar);padding:0 8px 0 16px;background:var(--chrome);border-bottom:1px solid var(--line)}
+header h1{font-size:13px;font-weight:600;margin:0 auto 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sep{width:1px;height:20px;background:var(--line);margin:0 4px;flex:none}
+#feedback{background:var(--note);color:var(--note-ink);font-weight:600;padding:6px 10px;margin:0 4px}#feedback:hover{background:#ffdb8a}
+#notes-toggle{position:relative}#notes-toggle[aria-expanded=true]{background:var(--raised)}
+#count{position:absolute;top:3px;right:2px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--note);color:var(--note-ink);font-size:10px;font-weight:700;line-height:15px;text-align:center}#count:empty{display:none}
+#stage{position:absolute;inset:var(--bar) var(--side) 0 0;overflow:hidden;touch-action:none;background:var(--canvas) radial-gradient(var(--dot) 1px,transparent 1px) 0 0/22px 22px;outline-offset:-2px}
+body.side-collapsed{--side:0px}
+#world{position:absolute;transform-origin:0 0;width:0;height:0}#frames{position:absolute}
+.frame{position:absolute;background:white;box-shadow:0 12px 40px #0006;border-radius:3px;isolation:isolate}.frame.selected{outline:2px solid var(--ink);outline-offset:2px}
+.frame>button{position:absolute;bottom:100%;left:0;color:var(--ink2);white-space:nowrap;padding:8px 0;max-width:100%;overflow:hidden;text-overflow:ellipsis;cursor:grab;display:block;text-align:left}.frame>button:hover{background:none;color:var(--ink)}
+.frame iframe{display:block;width:100%;height:100%;border:0;background:white;pointer-events:none}.preview .frame iframe{pointer-events:auto}.shield{position:absolute;inset:0}.preview .shield{display:none}
+#ink,#pins{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}#ink{width:1px;height:1px}
+.pin-wrap{position:absolute;width:0;height:0;pointer-events:auto;transform:scale(var(--inv,1));transform-origin:0 0}
+#pins .pin{position:absolute;transform:translate(-50%,-50%);border-radius:50% 50% 50% 4px;width:28px;height:28px;padding:0;justify-content:center;background:var(--note);color:var(--note-ink);font-weight:700;font-size:12px;box-shadow:0 2px 8px #0007}#pins .pin.resolved{background:#7d8590;color:#15161a}
+.pin-del{position:absolute;left:8px;top:-24px;width:20px;height:20px;padding:0;justify-content:center;border-radius:50%;background:var(--chrome);color:var(--ink);box-shadow:0 0 0 1px var(--line);visibility:hidden}.pin-del .i{width:12px;height:12px;stroke-width:2.25}.pin-del:hover{background:#c2413b}
+.pin-wrap:hover .pin-del,.pin-wrap:focus-within .pin-del{visibility:visible}
+.dock,.zoom{position:absolute;z-index:4;display:flex;align-items:center;gap:2px;padding:4px;background:var(--chrome);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #0006}
+.dock{bottom:16px;left:calc((100% - var(--side)) / 2);transform:translateX(-50%)}
+.zoom{bottom:16px;right:calc(var(--side) + 16px)}
+.dock [aria-pressed=true]{background:var(--ink);color:var(--canvas)}.dock [data-mode=comment][aria-pressed=true]{background:var(--note);color:var(--note-ink)}
+#zoom{min-width:52px;justify-content:center;font-variant-numeric:tabular-nums;color:var(--ink2)}
+#draw-opts{display:none;align-items:center;gap:6px;padding:0 4px}.mode-draw #draw-opts{display:flex}
+#color{width:24px;height:24px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}#color::-webkit-color-swatch-wrapper{padding:0}#color::-webkit-color-swatch{border:0;border-radius:50%}
+#width{width:72px;accent-color:var(--ink)}
+#status{position:absolute;z-index:3;left:16px;top:calc(var(--bar) + 12px);font-size:12px;color:var(--ink2);pointer-events:none}
+aside{position:absolute;right:0;top:var(--bar);bottom:0;width:var(--side);border-left:1px solid var(--line);background:var(--chrome);padding:14px 14px 20px;overflow:auto}
+.side-collapsed aside{display:none}
+aside h2{font-size:12px;font-weight:600;color:var(--ink2);margin:6px 0 8px}aside h2:not(:first-child){margin-top:22px}
+.screen-link{display:block;width:100%;text-align:left;padding:6px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note{padding:10px 0;border-top:1px solid var(--line)}.note p{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}.note small{color:var(--ink2)}
+.note button{font-size:12px;color:var(--ink2);padding:3px 6px;margin-right:2px}.note button:hover{color:var(--ink)}
+.muted{font-size:12px;color:var(--ink2)}
+dialog{color:inherit;background:var(--chrome);border:1px solid var(--line);border-radius:12px;max-width:520px;width:calc(100% - 32px);padding:18px}dialog::backdrop{background:#0009}
+dialog h2{font-size:14px;margin:0 0 10px}dialog textarea{width:100%;min-height:130px;background:var(--canvas);padding:10px;border:1px solid var(--line);border-radius:8px;resize:vertical}
+dialog .group{display:flex;gap:6px;margin-top:12px}dialog .group .grow{flex:1}#apply{background:var(--ink);color:var(--canvas);font-weight:600}#delete-comment{color:#ff8a80}
+#empty{position:absolute;left:40px;top:50px;color:var(--ink2)}
+@media(max-width:780px){#stage{right:0}aside{display:none}body.show-notes aside{display:block;width:min(300px,90vw);z-index:6}.dock{left:12px;transform:none}.zoom{right:12px;bottom:68px}header h1{margin-right:auto}#feedback span{display:none}}
+@media(prefers-reduced-motion:no-preference){button{transition:background-color .12s,color .12s}}
 </style></head><body>
-<header><h1 id="title">Prototype canvas</h1><div class="group" aria-label="Canvas tools">
-<button data-mode="select" aria-pressed="true" title="Move frames (V)">Select</button><button data-mode="pan" aria-pressed="false" title="Pan (H)">Hand</button><button data-mode="comment" aria-pressed="false" title="Pin a comment (C)">Comment</button><button data-mode="draw" aria-pressed="false" title="Draw (D)">Draw</button><button data-mode="preview" aria-pressed="false" title="Interact with screens (P)">Preview</button></div>
-<input id="color" type="color" value="#f5a45d" aria-label="Drawing color"><input id="width" type="number" min="1" max="16" value="3" aria-label="Drawing width"><button id="undo">Undo</button><button id="redo">Redo</button>
-<div class="spacer"></div><div class="group"><button id="minus" aria-label="Zoom out">−</button><button id="zoom" title="Reset zoom">65%</button><button id="plus" aria-label="Zoom in">+</button><button id="fit">Fit</button></div>
-<button id="save">Save HTML</button><button id="export">Export JSON</button><button id="import">Import JSON</button><button id="feedback">Copy for agent</button><button id="notes-toggle">Notes</button><input id="file" type="file" accept=".json,application/json" hidden>
+<header><h1 id="title">Prototype canvas</h1>
+<button id="save" class="icon" title="Save HTML: a portable copy with your comments" aria-label="Save HTML"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
+<button id="export" class="icon" title="Export JSON" aria-label="Export JSON"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4C7 4 6.5 5 6.5 7v2.5c0 1-.6 2-2 2.5 1.4.5 2 1.5 2 2.5V17c0 2 .5 3 2.5 3M15 4c2 0 2.5 1 2.5 3v2.5c0 1 .6 2 2 2.5-1.4.5-2 1.5-2 2.5V17c0 2-.5 3-2.5 3"/></svg></button>
+<button id="import" class="icon" title="Import JSON" aria-label="Import JSON"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg></button>
+<input id="file" type="file" accept=".json,application/json" hidden>
+<button id="feedback" title="Copy comments, drawings and screen positions for your agent"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H5v16h14V5h-3M9 12h6M9 16h4"/></svg><span>Copy for agent</span></button>
+<span class="sep"></span>
+<button id="notes-toggle" class="icon" title="Screens and comments" aria-label="Screens and comments" aria-controls="side" aria-expanded="true"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg><span id="count"></span></button>
 </header>
 <main id="stage" tabindex="0" aria-label="Design canvas. Drag frame titles to move. Scroll to pan, pinch or Control-scroll to zoom."><div id="empty">Add screens with the bundled build.py script.</div><div id="world"><div id="frames"></div><svg id="ink" xmlns="http://www.w3.org/2000/svg"></svg><div id="pins"></div></div></main>
-<aside aria-label="Screens and feedback"><h2>Screens</h2><div id="screen-list"></div><p class="muted">Drag a frame title to move it. Select a title and use arrow keys for precise positioning.</p><h2>Comments</h2><div id="notes"></div><p class="muted">Edits are saved in this browser. Save HTML carries your review with the file. Export JSON includes drawings and screen positions.</p></aside>
-<footer><span class="hint">Scroll: pan · Ctrl/⌘ + scroll: zoom · V select · H hand · C comment · D draw · P preview</span><span id="status" role="status">Ready</span></footer>
-<dialog id="editor"><h2 id="editor-title">Comment</h2><textarea id="editor-text" aria-label="Comment text"></textarea><div class="group"><button id="cancel">Cancel</button><button id="apply">Save comment</button></div></dialog>
+<div class="dock" role="toolbar" aria-label="Canvas tools">
+<button data-mode="select" class="icon" aria-pressed="true" title="Select and move frames (V)" aria-label="Select"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v15l4-3.8 2.8 6 2.4-1.1-2.8-5.9H17z"/></svg></button>
+<button data-mode="pan" class="icon" aria-pressed="false" title="Hand: pan the canvas (H, or hold Space)" aria-label="Hand"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-.5a5 5 0 0 1-3.8-1.8L3.6 15.6a1.5 1.5 0 0 1 2.3-1.9L8 16"/></svg></button>
+<button data-mode="comment" class="icon" aria-pressed="false" title="Comment: click a screen to pin a note (C)" aria-label="Comment"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M12 8v5M9.5 10.5h5"/></svg></button>
+<button data-mode="draw" class="icon" aria-pressed="false" title="Draw (D)" aria-label="Draw"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.2L16 5l3 3L8.2 18.8z"/><path d="M14 7l3 3"/></svg></button>
+<button data-mode="preview" class="icon" aria-pressed="false" title="Preview: use the screens' own buttons and links (P)" aria-label="Preview"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10.2 8.6v6.8l5.3-3.4z"/></svg></button>
+<span id="draw-opts"><span class="sep"></span><input id="color" type="color" value="#f5a45d" aria-label="Drawing color" title="Drawing color"><input id="width" type="range" min="1" max="16" value="3" aria-label="Drawing width" title="Drawing width"></span>
+<span class="sep"></span>
+<button id="undo" class="icon" title="Undo (Ctrl/⌘ Z)" aria-label="Undo"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 13.5L4.5 9 9 4.5"/><path d="M4.5 9H14a5.5 5.5 0 0 1 0 11h-3"/></svg></button>
+<button id="redo" class="icon" title="Redo (Ctrl/⌘ Shift Z)" aria-label="Redo"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 13.5L19.5 9 15 4.5"/><path d="M19.5 9H10a5.5 5.5 0 0 0 0 11h3"/></svg></button>
+</div>
+<div class="zoom" role="group" aria-label="Zoom">
+<button id="minus" class="icon" title="Zoom out" aria-label="Zoom out"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+<button id="zoom" title="Reset to 100%">65%</button>
+<button id="plus" class="icon" title="Zoom in" aria-label="Zoom in"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+<button id="fit" class="icon" title="Fit all screens" aria-label="Fit"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</div>
+<div id="status" role="status">Ready</div>
+<aside id="side" aria-label="Screens and feedback"><h2>Screens</h2><div id="screen-list"></div><h2 id="notes-title">Comments</h2><div id="notes"></div><p class="muted">Edits stay in this browser. Save HTML to share your review.</p></aside>
+<dialog id="editor"><h2 id="editor-title">Comment</h2><textarea id="editor-text" aria-label="Comment text"></textarea><div class="group"><button id="delete-comment" hidden>Delete comment</button><span class="grow"></span><button id="cancel">Cancel</button><button id="apply">Save comment</button></div></dialog>
 <script>
 (function(){
 'use strict';
@@ -44,7 +108,8 @@ function button(text,fn,cls){const b=document.createElement('button');b.textCont
 function frame(id){return state.frames.find(f=>f.id===id)}
 function origin(a){const f=frame(a.frameId);return f?[f.x,f.y]:[0,0]}
 function orphan(a){return a.frameId!==null&&!frame(a.frameId)}
-function view(){const v=state.viewport;$('world').style.transform=`translate(${v.x}px,${v.y}px) scale(${v.z})`;$('zoom').textContent=Math.round(v.z*100)+'%'}
+// Pins keep their on-screen size at every zoom level.
+function view(){const v=state.viewport;$('world').style.transform=`translate(${v.x}px,${v.y}px) scale(${v.z})`;$('world').style.setProperty('--inv',String(1/v.z));$('zoom').textContent=Math.round(v.z*100)+'%'}
 function moveFrames(){for(const f of state.frames){const el=[...$('frames').children].find(e=>e.dataset.id===f.id);if(el){el.style.left=f.x+'px';el.style.top=f.y+'px';el.classList.toggle('selected',selected===f.id)}}}
 // Screen HTML is authored by the agent. Keep it in an opaque sandbox, with no external resources.
 const csp="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'\">";
@@ -56,23 +121,31 @@ function render(){
  $('screen-list').append(button(f.title,()=>focusFrame(f),'screen-link'));}
  moveFrames();marks();view();setMode(mode);
 }
-function focusFrame(f){const r=$('stage').getBoundingClientRect();state.viewport={z:Math.min(1,(r.width-60)/f.w,(r.height-90)/f.h),x:0,y:0};state.viewport.z=Math.max(.1,state.viewport.z);state.viewport.x=(r.width-f.w*state.viewport.z)/2-f.x*state.viewport.z;state.viewport.y=(r.height-f.h*state.viewport.z)/2-f.y*state.viewport.z;selected=f.id;moveFrames();view();persist()}
+// Leave room for the floating tool dock when fitting screens.
+const DOCK=64;
+function focusFrame(f){const r=$('stage').getBoundingClientRect();state.viewport={z:Math.min(1,(r.width-60)/f.w,(r.height-90-DOCK)/f.h),x:0,y:0};state.viewport.z=Math.max(.1,state.viewport.z);state.viewport.x=(r.width-f.w*state.viewport.z)/2-f.x*state.viewport.z;state.viewport.y=(r.height-DOCK-f.h*state.viewport.z)/2-f.y*state.viewport.z+12;selected=f.id;moveFrames();view();persist()}
+function removeComment(c){checkpoint();state.comments=state.comments.filter(a=>a.id!==c.id);marks();persist();status('Comment deleted — Undo brings it back')}
 function marks(){
  $('ink').replaceChildren();$('pins').replaceChildren();$('notes').replaceChildren();
  for(const s of state.strokes){if(orphan(s))continue;const [x,y]=origin(s),p=document.createElementNS('http://www.w3.org/2000/svg','polyline');p.setAttribute('points',s.points.map(q=>(q[0]+x)+','+(q[1]+y)).join(' '));p.setAttribute('fill','none');p.setAttribute('stroke',s.color);p.setAttribute('stroke-width',s.width);p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');$('ink').append(p)}
- state.comments.forEach((c,i)=>{if(!orphan(c)){const [x,y]=origin(c),p=button(String(i+1),()=>editComment(c),'pin'+(c.resolved?' resolved':''));p.style.left=(x+c.x)+'px';p.style.top=(y+c.y)+'px';p.title=c.text;p.setAttribute('aria-label','Comment '+(i+1)+': '+c.text);$('pins').append(p)}
- const n=document.createElement('div');n.className='note';const label=document.createElement('small');label.textContent=`${i+1} · ${orphan(c)?'Unanchored — '+c.frameId:frame(c.frameId)?.title||'Canvas'}${c.resolved?' · Resolved':''}`;const p=document.createElement('p');p.textContent=c.text;n.append(label,p,button('Edit',()=>editComment(c)),button(c.resolved?'Reopen':'Resolve',()=>{checkpoint();c.resolved=!c.resolved;marks();persist()}),button('Delete',()=>{checkpoint();state.comments=state.comments.filter(a=>a.id!==c.id);marks();persist()}));$('notes').append(n)});
- const lost=state.strokes.filter(orphan).length;if(lost){const p=document.createElement('p');p.textContent=lost+' drawing(s) on removed screens remain in the export.';$('notes').append(p)}
+ state.comments.forEach((c,i)=>{if(!orphan(c)){const [x,y]=origin(c),w=document.createElement('div');w.className='pin-wrap';w.style.left=(x+c.x)+'px';w.style.top=(y+c.y)+'px';
+  const p=button(String(i+1),()=>editComment(c),'pin'+(c.resolved?' resolved':''));p.title=c.text;p.setAttribute('aria-label','Comment '+(i+1)+': '+c.text);
+  const del=document.createElement('button');del.className='pin-del';del.title='Delete comment';del.setAttribute('aria-label','Delete comment '+(i+1));del.innerHTML='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>';del.onclick=()=>removeComment(c);
+  w.append(p,del);$('pins').append(w)}
+ const n=document.createElement('div');n.className='note';const label=document.createElement('small');label.textContent=`${i+1} · ${orphan(c)?'Unanchored — '+c.frameId:frame(c.frameId)?.title||'Canvas'}${c.resolved?' · Resolved':''}`;const p=document.createElement('p');p.textContent=c.text;n.append(label,p,button('Edit',()=>editComment(c)),button(c.resolved?'Reopen':'Resolve',()=>{checkpoint();c.resolved=!c.resolved;marks();persist()}),button('Delete',()=>removeComment(c)));$('notes').append(n)});
+ const lost=state.strokes.filter(orphan).length;if(lost){const p=document.createElement('p');p.className='muted';p.textContent=lost+' drawing(s) on removed screens remain in the export.';$('notes').append(p)}
+ const open=state.comments.filter(c=>!c.resolved).length;$('count').textContent=open||'';$('notes-title').textContent=state.comments.length?`Comments (${state.comments.length})`:'Comments';
 }
-function setMode(m){mode=m;$('stage').classList.toggle('preview',m==='preview');$('stage').style.cursor= m==='pan'?'grab':m==='draw'||m==='comment'?'crosshair':'default';document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m)))}
+function setMode(m){mode=m;$('stage').classList.toggle('preview',m==='preview');document.body.classList.toggle('mode-draw',m==='draw');$('stage').style.cursor= m==='pan'?'grab':m==='draw'||m==='comment'?'crosshair':'default';document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m)))}
 function point(e){const r=$('stage').getBoundingClientRect(),v=state.viewport;return[(e.clientX-r.left-v.x)/v.z,(e.clientY-r.top-v.y)/v.z]}
 function anchor(p){const f=[...state.frames].reverse().find(f=>p[0]>=f.x&&p[0]<=f.x+f.w&&p[1]>=f.y&&p[1]<=f.y+f.h);return {frameId:f?.id||null,x:p[0]-(f?.x||0),y:p[1]-(f?.y||0)}}
 function uid(){return 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
-function editComment(c){editing=c;$('editor-title').textContent=c?'Edit comment':'Add comment';$('editor-text').value=c?.text||'';$('apply').hidden=false;$('editor-text').readOnly=false;$('editor').showModal();$('editor-text').focus()}
+function editComment(c){editing=c;$('editor-title').textContent=c?'Edit comment':'Add comment';$('editor-text').value=c?.text||'';$('apply').hidden=false;$('delete-comment').hidden=!c;$('editor-text').readOnly=false;$('editor').showModal();$('editor-text').focus()}
 $('apply').onclick=()=>{const text=$('editor-text').value.trim();if(!text){$('editor-text').focus();return}checkpoint();if(editing.id){const old=state.comments.find(c=>c.id===editing.id);if(old)old.text=text}else state.comments.push({...editing,id:uid(),text,resolved:false});$('editor').close();marks();persist()};
+$('delete-comment').onclick=()=>{const c=editing;$('editor').close();if(c?.id)removeComment(c)};
 $('cancel').onclick=()=>$('editor').close();
 $('stage').addEventListener('pointerdown',e=>{
- if(e.target.closest('.pin'))return;if(e.button!==0&&e.button!==1)return;const p=point(e),drag=e.target.closest('[data-drag]');
+ if(e.target.closest('.pin-wrap'))return;if(e.button!==0&&e.button!==1)return;const p=point(e),drag=e.target.closest('[data-drag]');
  if(space||mode==='pan'||e.button===1){e.preventDefault();gesture={kind:'pan',start:[e.clientX,e.clientY],v:{...state.viewport}}}
  else if(mode==='comment'){e.preventDefault();editComment(null);editing=anchor(p);return}
  else if(mode==='draw'){e.preventDefault();checkpoint();const a=anchor(p),s={id:uid(),frameId:a.frameId,color:$('color').value,width:Math.min(16,Math.max(1,Number($('width').value)||3)),points:[[a.x,a.y],[a.x+.01,a.y+.01]]};state.strokes.push(s);gesture={kind:'draw',s};marks()}
@@ -87,18 +160,22 @@ function zoomAt(z,x,y){const v=state.viewport,n=Math.max(.1,Math.min(3,z));v.x=x
 function centerZoom(factor){const r=$('stage').getBoundingClientRect();zoomAt(state.viewport.z*factor,r.width/2,r.height/2)}
 $('stage').addEventListener('wheel',e=>{e.preventDefault();if(e.ctrlKey||e.metaKey){const r=$('stage').getBoundingClientRect();zoomAt(state.viewport.z*Math.exp(-e.deltaY*.008),e.clientX-r.left,e.clientY-r.top)}else{state.viewport.x-=e.deltaX;state.viewport.y-=e.deltaY;view();persist()}},{passive:false});
 $('plus').onclick=()=>centerZoom(1.2);$('minus').onclick=()=>centerZoom(1/1.2);$('zoom').onclick=()=>centerZoom(1/state.viewport.z);
-$('fit').onclick=()=>{if(!state.frames.length)return;const fs=state.frames,r=$('stage').getBoundingClientRect(),l=Math.min(...fs.map(f=>f.x)),t=Math.min(...fs.map(f=>f.y))-45,w=Math.max(...fs.map(f=>f.x+f.w))-l,h=Math.max(...fs.map(f=>f.y+f.h))-t,z=Math.max(.1,Math.min(1,(r.width-70)/w,(r.height-70)/h));state.viewport={z,x:(r.width-w*z)/2-l*z,y:(r.height-h*z)/2-t*z};view();persist()};
+$('fit').onclick=()=>{if(!state.frames.length)return;const fs=state.frames,r=$('stage').getBoundingClientRect(),l=Math.min(...fs.map(f=>f.x)),t=Math.min(...fs.map(f=>f.y))-45,w=Math.max(...fs.map(f=>f.x+f.w))-l,h=Math.max(...fs.map(f=>f.y+f.h))-t,z=Math.max(.1,Math.min(1,(r.width-70)/w,(r.height-70-DOCK)/h));state.viewport={z,x:(r.width-w*z)/2-l*z,y:(r.height-DOCK-h*z)/2-t*z};view();persist()};
 $('undo').onclick=()=>restore(history,future);$('redo').onclick=()=>restore(future,history);document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,[contenteditable]')||$('editor').open)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?restore(future,history):restore(history,future);return}if(e.code==='Space'){e.preventDefault();space=true;return}if(e.ctrlKey||e.metaKey||e.altKey)return;const modes={v:'select',h:'pan',c:'comment',d:'draw',p:'preview'};if(modes[e.key.toLowerCase()])setMode(modes[e.key.toLowerCase()]);if(selected&&mode==='select'&&e.key.startsWith('Arrow')){e.preventDefault();checkpoint();const f=frame(selected);if(!f)return;const n=e.shiftKey?10:1;if(e.key==='ArrowLeft')f.x-=n;if(e.key==='ArrowRight')f.x+=n;if(e.key==='ArrowUp')f.y-=n;if(e.key==='ArrowDown')f.y+=n;moveFrames();marks();persist()}});
 window.addEventListener('keyup',e=>{if(e.code==='Space')space=false});
 function json(){return JSON.stringify(state,null,2).replace(/</g,'\\u003c')}
 function download(text,name,type){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 function filename(){return state.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'prototype'}
-$('save').onclick=()=>{persist();const doc=document.documentElement.cloneNode(true);doc.querySelector('#prototype-data').textContent='\n'+json()+'\n';for(const id of ['frames','ink','pins','notes','screen-list'])doc.querySelector('#'+id).replaceChildren();doc.querySelector('#editor').removeAttribute('open');doc.querySelector('#editor-text').textContent='';download('<!doctype html>\n'+doc.outerHTML,filename()+'.html','text/html');status('Saved portable HTML copy')};
+$('save').onclick=()=>{persist();const doc=document.documentElement.cloneNode(true);doc.querySelector('#prototype-data').textContent='\n'+json()+'\n';for(const id of ['frames','ink','pins','notes','screen-list','count'])doc.querySelector('#'+id).replaceChildren();doc.querySelector('body').removeAttribute('class');doc.querySelector('#editor').removeAttribute('open');doc.querySelector('#editor-text').textContent='';download('<!doctype html>\n'+doc.outerHTML,filename()+'.html','text/html');status('Saved portable HTML copy')};
 $('export').onclick=()=>{persist();download(json(),filename()+'.json','application/json')};
 $('import').onclick=()=>$('file').click();$('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!valid(data))throw Error('Invalid canvas JSON');if(data.id!==state.id||data.revision!==state.revision)throw Error('Use the matching canvas revision to import this file; current work was kept');checkpoint();state=data;selected=null;render();persist()}catch(e){status(e.message)}finally{$('file').value=''}};
-$('feedback').onclick=async()=>{const feedback={documentId:state.id,revision:state.revision,title:state.title,frames:state.frames.map(({id,title,x,y,w,h})=>({id,title,x,y,w,h})),comments:state.comments,strokes:state.strokes};const text=JSON.stringify(feedback,null,2);try{await navigator.clipboard.writeText(text);status('Feedback copied — paste it to your agent')}catch(e){$('editor-title').textContent='Copy this feedback';$('editor-text').value=text;$('editor-text').readOnly=true;$('apply').hidden=true;$('editor').showModal();$('editor-text').select()}};
-$('notes-toggle').onclick=()=>document.body.classList.toggle('show-notes');new ResizeObserver(()=>{document.documentElement.style.setProperty('--bar',document.querySelector('header').offsetHeight+'px')}).observe(document.querySelector('header'));
+$('feedback').onclick=async()=>{const feedback={documentId:state.id,revision:state.revision,title:state.title,frames:state.frames.map(({id,title,x,y,w,h})=>({id,title,x,y,w,h})),comments:state.comments,strokes:state.strokes};const text=JSON.stringify(feedback,null,2);try{await navigator.clipboard.writeText(text);status('Feedback copied — paste it to your agent')}catch(e){$('editor-title').textContent='Copy this feedback';$('editor-text').value=text;$('editor-text').readOnly=true;$('apply').hidden=true;$('delete-comment').hidden=true;$('editor').showModal();$('editor-text').select()}};
+// The sidebar collapses on wide screens and opens as an overlay on narrow ones.
+const narrow=matchMedia('(max-width:780px)');
+function sideOpen(){return narrow.matches?document.body.classList.contains('show-notes'):!document.body.classList.contains('side-collapsed')}
+function syncSide(){$('notes-toggle').setAttribute('aria-expanded',String(sideOpen()))}
+$('notes-toggle').onclick=()=>{document.body.classList.toggle(narrow.matches?'show-notes':'side-collapsed');syncSide()};narrow.addEventListener('change',syncSide);syncSide();
 render();if(recovered)status('Restored your browser edits');else if(seed.savedAt>0)status('Loaded saved document');
 })();
 </script></body></html>
