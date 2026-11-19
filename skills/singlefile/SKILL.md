@@ -136,6 +136,19 @@ The manual toggle then only flips `color-scheme` on `[data-theme]`, and every to
 
 **Upgrade path:** if the app is form-heavy, replace the `<style>` contents with vendored Pico (command above) and delete the token block. Because Pico is classless, you keep writing plain `<article>`, `<button>`, `<input>` — no class names to invent, and no design drift over a long generation. That's why it's the recommended framework here despite the 71 KB.
 
+**Polish details** that the model won't add unprompted:
+
+- `text-wrap: balance` on headings and short titles, `pretty` on short body text and list items; neither on long prose or code.
+- `font-variant-numeric: tabular-nums` on anything that updates — counters, timers, prices, table columns — so digits don't jitter.
+- Nested rounded surfaces: outer radius = inner radius + padding.
+- Never `transition: all` or `will-change: all`; name the properties (`transform, background-color, box-shadow`). Exits shorter than entries (~150 ms).
+- Hit areas at least 40×40 px (44 where it fits); extend a small icon's with a pseudo-element.
+- Images get a neutral 1px inset outline (`outline: 1px solid rgb(0 0 0 / .1); outline-offset: -1px`, white alpha in dark mode).
+- A negated CSS function drops the whole declaration silently: `-clamp(…)`, `-min(…)`, `-max(…)` do nothing; write `calc(-1 * clamp(…))`.
+- Full-screen views use `height: 100vh; height: 100dvh;` — the second line wins where mobile browser chrome would otherwise cut the bottom off.
+
+Source: ECC's `make-interfaces-feel-better` and `frontend-slides`, both in the skill vault (`engineering/ecc`).
+
 **JS:** vanilla first — a `state` object, a `render()` that rebuilds the view, and delegated event listeners cover most apps in ~40 lines, as in the template. Reach for Alpine only when the UI is genuinely form- and interaction-heavy.
 
 ## 7. Definition of done
