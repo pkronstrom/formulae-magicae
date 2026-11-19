@@ -382,6 +382,31 @@ the observable it was recorded with, look only at the episodes that happened
 change generator. Report the honest answer, including "no episodes since — can't
 tell yet".
 
+## Optional — Test the fixes forward with skill-comply
+
+Step 9 can only judge a fix from episodes that happen later. When an applied
+finding is about **a rule the agent skipped or ignored** — not wording, tokens
+or structure — offer once, after Step 8: *"Want to test the fixed skill now with
+skill-comply?"* Never run it during the retro: it would measure the version
+you are about to change.
+
+`skill-comply` (vault: `engineering/ecc/skills/skill-comply`) writes the
+behaviour the skill expects, then runs fresh `claude -p` sessions at three
+prompt levels — supportive, neutral, competing — and reports how often the steps
+happened in order. Claude Code only. From its directory:
+
+```bash
+uv run python -m scripts.run --dry-run <path/to/SKILL.md>   # cheap: haiku writes spec + scenarios, nothing runs
+uv run python -m scripts.run <path/to/SKILL.md>             # runs sonnet agents with Bash in a temp sandbox
+```
+
+It is third-party code from the vault: read what changed since the last pull
+before the first run. Show the dry run's scenarios first and run the full pass
+only on a yes. Record
+the per-level compliance in the ledger next to the finding: it is the
+observable the next retro checks against, available today instead of after
+the next real session.
+
 ## Optional — Trigger audit
 
 If the complaint is "it never fires" rather than "it fires and misbehaves", the
