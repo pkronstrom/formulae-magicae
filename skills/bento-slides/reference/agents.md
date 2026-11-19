@@ -1,15 +1,16 @@
 <!--
   VENDORED from https://bento.page/agents.md — do not edit by hand.
-  Guide version : 1.0.17
+  Guide version : 1.2.9
   Document format: bento/slides (v1)
-  Fetched        : 2026-08-12
+  Fetched        : 2026-10-17
+  Runtime sha256 : c7da70eaa8d3f457b2458f1685769bf2c488724ac075954f216c70c60f310af0
   Paired runtime : runtime/Bento_Slides.bento.html
   Refresh with   : ./bento.sh refresh  (fetches guide + runtime as a matched pair)
 -->
 
 # bento/slides — for AI agents
 
-**Guide version `1.0.17`** · document format `bento/slides` (v1). This
+**Guide version `1.2.9`** · document format `bento/slides` (v1). This
 guide matches the bento/slides shell of the same version. A deck's `#bento-doc`
 JSON is always the source of truth — if it was written by a newer shell it may
 carry features beyond this guide; unknown keys are ignored, never fatal.
