@@ -1,0 +1,18 @@
+{
+  "version": 3,
+  "phases": [
+    {"id":"brief","title":"Product brief","needs":[],"outputs":["brief","visual"],"checks":["direction"],"review":true,"guide":"phase-idea.md"},
+    {"id":"architecture","title":"Architecture and parts","needs":["brief"],"outputs":["architecture","parts","visual"],"checks":["compatibility","scope"],"guide":"phase-architecture.md"},
+    {"id":"pricing","title":"Manufacturer cost estimate","needs":["architecture"],"outputs":["estimate","visual"],"checks":["comparison"],"when":"pricing","guide":"phase-pricing.md"},
+    {"id":"feasibility","title":"Feasibility","needs":["architecture"],"outputs":["findings","visual"],"checks":["claims"],"guide":"phase-architecture.md"},
+    {"id":"contracts","title":"Interface contracts","needs":["architecture","feasibility"],"outputs":["contracts","acceptance","visual"],"checks":["interfaces","obligations"],"guide":"phase-contracts.md"},
+    {"id":"schematic","title":"Electrical design","needs":["contracts"],"outputs":["schematic","visual"],"checks":["electrical"],"guide":"phase-pcb.md"},
+    {"id":"arrangement","title":"Board shape and placement","needs":["schematic"],"outputs":["board","arrangement","visual"],"checks":["mechanical","placement"],"review":true,"guide":"phase-pcb.md"},
+    {"id":"routing","title":"PCB routing","needs":["arrangement"],"outputs":["board","visual"],"checks":["layout"],"guide":"phase-pcb.md"},
+    {"id":"enclosure","title":"Enclosure and fit","needs":["routing"],"outputs":["mechanical","visual"],"checks":["fit"],"when":"enclosure","guide":"phase-enclosure.md"},
+    {"id":"firmware-handoff","title":"Firmware handoff","needs":["routing","enclosure"],"outputs":["handoff","visual"],"checks":["handoff"],"when":"programmable","guide":"phase-firmware.md"},
+    {"id":"firmware","title":"Firmware build","needs":["firmware-handoff"],"outputs":["firmware","visual"],"checks":["firmware"],"when":"build","guide":"phase-firmware.md"},
+    {"id":"release","title":"Delivery and release","needs":["routing","enclosure"],"needsWhen":{"factory_programming":["firmware"]},"outputs":["manifest","visual"],"checks":["release"],"review":true,"when":"release","guide":"phase-delivery.md"},
+    {"id":"physical","title":"Physical validation","needs":["release"],"outputs":["results","visual"],"checks":["physical"],"when":"physical","guide":"phase-validation.md"}
+  ]
+}

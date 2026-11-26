@@ -1,0 +1,51 @@
+# Place this directory at tools/hardware/ in the gadget project.
+x-tool: &tool
+  network_mode: none
+  working_dir: /project
+  volumes:
+    - ../..:/project
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  environment:
+    HOME: /tmp
+    PYTHONDONTWRITEBYTECODE: "1"
+
+services:
+  kicad:
+    <<: *tool
+    platform: linux/amd64
+    image: kicad/kicad:10.0.8@sha256:3f4a01786dfbe803a65f345c3342b765db9add913f5e9448f8356793714ddc34
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        mkdir -p /tmp/.config/kicad/10.0
+        cp /usr/share/kicad/template/sym-lib-table /usr/share/kicad/template/fp-lib-table /tmp/.config/kicad/10.0/
+        exec "$$@"
+      - sh
+    command: ["kicad-cli", "version"]
+  krt:
+    <<: *tool
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.krt
+    working_dir: /opt/krt
+    entrypoint: ["python3", "-B"]
+    environment:
+      HOME: /tmp
+      PYTHONHASHSEED: "${KRT_SEED:-0}"
+    command: ["py_router/route.py", "--help"]
+  freerouting:
+    <<: *tool
+    image: ghcr.io/freerouting/freerouting:2.2.4@sha256:0d010c6bf13b562551e8cb41fb298090006033fa2850e5bfc678c98ecf47111e
+    entrypoint: ["java", "-jar", "/app/freerouting-executable.jar",
+      "--gui-enabled=false", "--api_server-enabled=false", "--user_data_path=/tmp/freerouting",
+      "--feature_flags-save_jobs=0", "--usage_and_diagnostic_data-disable_analytics=true"]
+  cad:
+    <<: *tool
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.cad
+    entrypoint: ["python3"]
+    command: ["-c", "import cadquery as cq; print(cq.__version__)"]

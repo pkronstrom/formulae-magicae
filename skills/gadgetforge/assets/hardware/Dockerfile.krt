@@ -1,0 +1,9 @@
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl && rm -rf /var/lib/apt/lists/*
+ARG KRT_REF=f3ebd59533265ff58277d85db2398fa464b58404
+WORKDIR /opt/krt
+RUN git init . && git fetch --depth 1 https://github.com/drandyhaas/KiCadRoutingTools "$KRT_REF" \
+    && git checkout --detach FETCH_HEAD && git rev-parse HEAD > COMMIT && test "$(cat COMMIT)" = "$KRT_REF"
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+RUN python3 build_router.py --tag v0.24.1 \
+    && echo "d3107721e55c25cfd467bfc7a27923791b7f73bab14dae7fd007496adf6f2096  rust_router/grid_router.so" | sha256sum -c -

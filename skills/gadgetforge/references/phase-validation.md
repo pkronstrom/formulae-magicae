@@ -1,0 +1,7 @@
+# Optional physical validation
+
+Enable for a scoped prototype, measurement or bring-up request. If evidence must be physically demonstrated, plan access and acceptance criteria upstream. Skip dedicated fixtures for simple work when normal access and a manual method can establish the claim.
+
+You can finish a design or manufacturing package without enabling this phase. If testing is planned for later, record the intended tests, missing equipment or units, and what would let someone resume. Leave the phase open if you want it visible as pending work. In an existing package or delivery project, `configure --no-physical` takes validation out of the active scope and keeps the recorded results. Use `configure --physical` when you return. Compare the unit and applicable firmware with the recorded revisions and repeat affected checks if anything changed. For design-only projects, select a package or delivery scope when you decide to add a physical build.
+
+**Minimum inputs.** Identified unit/release and applicable firmware, assembly condition, test procedure, tools/reference and scoped thresholds. **Capture `physical`.** Output roles `results` and `visual` (photo, plot or annotated measurement). The `physical` check compares actual measurements and conditions with acceptance criteria. Record which properties, samples and environments were covered. Failure or unavailable evidence preserves an unresolved result. Reopen relevant requirements, PCB, enclosure or firmware, and repeat the affected evidence on the new revision.

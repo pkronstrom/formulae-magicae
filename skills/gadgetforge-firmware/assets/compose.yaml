@@ -1,0 +1,10 @@
+services:
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.firmware
+      target: simulator
+      args:
+        TOOLCHAIN_IMAGE: ${TOOLCHAIN_IMAGE:?Set the firmware toolchain image}
+    ports:
+      - "127.0.0.1:${SIM_PORT:-8786}:8080"

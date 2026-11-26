@@ -1,0 +1,32 @@
+id = "tps7a20"
+version = 1
+kind = "ldo-regulator"
+family = "Texas Instruments TPS7A20"
+source = "https://www.ti.com/lit/ds/sbvs338h/sbvs338h.pdf"
+source_revision = "SBVS338H (Rev. H)"
+evidence = "manufacturer reference, not a physically tested gadget instance"
+applies_when = "A selected fixed-output TPS7A20 variant satisfies the actual input, output, load and environment."
+instance_parameters = ["exact_mpn_and_package", "input_range", "output_voltage", "peak_load", "temperature_range", "capacitor_part_numbers", "enable_behavior"]
+provides = ["regulated DC rail"]
+needs = ["qualified DC input", "ground", "enable policy"]
+
+[[obligations]]
+id = "operating-envelope"
+phase = "architecture"
+check = "compatibility"
+work = "Check dropout/headroom, dissipation, transient load and worst-case operating conditions against the selected variant."
+section = "Specifications; Application and Implementation"
+
+[[obligations]]
+id = "support-components"
+phase = "schematic"
+check = "electrical"
+work = "Select input/output capacitors from effective capacitance over operating conditions, resolve enable and verify package pin mapping."
+section = "Typical Application; Recommended Operating Conditions; Pin Configuration and Functions"
+
+[[obligations]]
+id = "capacitor-placement"
+phase = "routing"
+check = "layout"
+work = "Place the support capacitors close to the regulator pins per the package layout example and review return paths."
+section = "Layout Guidelines and Layout Example"

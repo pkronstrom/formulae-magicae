@@ -192,6 +192,18 @@
       "source": "./skills/share",
       "description": "Package original assets inside playful offline HTML collectible cards with foil, flip details and agent-readable extraction.",
       "version": "0.1.0"
+    },
+    {
+      "name": "gadgetforge",
+      "source": "./skills/gadgetforge",
+      "description": "Design a physical electronic gadget with an agent, from product brief through parts, schematic, PCB, enclosure, firmware handoff and manufacturing files.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "gadgetforge-firmware",
+      "source": "./skills/gadgetforge-firmware",
+      "description": "Write, build and test device firmware in Docker from a Gadgetforge hardware handoff for one board revision.",
+      "version": "1.0.0"
     }
   ]
 }

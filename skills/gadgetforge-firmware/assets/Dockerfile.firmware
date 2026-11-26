@@ -1,0 +1,17 @@
+# Set TOOLCHAIN_IMAGE to the project's pinned Linux toolchain image.
+ARG TOOLCHAIN_IMAGE=scratch
+FROM ${TOOLCHAIN_IMAGE} AS verify
+WORKDIR /work
+COPY . .
+ENV FIRMWARE_OUT=/work/out
+RUN --network=none mkdir -p "$FIRMWARE_OUT" && sh ./verify.sh
+
+# Optional browser demo written by verify.sh to $FIRMWARE_OUT/preview/.
+FROM python:3.12-slim@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54 AS simulator
+COPY --from=verify /work/out/preview/ /preview/
+USER 65534:65534
+RUN --network=none test -s /preview/index.html
+CMD ["python", "-m", "http.server", "8080", "--directory", "/preview"]
+
+FROM scratch AS artifacts
+COPY --from=verify /work/out/ /

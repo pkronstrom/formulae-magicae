@@ -1,0 +1,17 @@
+# Bootstrap or resume
+
+Use Python 3.10+ and Git for the local helper. Find the requested project before creating a new root. One gadget has one Git history for source, artifacts and decisions. Use paths relative to that root. Inspect existing branches and changes before saving your work to Git. Keep unrelated files out of gadget commits.
+
+For a new project, run `python3 <skill-dir>/scripts/forge.py --project <project-dir> init --title "Project title" --firmware handoff`. The default target is `design`. Use `--target package` for a manufacturing package or `--target delivery` for a supplier-confirmed delivery plan. Use `--firmware none` to omit firmware work, `handoff` to enable only the handoff and `build` to enable implementation in the sibling skill. The hardware release is independent of these settings. For an order that includes factory loading, select `--firmware build --factory-programming` with a package or delivery target. Use `--no-enclosure` for bare-board work, `--physical` to enable post-build validation with a package/delivery target, and `--mode professional` for deeper presentation. If firmware scope is genuinely unknown, record it provisionally and revisit at architecture. See `configure --help` for later agreed changes.
+
+For existing KiCad, CAD or firmware files without a project record, inspect the sources and then run `init --adopt`. Map current artifacts into a minimum brief and relevant contracts using facts you can recover. Request any missing decision at the appropriate milestone. Capture already existing bona fide artifacts in prerequisite order without recreating them. Prior approval is usable only when attributable to the same artifact scope. Offer a concise bundled review if historical decisions cannot be recovered. Do not infer checks, physical results or manufacturing readiness from filenames.
+
+For an existing Gadgetforge project, use `status` and `feedback`. Inspect `git status --short`, the pinned workflow and expected source paths. Import a saved board or JSON before regenerating it. Report current work, stale dependencies, and the next practical action. Saved records carry over when an agent changes.
+
+New delivery projects include the [manufacturer cost estimate](phase-pricing.md). Use `--pricing` during init or configure to include it for a design or package, or `--no-pricing` to defer it. On a project pinned to an older workflow, follow the same guide and keep the estimate and visual in the repo. Reference them from the delivery notes or architecture review without changing the project pin.
+
+Probe only the tools needed for the next task. Record executable versions, invocation and known limitations in a tracked toolchain note. Prefer a pinned native or containerized batch command for repeatable work, with a native editor when a GUI is needed. Containerize only the tool that benefits. Use the installed CLI's help to confirm KiCad checks and exports. Test any editor API, simulator model or CAD exchange with a small sample before depending on it. Mark a missing capability explicitly and use a supported alternate or recorded manual check where it can establish the same claim.
+
+## Hardware containers
+
+For KiCad CLI and pcbnew, headless PCB routing, or parametric enclosure CAD, use the [hardware Compose starter](hardware-containers.md). Copy its assets into the gadget repo and run only the service the phase needs. Keep the native editor available for interactive review. Record the selected tool version and image identity with the generated artifacts.

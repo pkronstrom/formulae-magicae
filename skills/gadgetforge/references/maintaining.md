@@ -1,0 +1,33 @@
+# Maintaining Gadgetforge
+
+Keep the main skill readable in one pass. It owns navigation and working principles. Phase guides own inputs, work and evidence. Put reusable engineering technique in a focused capability reference. Put exact device constraints and their origins in versioned recipes. Put repeatable transformations or validations in scripts. A gadget decision belongs in that gadget's repository.
+
+Use one authority per fact. The executable phase IDs, dependencies, mandatory output roles, check names and review policy live in the workflow file. Guidelines explain engineering meaning and can point to status output for machine-readable details. A new check needs an applicable failure case. New rule variants must say when they apply and what would happen without them. Keep human reviews focused on decisions the user owns.
+
+When changing workflow fields or behavior, test a real transition or a misuse that would otherwise slip through. Existing projects load their pinned copy. An update must be deliberate, with a backup/baseline and an impact review. If adopting a new workflow changes shape or schema, migrate the records and verify them before updating the pinned digest. This release supplies a pin and validation, not an automatic schema migration. Reuse existing records only when their inputs and semantics still match.
+
+An electronics recipe is a researched starting point. Its reusable description and a gadget's instance have separate identities. Include applicability, a part/document revision, what to configure, positional or electrical obligations and qualifying checks. Register the pinned recipe and any instance values with `--uses` in the first affected capture. Follow dependencies when a recipe changes. Keep vendor-published applicability separate from physical evidence. Verify all product-specific constraints against current sources and include those sources in the project records.
+
+Use the supplied [LDO recipe](../assets/recipes/tps7a20.toml) and [controller recipe](../assets/recipes/esp32-s3.toml) as examples of the data convention. Recipe obligations are explicit user-project inputs. The validator expects evidence for the phase checks. It does not derive a circuit or parse obligations out of TOML.
+
+## Adding a capability
+
+1. **Define what is supported.** Name the job, the first device or workflow that proves it, what activates it, and any limits. For example, support one FPGA part/package and toolchain before claiming support for a whole family.
+2. **Map the phases it touches.** Start at the brief and scan through release and optional validation. For each affected phase, record what needs to be known, who owns it, the output or handoff, how to verify it, and what a failure would send back for revision. Identify early decisions that would be expensive to reverse. Leave unaffected phases alone.
+3. **Find and pin primary references.** Use the exact part's datasheet, package pinout, errata, hardware checklist, reference design and manufacturer tool documentation as applicable. Record version, section and conditions. Check that example layouts and models apply to the actual package and use. Note missing limits and establish them before signing off a dependent design choice.
+4. **Put the change in the smallest useful place.** Put part obligations in a recipe, shared procedure in a capability guide, and an on-demand tool in a script. Use a sibling skill if the work can run independently from a stable handoff. Change the pinned workflow only when a required output, dependency or milestone actually changes. State what runs by default and what is selected per project or release.
+5. **Define evidence and check an unaffected project.** Separate model results, static tool checks and physical measurements. Name the inputs, expected result and report, and bind them to the revision. For code or workflow changes, exercise the new path and a realistic failure, then check an existing project with the capability disabled. Preserve the existing workflow pin unless a project deliberately adopts the change.
+
+## Example: adding FPGA support later
+
+Start with the exact part, package and speed grade and a toolchain that can build for it. Treat the mapping between board connections and HDL ports as an explicit interface with one owner. Generate or check the pin constraints against that same mapping. [Example I/O planning flow](https://docs.amd.com/r/2026.1-English/ug899-vivado-io-clock-planning/I/O-and-Clock-Planning-Design-Flow-Steps), [example device hardware checklist](https://www.latticesemi.com/-/media/LatticeSemi/Documents/ApplicationNotes/IK/FPGA-TN-02006-2-4-iCE40-Hardware-Checklist.ashx?document_id=47779)
+
+| Phase | What changes | Evidence to keep |
+| --- | --- | --- |
+| Brief, architecture and feasibility | Translate the feature into I/O, throughput and latency needs. Check resources, clock needs, power and target-tool support. Prototype risky logic or pin assignments early. | Candidate device and variant, interface budget, representative synthesis or feasibility result. |
+| Contracts and schematic | Agree port-to-pin mappings, I/O standards and bank voltages, clock and reset, configuration memory and programming access. Resolve dedicated or reserved pins before locking the board pinout. | Shared pin map, schematic review and device-tool pin or bank checks for the selected package. |
+| Placement, routing and enclosure | Review package escape, decoupling, clocks and applicable interface routing. Confirm access to the programming or recovery connection where relevant. | Current PCB checks, reviewed critical routes and a fit view showing access. |
+| HDL and delivery | Use a separate logic workflow when useful. Simulate the intended logic, build for the target, review constraints and post-route timing, and attach the bitstream and loading procedure if the order includes programming. | Testbench results, build and timing reports tied to the part and constraints, and the exact bitstream if in release scope. [Example checks for incomplete timing constraints](https://docs.amd.com/r/2026.1-English/ug906-vivado-design-analysis/Check-Timing-Section?contentId=U9H~MuOPB~3Mwg27SetnVA) |
+| Physical validation, when selected | Program a real board and check boot/configuration, relevant I/O and behavior against the agreed criteria. | Unit and bitstream identifiers, conditions and observations. |
+
+A pin reassignment can change both board wiring and HDL constraints. Recheck both against the shared map. Changing only the internal logic should keep ordinary hardware release independent if the external contract still holds. This example describes how to add FPGA support. A specific project still needs a recipe and checks for its chosen device.

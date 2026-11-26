@@ -1,0 +1,44 @@
+id = "esp32-s3"
+version = 2
+kind = "programmable-controller"
+family = "Espressif ESP32-S3"
+source = "https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/index.html"
+evidence = "manufacturer guidance; pin the exact selected module/SoC documents in the gadget"
+applies_when = "The actual PCB uses an ESP32-S3 design. Use the exact module datasheet for module-level decisions."
+instance_parameters = ["module_or_soc_mpn", "supply", "boot_path", "flash_path", "recovery_access", "debug_choice", "antenna_or_radio_scope"]
+provides = ["programmable controller"]
+needs = ["qualified power and loading route"]
+
+[[obligations]]
+id = "workload-fit"
+phase = "feasibility"
+check = "claims"
+work = "Compare the project's resource, peripheral and power budgets against the exact device datasheet and software configuration. Investigate tight or uncertain margins before committing to PCB design."
+
+[[obligations]]
+id = "boot-flash-recovery"
+phase = "schematic"
+check = "electrical"
+work = "Resolve how to enter bootloader mode, flash and recover this board. Check strapping and reset constraints. Select debug access if applicable."
+source = "https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/schematic-checklist.html"
+
+[[obligations]]
+id = "physical-access"
+phase = "arrangement"
+check = "placement"
+work = "Show the selected programming and recovery access on the board and account for enclosure/tool access."
+source = "https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/download-guidelines.html"
+
+[[obligations]]
+id = "layout"
+phase = "routing"
+check = "layout"
+work = "Check the design against relevant package/antenna, power and USB routing guidance for this instance."
+source = "https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/pcb-layout-design.html"
+
+[[obligations]]
+id = "handoff"
+phase = "firmware-handoff"
+check = "handoff"
+work = "Bind the loading route, recovery procedure and applicable debug decisions to the exact hardware revision. Label unperformed physical verification."
+source = "https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/download-guidelines.html"

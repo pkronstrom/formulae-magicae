@@ -52,6 +52,10 @@ contents:
       name: backlog
     - path: skills/coordinate/
       name: coordinate
+    - path: skills/gadgetforge/
+      name: gadgetforge
+    - path: skills/gadgetforge-firmware/
+      name: gadgetforge-firmware
     - path: skills/cad-studio/
       name: cad-studio
     - path: skills/cad-construction-pdf/
